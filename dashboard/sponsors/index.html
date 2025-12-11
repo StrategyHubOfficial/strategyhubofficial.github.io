@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supporters - StrategyHub Dashboard</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    <style>
+        .tier-section {
+            margin-bottom: 3rem;
+        }
+        .tier-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .tier-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .badge-supporter {
+            background: #2d5016;
+            color: #4ade80;
+        }
+        .badge-contributor {
+            background: #1e3a8a;
+            color: #60a5fa;
+        }
+        .badge-patron {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: #000;
+        }
+        .supporter-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .supporter-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--bitcoin-orange) 0%, var(--bitcoin-orange-light) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--bg-darker);
+            flex-shrink: 0;
+        }
+        .supporter-info {
+            flex: 1;
+        }
+        .supporter-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .pricing-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        .pricing-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: var(--transition);
+        }
+        .pricing-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+        .pricing-card.featured {
+            border-color: var(--bitcoin-orange);
+            background: linear-gradient(135deg, rgba(247, 147, 26, 0.1) 0%, rgba(247, 147, 26, 0.05) 100%);
+        }
+        .pricing-tier {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .pricing-amount {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--bitcoin-orange);
+            margin: 1rem 0;
+        }
+        .pricing-amount span {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+        }
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin: 1.5rem 0;
+            text-align: left;
+        }
+        .pricing-features li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+        .pricing-features li::before {
+            content: "✓ ";
+            color: var(--bitcoin-orange);
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+        .current-sponsorship {
+            background: rgba(0, 184, 148, 0.1);
+            border: 1px solid rgba(0, 184, 148, 0.3);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .current-sponsorship h3 {
+            color: var(--success);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/dashboard" class="nav-logo">StrategyHub</a>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/dashboard/studio">Studio</a></li>
+            <li><a href="/dashboard/members">Members</a></li>
+            <li><a href="/dashboard/projects">Projects</a></li>
+            <li><a href="/dashboard/events">Events</a></li>
+            <li><a href="/dashboard/resources">Equipment</a></li>
+            <li><a href="/dashboard/sponsors" class="active">Supporters</a></li>
+            <li><a href="#" id="logout-link">Logout</a></li>
+        </ul>
+    </nav>
+    <script>
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+            document.getElementById('nav-links').classList.toggle('active');
+        });
+    </script>
+
+    <div class="container">
+        <h1>Support StrategyHub</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;">
+            Help us build better Bitcoin infrastructure. Choose a sponsorship tier and get exclusive benefits.
+        </p>
+
+        <div id="current-sponsorship" style="display: none;"></div>
+
+        <div class="pricing-cards">
+            <!-- Supporter Tier -->
+            <div class="pricing-card">
+                <div class="pricing-tier">Supporter</div>
+                <div class="pricing-amount">$25<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Supporter badge on profile</li>
+                    <li>Name on supporters page</li>
+                    <li>Monthly infrastructure update email</li>
+                    <li>Vote on next tool to build</li>
+                </ul>
+                <button class="btn" onclick="purchaseSponsorship('supporter')">Become a Supporter</button>
+            </div>
+
+            <!-- Contributor Tier -->
+            <div class="pricing-card featured">
+                <div class="pricing-tier">Contributor</div>
+                <div class="pricing-amount">$50<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Contributor badge (distinct color)</li>
+                    <li>Everything in Supporter</li>
+                    <li>Beta access to new tools</li>
+                    <li>Private dev channel access</li>
+                    <li>Feature request submission</li>
+                </ul>
+                <button class="btn" onclick="purchaseSponsorship('contributor')">Become a Contributor</button>
+            </div>
+
+            <!-- Patron Tier -->
+            <div class="pricing-card">
+                <div class="pricing-tier">Patron</div>
+                <div class="pricing-amount">$100<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Patron badge</li>
+                    <li>Everything in Contributor</li>
+                    <li>Quarterly 1-on-1 with dev team</li>
+                    <li>Logo on supporters page</li>
+                    <li>Public thank-you at hub events</li>
+                </ul>
+                <button class="btn" onclick="purchaseSponsorship('patron')">Become a Patron</button>
+            </div>
+        </div>
+
+        <h2 style="margin: 4rem 0 2rem 0;">Our Supporters</h2>
+
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading supporters...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="supporters-content" style="display: none;">
+            <div id="patrons-section" class="tier-section">
+                <div class="tier-header">
+                    <h3>Patrons</h3>
+                    <span class="tier-badge badge-patron">$100/month</span>
+                </div>
+                <div id="patrons-list"></div>
+            </div>
+
+            <div id="contributors-section" class="tier-section">
+                <div class="tier-header">
+                    <h3>Contributors</h3>
+                    <span class="tier-badge badge-contributor">$50/month</span>
+                </div>
+                <div id="contributors-list"></div>
+            </div>
+
+            <div id="supporters-section" class="tier-section">
+                <div class="tier-header">
+                    <h3>Supporters</h3>
+                    <span class="tier-badge badge-supporter">$25/month</span>
+                </div>
+                <div id="supporters-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/protected-route.js"></script>
+    <script src="../assets/js/toast.js"></script>
+    <script>
+        let currentSponsorship = null;
+        let allSupporters = [];
+
+        async function loadCurrentSponsorship() {
+            try {
+                const response = await api.get('/sponsorships/me');
+                if (response.success && response.data) {
+                    currentSponsorship = response.data;
+                    renderCurrentSponsorship();
+                }
+            } catch (error) {
+                console.error('Error loading current sponsorship:', error);
+            }
+        }
+
+        function renderCurrentSponsorship() {
+            if (!currentSponsorship) return;
+
+            const container = document.getElementById('current-sponsorship');
+            const tierNames = {
+                supporter: 'Supporter',
+                contributor: 'Contributor',
+                patron: 'Patron'
+            };
+
+            container.innerHTML = `
+                <div class="current-sponsorship">
+                    <h3>Your Current Sponsorship</h3>
+                    <p><strong>Tier:</strong> ${tierNames[currentSponsorship.tier]}</p>
+                    <p><strong>Started:</strong> ${new Date(currentSponsorship.startDate).toLocaleDateString()}</p>
+                    <p><strong>Next Billing:</strong> ${new Date(currentSponsorship.nextBillingDate).toLocaleDateString()}</p>
+                    <button class="btn-secondary btn-small" onclick="cancelSponsorship('${currentSponsorship.id}')" style="margin-top: 1rem;">Cancel Sponsorship</button>
+                </div>
+            `;
+            container.style.display = 'block';
+        }
+
+        async function loadSupporters() {
+            try {
+                const response = await api.get('/sponsorships');
+                if (response.success) {
+                    allSupporters = response.data.all || [];
+                    renderSupporters(response.data.grouped || {});
+                } else {
+                    toast.error('Failed to load supporters');
+                }
+            } catch (error) {
+                console.error('Error loading supporters:', error);
+                toast.error('Error loading supporters');
+            }
+        }
+
+        async function loadMemberNames() {
+            try {
+                const membersResponse = await api.get('/members');
+                if (membersResponse.success) {
+                    return membersResponse.data || [];
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+            }
+            return [];
+        }
+
+        async function renderSupporters(grouped) {
+            const members = await loadMemberNames();
+            const memberMap = new Map(members.map(m => [m.userId, m]));
+
+            function renderTierList(sponsorships, containerId) {
+                const container = document.getElementById(containerId);
+                if (!sponsorships || sponsorships.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-secondary);">No supporters yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = sponsorships.map(sponsorship => {
+                    const member = memberMap.get(sponsorship.userId);
+                    const name = member?.name || 'Anonymous';
+                    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+
+                    return `
+                        <div class="supporter-card">
+                            <div class="supporter-avatar">${initials}</div>
+                            <div class="supporter-info">
+                                <div class="supporter-name">${name}</div>
+                                <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                                    Since ${new Date(sponsorship.startDate).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            renderTierList(grouped.patron || [], 'patrons-list');
+            renderTierList(grouped.contributor || [], 'contributors-list');
+            renderTierList(grouped.supporter || [], 'supporters-list');
+        }
+
+        async function purchaseSponsorship(tier) {
+            try {
+                const response = await api.post('/sponsorships', { tier });
+                if (response.success) {
+                    if (response.data.paymentUrl) {
+                        // Redirect to payment page
+                        window.location.href = response.data.paymentUrl;
+                    } else if (response.data.lightningInvoice) {
+                        // Show Lightning invoice
+                        const invoice = response.data.lightningInvoice.payreq;
+                        if (confirm(`Pay with Lightning?\n\nInvoice: ${invoice.substring(0, 50)}...\n\nCopy invoice and pay, then refresh this page.`)) {
+                            navigator.clipboard.writeText(invoice);
+                            toast.info('Lightning invoice copied to clipboard');
+                        }
+                    } else {
+                        toast.error('Payment setup failed');
+                    }
+                } else {
+                    toast.error('Failed to create sponsorship: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error purchasing sponsorship:', error);
+                toast.error('Error purchasing sponsorship');
+            }
+        }
+
+        async function cancelSponsorship(id) {
+            if (!confirm('Are you sure you want to cancel your sponsorship? This will stop at the end of the current billing period.')) {
+                return;
+            }
+
+            try {
+                const response = await api.post(`/sponsorships/${id}/cancel`);
+                if (response.success) {
+                    toast.success('Sponsorship cancelled');
+                    currentSponsorship = null;
+                    document.getElementById('current-sponsorship').style.display = 'none';
+                    await loadSupporters();
+                } else {
+                    toast.error('Failed to cancel sponsorship');
+                }
+            } catch (error) {
+                console.error('Error cancelling sponsorship:', error);
+                toast.error('Error cancelling sponsorship');
+            }
+        }
+
+        // Initialize
+        (async () => {
+            await auth.requireAuth();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('supporters-content').style.display = 'block';
+            await loadCurrentSponsorship();
+            await loadSupporters();
+        })();
+
+        document.getElementById('logout-link').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await auth.logout();
+        });
+    </script>
+</body>
+</html>
+

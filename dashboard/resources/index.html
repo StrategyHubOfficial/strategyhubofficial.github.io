@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equipment - StrategyHub Dashboard</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    <style>
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .equipment-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .equipment-card:hover {
+            border-color: #f7931a;
+            transform: translateY(-4px);
+        }
+        .equipment-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #fff;
+        }
+        .equipment-card .category {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .equipment-card .status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .status.available { background: #2d5016; color: #4ade80; }
+        .status.checked-out { background: #7c2d12; color: #fb923c; }
+        .status.online { background: #1e3a8a; color: #60a5fa; }
+        .status.offline { background: #7f1d1d; color: #f87171; }
+        .status.maintenance { background: #78350f; color: #fbbf24; }
+        .equipment-info {
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        .equipment-info strong {
+            color: #f7931a;
+        }
+        .equipment-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        .checkout-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .checkout-modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .selected-items {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #0a0a0a;
+            border-radius: 8px;
+        }
+        .selected-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            background: #111;
+            border-radius: 4px;
+        }
+        .remove-item {
+            background: #7f1d1d;
+            color: #f87171;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/dashboard" class="nav-logo">StrategyHub</a>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/dashboard/studio">Studio</a></li>
+            <li><a href="/dashboard/members">Members</a></li>
+            <li><a href="/dashboard/projects">Projects</a></li>
+            <li><a href="/dashboard/events">Events</a></li>
+            <li><a href="/dashboard/resources" class="active">Equipment</a></li>
+            <li><a href="/dashboard/sponsors">Supporters</a></li>
+            <li><a href="#" id="logout-link">Logout</a></li>
+        </ul>
+    </nav>
+    <script>
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+            document.getElementById('nav-links').classList.toggle('active');
+        });
+    </script>
+
+    <div class="container">
+        <h1>Equipment & Infrastructure</h1>
+        
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading equipment...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="equipment-content" style="display: none;">
+            <div class="tabs" style="margin-bottom: 2rem;">
+                <button class="tab-btn active" data-tab="all">All Equipment</button>
+                <button class="tab-btn" data-tab="borrowable">Borrowable</button>
+                <button class="tab-btn" data-tab="servers">Servers</button>
+                <button class="tab-btn" data-tab="infrastructure">Infrastructure</button>
+            </div>
+
+            <div id="equipment-grid" class="equipment-grid"></div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="checkout-modal">
+        <div class="modal-content">
+            <h2>Request Equipment</h2>
+            <div id="selected-items" class="selected-items">
+                <p>No items selected</p>
+            </div>
+            <form id="checkout-form">
+                <div class="form-group">
+                    <label>Checkout Date:</label>
+                    <input type="datetime-local" id="checkout-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Return Date:</label>
+                    <input type="datetime-local" id="return-date" required>
+                </div>
+                <div class="form-group">
+                    <label>Notes (optional):</label>
+                    <textarea id="checkout-notes" rows="3"></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn">Request Equipment</button>
+                    <button type="button" class="btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/protected-route.js"></script>
+    <script src="../assets/js/toast.js"></script>
+    <script>
+        let allEquipment = [];
+        let selectedItems = [];
+        let currentTab = 'all';
+
+        async function loadEquipment() {
+            try {
+                const response = await api.get('/equipment');
+                if (response.success) {
+                    allEquipment = response.data.all || [];
+                    renderEquipment();
+                } else {
+                    toast.error('Failed to load equipment');
+                    document.getElementById('error').textContent = 'Failed to load equipment';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading equipment:', error);
+                toast.error('Error loading equipment');
+                document.getElementById('error').textContent = 'Error loading equipment';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function renderEquipment() {
+            const grid = document.getElementById('equipment-grid');
+            const filtered = currentTab === 'all' 
+                ? allEquipment 
+                : allEquipment.filter(e => e.type === currentTab);
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<p>No equipment found in this category.</p>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(item => {
+                const statusClass = item.status.replace('-', '');
+                let actions = '';
+                let info = '';
+
+                if (item.type === 'borrowable') {
+                    if (item.status === 'available') {
+                        actions = `<button class="btn btn-small" onclick="selectItem('${item.id}')">Request to Borrow</button>`;
+                    } else if (item.status === 'checked-out') {
+                        actions = `<span style="color: #888;">Checked out by ${item.currentUser || 'someone'}</span>`;
+                    }
+                    if (item.checkoutDate) {
+                        info = `<div class="equipment-info">Checkout: ${new Date(item.checkoutDate).toLocaleDateString()}</div>`;
+                    }
+                } else if (item.type === 'server' || item.type === 'infrastructure') {
+                    if (item.ipAddress) {
+                        info = `<div class="equipment-info"><strong>IP:</strong> ${item.ipAddress}</div>`;
+                    }
+                    if (item.endpoint) {
+                        info += `<div class="equipment-info"><strong>Endpoint:</strong> <a href="${item.endpoint}" target="_blank">${item.endpoint}</a></div>`;
+                    }
+                    if (item.metadata) {
+                        Object.entries(item.metadata).forEach(([key, value]) => {
+                            info += `<div class="equipment-info"><strong>${key}:</strong> ${value}</div>`;
+                        });
+                    }
+                }
+
+                return `
+                    <div class="equipment-card">
+                        <h3>${item.name}</h3>
+                        <div class="category">${item.category}</div>
+                        <span class="status ${statusClass}">${item.status}</span>
+                        ${item.description ? `<p style="color: #aaa; margin: 0.5rem 0;">${item.description}</p>` : ''}
+                        ${info}
+                        <div class="equipment-actions">${actions}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectItem(id) {
+            const item = allEquipment.find(e => e.id === id);
+            if (!item) return;
+            
+            if (!selectedItems.find(i => i.id === id)) {
+                selectedItems.push(item);
+                updateSelectedItems();
+                document.getElementById('checkout-modal').classList.add('active');
+            }
+        }
+
+        function updateSelectedItems() {
+            const container = document.getElementById('selected-items');
+            if (selectedItems.length === 0) {
+                container.innerHTML = '<p>No items selected</p>';
+                return;
+            }
+            container.innerHTML = selectedItems.map(item => `
+                <div class="selected-item">
+                    <span>${item.name}</span>
+                    <button type="button" class="remove-item" onclick="removeItem('${item.id}')">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        function removeItem(id) {
+            selectedItems = selectedItems.filter(i => i.id !== id);
+            updateSelectedItems();
+        }
+
+        function closeCheckoutModal() {
+            document.getElementById('checkout-modal').classList.remove('active');
+            selectedItems = [];
+            updateSelectedItems();
+        }
+
+        document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const checkoutDate = document.getElementById('checkout-date').value;
+            const returnDate = document.getElementById('return-date').value;
+            const notes = document.getElementById('checkout-notes').value;
+
+            try {
+                const response = await api.post('/equipment/checkout/request', {
+                    equipmentIds: selectedItems.map(i => i.id),
+                    checkoutDate: new Date(checkoutDate).toISOString(),
+                    returnDate: new Date(returnDate).toISOString(),
+                    notes
+                });
+
+                if (response.success) {
+                    toast.success('Equipment request submitted!');
+                    closeCheckoutModal();
+                    loadEquipment();
+                } else {
+                    toast.error('Failed to request equipment: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error requesting equipment:', error);
+                alert('Error requesting equipment');
+            }
+        });
+
+        // Tab switching
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTab = btn.dataset.tab;
+                renderEquipment();
+            });
+        });
+
+        // Initialize
+        (async () => {
+            await auth.requireAuth();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('equipment-content').style.display = 'block';
+            await loadEquipment();
+        })();
+
+        document.getElementById('logout-link').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await auth.logout();
+        });
+    </script>
+</body>
+</html>
+

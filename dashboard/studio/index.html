@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Studio Booking - StrategyHub Dashboard</title>
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    <style>
+        .booking-form {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 600px;
+            margin: 2rem 0;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #fff;
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f7931a;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        .bookings-list {
+            margin-top: 2rem;
+        }
+        .booking-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .booking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+        .booking-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status.confirmed { background: #2d5016; color: #4ade80; }
+        .status.pending { background: #78350f; color: #fbbf24; }
+        .status.cancelled { background: #7f1d1d; color: #f87171; }
+        .technical-assistance-badge {
+            display: inline-block;
+            background: #1e3a8a;
+            color: #60a5fa;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="/dashboard" class="nav-logo">StrategyHub</a>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
+        <ul class="nav-links" id="nav-links">
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/dashboard/studio" class="active">Studio</a></li>
+            <li><a href="/dashboard/members">Members</a></li>
+            <li><a href="/dashboard/projects">Projects</a></li>
+            <li><a href="/dashboard/events">Events</a></li>
+            <li><a href="/dashboard/resources">Equipment</a></li>
+            <li><a href="/dashboard/sponsors">Supporters</a></li>
+            <li><a href="#" id="logout-link">Logout</a></li>
+        </ul>
+    </nav>
+    <script>
+        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+            document.getElementById('nav-links').classList.toggle('active');
+        });
+    </script>
+
+    <div class="container">
+        <h1>Studio Booking</h1>
+        
+        <div class="booking-form">
+            <h2>Book Studio Time</h2>
+            <form id="booking-form">
+                <div class="form-group">
+                    <label>Start Time:</label>
+                    <input type="datetime-local" id="start-time" required>
+                </div>
+                <div class="form-group">
+                    <label>End Time:</label>
+                    <input type="datetime-local" id="end-time" required>
+                </div>
+                <div class="form-group">
+                    <label>Equipment Needed (optional):</label>
+                    <select id="equipment" multiple>
+                        <option value="">Select equipment...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="technical-assistance">
+                        <span>I need technical assistance</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Notes (optional):</label>
+                    <textarea id="notes" rows="3" placeholder="Any additional information..."></textarea>
+                </div>
+                <button type="submit" class="btn">Book Studio</button>
+            </form>
+        </div>
+
+        <div class="bookings-list">
+            <h2>My Bookings</h2>
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading bookings...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+            <div id="bookings-container"></div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/protected-route.js"></script>
+    <script src="../assets/js/toast.js"></script>
+    <script>
+        async function loadBookings() {
+            try {
+                const response = await api.get('/studio/bookings');
+                if (response.success) {
+                    renderBookings(response.data || []);
+                } else {
+                    toast.error('Failed to load bookings');
+                    document.getElementById('error').textContent = 'Failed to load bookings';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                toast.error('Error loading bookings');
+                document.getElementById('error').textContent = 'Error loading bookings';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        async function loadEquipment() {
+            try {
+                const response = await api.get('/resources/equipment');
+                if (response.success) {
+                    const equipment = response.data || [];
+                    const select = document.getElementById('equipment');
+                    equipment.forEach(item => {
+                        if (item.type === 'borrowable' || item.category === 'studio') {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            option.textContent = item.name;
+                            select.appendChild(option);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading equipment:', error);
+            }
+        }
+
+        function renderBookings(bookings) {
+            const container = document.getElementById('bookings-container');
+            if (bookings.length === 0) {
+                container.innerHTML = '<p>No bookings found.</p>';
+                return;
+            }
+
+            container.innerHTML = bookings.map(booking => {
+                const start = new Date(booking.startTime);
+                const end = new Date(booking.endTime);
+                const statusClass = booking.status;
+
+                return `
+                    <div class="booking-card">
+                        <div class="booking-header">
+                            <div>
+                                <h3>${start.toLocaleString()} - ${end.toLocaleString()}</h3>
+                                ${booking.needsTechnicalAssistance 
+                                    ? '<span class="technical-assistance-badge">Technical Assistance Requested</span>'
+                                    : ''
+                                }
+                            </div>
+                            <span class="booking-status status ${statusClass}">${booking.status}</span>
+                        </div>
+                        ${booking.equipment && booking.equipment.length > 0 
+                            ? `<p><strong>Equipment:</strong> ${booking.equipment.join(', ')}</p>`
+                            : ''
+                        }
+                        ${booking.notes ? `<p>${booking.notes}</p>` : ''}
+                        <div style="margin-top: 1rem;">
+                            <button class="btn-secondary btn-small" onclick="cancelBooking('${booking.id}')">Cancel</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm('Are you sure you want to cancel this booking?')) {
+                return;
+            }
+            
+            try {
+                const response = await api.delete(`/studio/bookings/${id}`);
+                if (response.success) {
+                    toast.success('Booking cancelled successfully');
+                    await loadBookings();
+                } else {
+                    toast.error('Failed to cancel booking');
+                }
+            } catch (error) {
+                console.error('Error canceling booking:', error);
+                toast.error('Error canceling booking');
+            }
+        }
+
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const startTime = document.getElementById('start-time').value;
+            const endTime = document.getElementById('end-time').value;
+            const equipment = Array.from(document.getElementById('equipment').selectedOptions).map(o => o.value).filter(v => v);
+            const needsTechnicalAssistance = document.getElementById('technical-assistance').checked;
+            const notes = document.getElementById('notes').value;
+
+            try {
+                const response = await api.post('/studio/bookings', {
+                    startTime: new Date(startTime).toISOString(),
+                    endTime: new Date(endTime).toISOString(),
+                    equipment,
+                    needsTechnicalAssistance,
+                    notes
+                });
+
+                if (response.success) {
+                    toast.success('Studio booked successfully!');
+                    document.getElementById('booking-form').reset();
+                    await loadBookings();
+                } else {
+                    const errorMsg = 'Failed to book studio: ' + (response.error || 'Unknown error');
+                    toast.error(errorMsg);
+                }
+            } catch (error) {
+                console.error('Error booking studio:', error);
+                toast.error('Error booking studio');
+            }
+        });
+
+        // Initialize
+        (async () => {
+            await auth.requireAuth();
+            document.getElementById('loading').style.display = 'none';
+            await loadBookings();
+            await loadEquipment();
+        })();
+
+        document.getElementById('logout-link').addEventListener('click', async (e) => {
+            e.preventDefault();
+            await auth.logout();
+        });
+    </script>
+</body>
+</html>
+
