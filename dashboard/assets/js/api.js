@@ -30,9 +30,11 @@ class StrategyHubAPI {
     try {
       const response = await fetch(url, config);
       
+      // Handle blocked requests (browser extensions, CORS, etc.)
       if (!response.ok && response.status === 0) {
-        // Network error or blocked request
-        throw new Error('Network request blocked. Please check browser extensions or network settings.');
+        const error = new Error('Request blocked by browser. This may be caused by an ad blocker or privacy extension. Please disable extensions for this site or check network settings.');
+        error.name = 'BlockedRequestError';
+        throw error;
       }
       
       const data = await response.json();
