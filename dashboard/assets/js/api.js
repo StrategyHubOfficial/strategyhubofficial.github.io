@@ -8,7 +8,9 @@ class StrategyHubAPI {
   }
 
   async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
+    // Ensure endpoint starts with /api
+    const normalizedEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+    const url = `${this.baseURL}${normalizedEndpoint}`;
     
     // Get auth token from localStorage if available
     const token = localStorage.getItem('hub_token');
@@ -16,6 +18,8 @@ class StrategyHubAPI {
     
     const config = {
       ...options,
+      mode: 'cors',
+      credentials: 'omit',
       headers: {
         'Content-Type': 'application/json',
         ...authHeaders,
@@ -25,6 +29,12 @@ class StrategyHubAPI {
 
     try {
       const response = await fetch(url, config);
+      
+      if (!response.ok && response.status === 0) {
+        // Network error or blocked request
+        throw new Error('Network request blocked. Please check browser extensions or network settings.');
+      }
+      
       const data = await response.json();
       
       if (!response.ok) {
