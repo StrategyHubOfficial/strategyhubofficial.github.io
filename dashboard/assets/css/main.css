@@ -105,7 +105,6 @@ body {
 }
 
 .nav-links li {
-  position: relative;
   list-style: none !important;
 }
 
@@ -115,40 +114,51 @@ body {
   padding: 0;
 }
 
-/* Bootstrap dropdown integration */
+/* Bootstrap dropdown - standard implementation */
+.nav-links .dropdown {
+  position: relative;
+}
+
 .nav-links .dropdown-toggle::after {
   margin-left: 0.5rem;
+  vertical-align: 0.255em;
 }
 
 .nav-links .dropdown-menu {
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
   background: var(--bg-darker);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 0.5rem 0;
   min-width: 180px;
   box-shadow: var(--shadow-lg);
-  margin-top: 0 !important; /* Remove gap - Bootstrap default adds margin */
-  top: 100% !important; /* Ensure it's right below the button */
+  margin-top: 0 !important;
+  z-index: 1000;
+  display: none;
 }
 
-.nav-links .dropdown-menu a {
+.nav-links .dropdown-menu.show {
+  display: block !important;
+}
+
+.nav-links .dropdown-item {
   color: var(--text-secondary);
   padding: 0.75rem 1.5rem;
+  display: block;
+  text-decoration: none;
+  transition: var(--transition);
 }
 
-.nav-links .dropdown-menu a:hover {
+.nav-links .dropdown-item:hover {
   background: rgba(247, 147, 26, 0.1);
   color: var(--bitcoin-orange);
 }
 
-.nav-links .dropdown-menu a.active {
+.nav-links .dropdown-item.active {
   background: rgba(247, 147, 26, 0.15);
   color: var(--bitcoin-orange);
-}
-
-/* Ensure dropdown stays visible when hovering */
-.nav-links .dropdown:hover .dropdown-menu {
-  display: block;
 }
 
 .nav-links a {
