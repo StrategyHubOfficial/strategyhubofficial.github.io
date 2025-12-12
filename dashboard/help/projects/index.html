@@ -1,0 +1,47 @@
+---
+layout: default
+title: Help
+---
+<style>
+.help-container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+.help-sidebar { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+.help-sidebar h3 { color: var(--bitcoin-orange); margin-bottom: 1rem; font-size: 1.2rem; }
+.help-nav { list-style: none; padding: 0; margin: 0; }
+.help-nav li { margin-bottom: 0.5rem; }
+.help-nav a { color: var(--text-secondary); text-decoration: none; padding: 0.5rem; display: block; border-radius: 6px; transition: var(--transition); }
+.help-nav a:hover { background: rgba(247, 147, 26, 0.1); color: var(--bitcoin-orange); }
+.help-nav a.active { background: rgba(247, 147, 26, 0.15); color: var(--bitcoin-orange); font-weight: 600; }
+.help-content { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; min-height: 500px; }
+.help-content h1 { color: var(--bitcoin-orange); margin-bottom: 1.5rem; font-size: 2rem; }
+.help-content h2 { color: var(--text-primary); margin-top: 2rem; margin-bottom: 1rem; font-size: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+.help-content h3 { color: var(--text-primary); margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.2rem; }
+.help-content p { color: var(--text-secondary); line-height: 1.7; margin-bottom: 1rem; }
+.help-content ul, .help-content ol { color: var(--text-secondary); margin-bottom: 1rem; padding-left: 2rem; }
+.help-content li { margin-bottom: 0.5rem; line-height: 1.6; }
+.help-content code { background: rgba(247, 147, 26, 0.1); color: var(--bitcoin-orange); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em; }
+.help-content pre { background: var(--bg-darker); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; overflow-x: auto; margin-bottom: 1rem; }
+.help-content pre code { background: none; color: var(--text-primary); padding: 0; }
+.help-content blockquote { border-left: 4px solid var(--bitcoin-orange); padding-left: 1rem; margin-left: 0; color: var(--text-secondary); font-style: italic; }
+.help-content a { color: var(--bitcoin-orange); text-decoration: none; }
+.help-content a:hover { text-decoration: underline; }
+@media (min-width: 768px) { .help-layout { display: grid; grid-template-columns: 250px 1fr; gap: 2rem; } .help-sidebar { position: sticky; top: 2rem; height: fit-content; } }
+</style>
+<div class="help-container">
+    <div class="help-layout">
+        <div class="help-sidebar">
+            <h3>Documentation</h3>
+            <ul class="help-nav">
+                <li><a href="/dashboard/help/">Overview</a></li>
+                <li><a href="/dashboard/help/getting-started/" {% if page.url contains '/getting-started/' %}class="active"{% endif %}>Getting Started</a></li>
+                <li><a href="/dashboard/help/studio/" {% if page.url contains '/studio/' %}class="active"{% endif %}>Studio Booking</a></li>
+                <li><a href="/dashboard/help/projects/" {% if page.url contains '/projects/' %}class="active"{% endif %}>Projects</a></li>
+                <li><a href="/dashboard/help/equipment/" {% if page.url contains '/equipment/' %}class="active"{% endif %}>Equipment</a></li>
+                <li><a href="/dashboard/help/faq/" {% if page.url contains '/faq/' %}class="active"{% endif %}>FAQ</a></li>
+            </ul>
+        </div>
+        <div class="help-content">
+            {% capture content %}{% include_relative index.md %}{% endcapture %}
+            {{ content | markdownify }}
+        </div>
+    </div>
+</div>
