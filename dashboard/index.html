@@ -78,63 +78,66 @@ title: StrategyHub Dashboard
             try {
                 // Check authentication first
                 const isAuthenticated = await auth.requireAuth();
-            
-            if (isAuthenticated) {
-                // Load user info
-                const user = auth.getCurrentUser();
                 
-                // Update UI with user info
-                if (user) {
-                    const greeting = document.getElementById('user-greeting');
-                    if (greeting) {
-                        const hour = new Date().getHours();
-                        const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                        greeting.textContent = `${timeGreeting}, ${user.name}!`;
+                if (isAuthenticated) {
+                    // Load user info
+                    const user = auth.getCurrentUser();
+                    
+                    // Update UI with user info
+                    if (user) {
+                        const greeting = document.getElementById('user-greeting');
+                        if (greeting) {
+                            const hour = new Date().getHours();
+                            const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                            greeting.textContent = `${timeGreeting}, ${user.name}!`;
+                        }
                     }
-                }
-                
-                // Load stats
-                try {
-                    const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
-                        api.get('/api/studio/bookings'),
-                        api.get('/api/events'),
-                        api.get('/api/projects'),
-                        api.get('/api/equipment')
-                    ]);
+                    
+                    // Load stats
+                    try {
+                        const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
+                            api.get('/api/studio/bookings'),
+                            api.get('/api/events'),
+                            api.get('/api/projects'),
+                            api.get('/api/equipment')
+                        ]);
 
-                    const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []).filter(b => new Date(b.startTime) > new Date()).length : 0;
-                    const events = eventsRes.status === 'fulfilled' ? (eventsRes.value.data || []).filter(e => {
-                        const eventDate = new Date(e.startTime);
-                        const weekFromNow = new Date();
-                        weekFromNow.setDate(weekFromNow.getDate() + 7);
-                        return eventDate > new Date() && eventDate < weekFromNow;
-                    }).length : 0;
-                    const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value.data || []).filter(p => p.status === 'active').length : 0;
-                    const equipment = equipmentRes.status === 'fulfilled' ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length : 0;
+                        const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []).filter(b => new Date(b.startTime) > new Date()).length : 0;
+                        const events = eventsRes.status === 'fulfilled' ? (eventsRes.value.data || []).filter(e => {
+                            const eventDate = new Date(e.startTime);
+                            const weekFromNow = new Date();
+                            weekFromNow.setDate(weekFromNow.getDate() + 7);
+                            return eventDate > new Date() && eventDate < weekFromNow;
+                        }).length : 0;
+                        const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value.data || []).filter(p => p.status === 'active').length : 0;
+                        const equipment = equipmentRes.status === 'fulfilled' ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length : 0;
 
-                    document.getElementById('stat-bookings').textContent = bookings;
-                    document.getElementById('stat-events').textContent = events;
-                    document.getElementById('stat-projects').textContent = projects;
-                    document.getElementById('stat-equipment').textContent = equipment;
-                    document.getElementById('stats-grid').style.display = 'grid';
-                } catch (err) {
-                    console.error('Error loading stats:', err);
+                        document.getElementById('stat-bookings').textContent = bookings;
+                        document.getElementById('stat-events').textContent = events;
+                        document.getElementById('stat-projects').textContent = projects;
+                        document.getElementById('stat-equipment').textContent = equipment;
+                        document.getElementById('stats-grid').style.display = 'grid';
+                    } catch (err) {
+                        console.error('Error loading stats:', err);
+                    }
+                    
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('content').style.display = 'block';
+                } else {
+                    // Redirect handled by requireAuth
+                    return;
                 }
-                
+            } catch (error) {
+                console.error('Dashboard init error:', error);
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('content').style.display = 'block';
-            } else {
-                // Redirect handled by requireAuth
-                return;
+                const errorDiv = document.getElementById('error');
+                errorDiv.className = 'error';
+                errorDiv.textContent = 'Failed to load dashboard. Please try again.';
+                errorDiv.style.display = 'block';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load dashboard');
+                }
             }
-        } catch (error) {
-            console.error('Dashboard init error:', error);
-            document.getElementById('loading').style.display = 'none';
-            const errorDiv = document.getElementById('error');
-            errorDiv.className = 'error';
-            errorDiv.textContent = 'Failed to load dashboard. Please try again.';
-            errorDiv.style.display = 'block';
-            toast.error('Failed to load dashboard');
-        }
+        })();
     })();
 </script>
