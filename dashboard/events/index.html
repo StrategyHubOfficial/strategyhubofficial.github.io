@@ -310,6 +310,10 @@ title: Events
                 toast.error('Error canceling RSVP');
             }
         }
+        
+        // Expose to global scope for onclick handlers
+        window.rsvpToEvent = rsvpToEvent;
+        window.cancelRSVP = cancelRSVP;
 
         function renderEvents() {
             const container = document.getElementById('events-list');
