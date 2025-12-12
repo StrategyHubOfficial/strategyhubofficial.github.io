@@ -300,6 +300,7 @@ title: Projects
                         ` : ''}
                         <div class="project-actions">
                             <button class="btn btn-small" onclick="viewProject('${project.id}')">View Details</button>
+                            <button class="btn btn-small" onclick="donateToProject('${project.id}', '${project.name}')" style="background: var(--bitcoin-orange);">Donate</button>
                             ${isAdmin() ? `<button class="btn-secondary btn-small" onclick="editProject('${project.id}')">Edit</button>` : ''}
                         </div>
                     </div>
