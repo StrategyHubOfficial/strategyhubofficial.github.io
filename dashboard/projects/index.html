@@ -190,11 +190,31 @@ title: Projects
                     <input type="text" id="project-tags" placeholder="bitcoin, infrastructure, tooling">
                 </div>
                 <div class="form-group">
+                    <label>Skills Needed (comma-separated):</label>
+                    <input type="text" id="project-skills-needed" placeholder="rust, lightning, ui/ux, typescript">
+                </div>
+                <div class="form-group">
                     <label>Visibility:</label>
                     <select id="project-visibility" required>
                         <option value="public">Public</option>
                         <option value="private">Private</option>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="project-looking-for-collaboration">
+                        <span>Looking for collaboration</span>
+                    </label>
+                </div>
+                <div class="form-group" id="collaboration-note-group" style="display: none;">
+                    <label>Collaboration Note (optional):</label>
+                    <textarea id="project-collaboration-note" rows="3" placeholder="What kind of collaboration are you looking for?"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="project-show-in-portfolio">
+                        <span>Show my project in the hub portfolio</span>
+                    </label>
                 </div>
                 <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
                     <button type="submit" class="btn">Create Project</button>
