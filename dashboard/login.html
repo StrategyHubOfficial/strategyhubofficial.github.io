@@ -134,6 +134,7 @@
             <p class="subtitle">Sign in to your account</p>
             
             <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="error-message" style="background: rgba(0, 184, 148, 0.1); border-color: rgba(0, 184, 148, 0.3); color: #00b894; display: none;"></div>
             
             <form id="login-form">
                 <div class="form-group">
@@ -173,6 +174,14 @@
     </div>
 
     <script>
+        // Check for registration success
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('registered') === 'true') {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = 'Registration successful! Please log in with your new account.';
+            successDiv.style.display = 'block';
+        }
+
         // Check if already logged in
         (async () => {
             if (auth.isAuthenticated()) {
