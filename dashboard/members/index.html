@@ -178,3 +178,130 @@ title: Members
             </div>
         </div>
     </div>
+
+<script>
+let allMembers = [];
+        let filteredMembers = [];
+        let currentFilter = 'all';
+        let searchQuery = '';
+
+        async function loadMembers() {
+            try {
+                const response = await api.get('/api/members');
+                if (response.success) {
+                    allMembers = response.data || [];
+                    applyFilters();
+                } else {
+                    toast.error('Failed to load members');
+                    document.getElementById('error').textContent = 'Failed to load members';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading members:', error);
+                toast.error('Error loading members');
+                document.getElementById('error').textContent = 'Error loading members';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function applyFilters() {
+            filteredMembers = allMembers.filter(member => {
+                // Status filter
+                if (currentFilter !== 'all' && member.status !== currentFilter) {
+                    return false;
+                }
+
+                // Search filter
+                if (searchQuery) {
+                    const query = searchQuery.toLowerCase();
+                    const nameMatch = member.name?.toLowerCase().includes(query);
+                    const emailMatch = member.email?.toLowerCase().includes(query);
+                    const skillsMatch = member.skills?.some(skill => skill.toLowerCase().includes(query));
+                    const bioMatch = member.bio?.toLowerCase().includes(query);
+                    
+                    if (!nameMatch && !emailMatch && !skillsMatch && !bioMatch) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            renderMembers();
+        }
+
+        function renderMembers() {
+            const container = document.getElementById('members-grid');
+            const noResults = document.getElementById('no-results');
+
+            if (filteredMembers.length === 0) {
+                container.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            container.innerHTML = filteredMembers.map(member => {
+                const initials = member.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '?';
+                const statusClass = member.status || 'pending';
+
+                return `
+                    <div class="member-card">
+                        <div class="member-avatar">${initials}</div>
+                        <div class="member-info">
+                            <div class="member-name">${member.name || 'Unknown'}</div>
+                            <div class="member-email">${member.email || ''}</div>
+                            ${member.bio ? `<div class="member-bio">${member.bio}</div>` : ''}
+                            ${member.skills && member.skills.length > 0 ? `
+                                <div class="member-skills">
+                                    ${member.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            ${member.projects && member.projects.length > 0 ? `
+                                <div class="member-projects">
+                                    <div class="member-projects-title">Projects</div>
+                                    ${member.projects.map(projectId => 
+                                        `<a href="/dashboard/projects#${projectId}" class="project-link">Project ${projectId.substring(0, 8)}...</a>`
+                                    ).join('')}
+                                </div>
+                            ` : ''}
+                            <span class="member-status status ${statusClass}">${statusClass}</span>
+                            ${member.sponsorship && member.sponsorship.status === 'active' ? `
+                                <span class="tier-badge badge-${member.sponsorship.tier}" style="margin-top: 0.5rem; display: inline-block;">
+                                    ${member.sponsorship.tier.charAt(0).toUpperCase() + member.sponsorship.tier.slice(1)}
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Search functionality
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            searchQuery = e.target.value;
+            applyFilters();
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                applyFilters();
+            });
+        });
+
+        // Initialize
+        (async () => {
+            await auth.requireAuth();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('members-content').style.display = 'block';
+            await loadMembers();
+        })();
+
+        
+            await auth.logout();
+        });
+</script>

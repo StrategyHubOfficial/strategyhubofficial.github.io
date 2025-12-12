@@ -203,3 +203,194 @@ title: Projects
             </form>
         </div>
     </div>
+
+<script>
+let allProjects = [];
+        let filteredProjects = [];
+        let currentFilter = 'all';
+
+        async function loadProjects() {
+            try {
+                const response = await api.get('/api/projects');
+                if (response.success) {
+                    allProjects = response.data || [];
+                    applyFilters();
+                } else {
+                    toast.error('Failed to load projects');
+                    document.getElementById('error').textContent = 'Failed to load projects';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading projects:', error);
+                toast.error('Error loading projects');
+                document.getElementById('error').textContent = 'Error loading projects';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function applyFilters() {
+            filteredProjects = allProjects.filter(project => {
+                if (currentFilter !== 'all' && project.status !== currentFilter) {
+                    return false;
+                }
+                return true;
+            });
+
+            renderProjects();
+        }
+
+        function renderProjects() {
+            const container = document.getElementById('projects-list');
+            const noResults = document.getElementById('no-results');
+
+            if (filteredProjects.length === 0) {
+                container.innerHTML = '';
+                noResults.style.display = 'block';
+                return;
+            }
+
+            noResults.style.display = 'none';
+            container.innerHTML = filteredProjects.map(project => {
+                const statusClass = project.status || 'idea';
+                const tags = project.tags || [];
+                const teamMembers = project.teamMembers || [];
+
+                return `
+                    <div class="project-card" id="project-${project.id}">
+                        <div class="project-header">
+                            <div>
+                                <div class="project-title">${project.name}</div>
+                                <span class="project-status status ${statusClass}">${statusClass}</span>
+                            </div>
+                        </div>
+                        <div class="project-description">${project.description || 'No description'}</div>
+                        <div class="project-meta">
+                            ${project.githubRepo ? `
+                                <div class="project-meta-item">
+                                    <span>🔗</span>
+                                    <a href="https://github.com/${project.githubRepo}" target="_blank" style="color: var(--bitcoin-orange);">${project.githubRepo}</a>
+                                </div>
+                            ` : ''}
+                            <div class="project-meta-item">
+                                <span>👁️</span>
+                                <span>${project.visibility || 'public'}</span>
+                            </div>
+                            <div class="project-meta-item">
+                                <span>👥</span>
+                                <span>${teamMembers.length} team member${teamMembers.length !== 1 ? 's' : ''}</span>
+                            </div>
+                        </div>
+                        ${tags.length > 0 ? `
+                            <div class="project-tags">
+                                ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                        ${teamMembers.length > 0 ? `
+                            <div class="project-team">
+                                <div class="team-title">Team Members</div>
+                                ${teamMembers.map(memberId => 
+                                    `<a href="/dashboard/members#${memberId}" class="team-member">Member ${memberId.substring(0, 8)}...</a>`
+                                ).join('')}
+                            </div>
+                        ` : ''}
+                        <div class="project-actions">
+                            <button class="btn btn-small" onclick="viewProject('${project.id}')">View Details</button>
+                            ${isAdmin() ? `<button class="btn-secondary btn-small" onclick="editProject('${project.id}')">Edit</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function isAdmin() {
+            const user = auth.getCurrentUser();
+            return user && user.role === 'admin';
+        }
+
+        function showCreateProject() {
+            if (!isAdmin()) {
+                toast.error('Only admins can create projects');
+                return;
+            }
+            document.getElementById('create-project-modal').classList.add('active');
+        }
+
+        function closeCreateProject() {
+            document.getElementById('create-project-modal').classList.remove('active');
+            document.getElementById('create-project-form').reset();
+        }
+
+        async function viewProject(id) {
+            try {
+                const response = await api.get(`/api/projects/${id}`);
+                if (response.success) {
+                    const project = response.data;
+                    alert(`Project: ${project.name}\n\n${project.description}\n\nStatus: ${project.status}\nTeam: ${project.teamMembers.length} members`);
+                } else {
+                    toast.error('Failed to load project details');
+                }
+            } catch (error) {
+                console.error('Error loading project:', error);
+                toast.error('Error loading project');
+            }
+        }
+
+        function editProject(id) {
+            toast.info('Edit functionality coming soon');
+        }
+
+        document.getElementById('create-project-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('project-name').value;
+            const description = document.getElementById('project-description').value;
+            const status = document.getElementById('project-status').value;
+            const githubRepo = document.getElementById('project-github').value;
+            const tags = document.getElementById('project-tags').value.split(',').map(t => t.trim()).filter(t => t);
+            const visibility = document.getElementById('project-visibility').value;
+
+            try {
+                const response = await api.post('/api/projects', {
+                    name,
+                    description,
+                    status,
+                    githubRepo: githubRepo || undefined,
+                    tags,
+                    visibility
+                });
+
+                if (response.success) {
+                    toast.success('Project created!');
+                    closeCreateProject();
+                    await loadProjects();
+                } else {
+                    toast.error('Failed to create project: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error creating project:', error);
+                toast.error('Error creating project');
+            }
+        });
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                applyFilters();
+            });
+        });
+
+        // Initialize
+        (async () => {
+            await auth.requireAuth();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('projects-content').style.display = 'block';
+            await loadProjects();
+        })();
+
+        
+            await auth.logout();
+        });
+</script>
