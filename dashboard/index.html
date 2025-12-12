@@ -95,6 +95,7 @@
     <script src="assets/js/api.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/toast.js"></script>
+    <script src="assets/js/navbar.js"></script>
     <script>
         // Initialize dashboard with protected route
         (async () => {
@@ -161,19 +162,7 @@
             }
         })();
 
-        // Logout handler
-        document.getElementById('logout-link').addEventListener('click', async (e) => {
-            e.preventDefault();
-            try {
-                toast.info('Logging out...');
-                await auth.logout();
-            } catch (error) {
-                console.error('Logout failed:', error);
-                // Force logout anyway
-                auth.clearToken();
-                window.location.href = '/dashboard/login.html';
-            }
-        });
+        // Logout handler is now in navbar.js
     </script>
 </body>
 </html>
