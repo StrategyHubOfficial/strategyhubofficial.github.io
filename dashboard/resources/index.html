@@ -121,11 +121,14 @@ title: Equipment
         <div id="error" class="error" style="display: none;"></div>
         
         <div id="equipment-content" style="display: none;">
-            <div class="tabs" style="margin-bottom: 2rem;">
-                <button class="tab-btn active" data-tab="all">All Equipment</button>
-                <button class="tab-btn" data-tab="borrowable">Borrowable</button>
-                <button class="tab-btn" data-tab="servers">Servers</button>
-                <button class="tab-btn" data-tab="infrastructure">Infrastructure</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div class="tabs" style="margin: 0;">
+                    <button class="tab-btn active" data-tab="all">All Equipment</button>
+                    <button class="tab-btn" data-tab="borrowable">Borrowable</button>
+                    <button class="tab-btn" data-tab="servers">Servers</button>
+                    <button class="tab-btn" data-tab="infrastructure">Infrastructure</button>
+                </div>
+                <button id="add-equipment-btn" class="btn" style="display: none;" onclick="showAddEquipmentModal()">+ Add Equipment</button>
             </div>
 
             <div id="equipment-grid" class="equipment-grid"></div>
@@ -155,6 +158,56 @@ title: Equipment
                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                     <button type="submit" class="btn">Request Equipment</button>
                     <button type="button" class="btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Equipment Modal (Admin Only) -->
+    <div id="add-equipment-modal" class="checkout-modal">
+        <div class="modal-content">
+            <h2>Add Equipment</h2>
+            <form id="add-equipment-form">
+                <div class="form-group">
+                    <label>Name *:</label>
+                    <input type="text" id="equipment-name" required>
+                </div>
+                <div class="form-group">
+                    <label>Category *:</label>
+                    <input type="text" id="equipment-category" required placeholder="e.g., Audio, Video, Computing">
+                </div>
+                <div class="form-group">
+                    <label>Type *:</label>
+                    <select id="equipment-type" required>
+                        <option value="borrowable">Borrowable</option>
+                        <option value="server">Server</option>
+                        <option value="infrastructure">Infrastructure</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="equipment-description" rows="3"></textarea>
+                </div>
+                <div class="form-group" id="studio-parent-group" style="display: none;">
+                    <label>Studio Parent:</label>
+                    <select id="equipment-studio-parent">
+                        <option value="">None</option>
+                        <option value="default">Default (Auto-included in all studio bookings)</option>
+                        <option value="studio">Studio (Auto-included in studio bookings)</option>
+                    </select>
+                    <small style="color: #888;">Equipment with a studio parent will be automatically included in studio bookings</small>
+                </div>
+                <div class="form-group" id="server-fields" style="display: none;">
+                    <label>IP Address:</label>
+                    <input type="text" id="equipment-ip">
+                </div>
+                <div class="form-group" id="server-fields-endpoint" style="display: none;">
+                    <label>Endpoint URL:</label>
+                    <input type="url" id="equipment-endpoint">
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn">Add Equipment</button>
+                    <button type="button" class="btn-secondary" onclick="closeAddEquipmentModal()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -320,9 +373,89 @@ title: Equipment
             });
         });
 
+        // Show/hide admin controls
+        function checkAdminStatus() {
+            if (window.isAdmin) {
+                document.getElementById('add-equipment-btn').style.display = 'block';
+            }
+        }
+
+        // Add Equipment Modal Functions
+        window.showAddEquipmentModal = function() {
+            document.getElementById('add-equipment-modal').classList.add('active');
+        }
+
+        window.closeAddEquipmentModal = function() {
+            document.getElementById('add-equipment-modal').classList.remove('active');
+            document.getElementById('add-equipment-form').reset();
+            updateEquipmentTypeFields();
+        }
+
+        function updateEquipmentTypeFields() {
+            const type = document.getElementById('equipment-type').value;
+            const studioParentGroup = document.getElementById('studio-parent-group');
+            const serverFields = document.getElementById('server-fields');
+            const serverFieldsEndpoint = document.getElementById('server-fields-endpoint');
+
+            // Show studio parent for all types
+            studioParentGroup.style.display = 'block';
+
+            // Show server-specific fields
+            if (type === 'server' || type === 'infrastructure') {
+                serverFields.style.display = 'block';
+                serverFieldsEndpoint.style.display = 'block';
+            } else {
+                serverFields.style.display = 'none';
+                serverFieldsEndpoint.style.display = 'none';
+            }
+        }
+
+        document.getElementById('equipment-type').addEventListener('change', updateEquipmentTypeFields);
+
+        // Add Equipment Form Handler
+        document.getElementById('add-equipment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const equipmentData = {
+                name: document.getElementById('equipment-name').value,
+                category: document.getElementById('equipment-category').value,
+                type: document.getElementById('equipment-type').value,
+                description: document.getElementById('equipment-description').value || undefined
+            };
+
+            const studioParent = document.getElementById('equipment-studio-parent').value;
+            if (studioParent) {
+                equipmentData.studioParent = studioParent;
+            }
+
+            const type = equipmentData.type;
+            if (type === 'server' || type === 'infrastructure') {
+                const ip = document.getElementById('equipment-ip').value;
+                const endpoint = document.getElementById('equipment-endpoint').value;
+                if (ip) equipmentData.ipAddress = ip;
+                if (endpoint) equipmentData.endpoint = endpoint;
+            }
+
+            try {
+                const response = await api.post('/api/resources/equipment', equipmentData);
+                
+                if (response.success) {
+                    toast.success('Equipment added successfully!');
+                    closeAddEquipmentModal();
+                    await loadEquipment();
+                } else {
+                    toast.error('Failed to add equipment: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error adding equipment:', error);
+                toast.error('Error adding equipment');
+            }
+        });
+
         // Initialize
         (async () => {
             await auth.requireAuth();
+            checkAdminStatus();
             document.getElementById('loading').style.display = 'none';
             document.getElementById('equipment-content').style.display = 'block';
             await loadEquipment();

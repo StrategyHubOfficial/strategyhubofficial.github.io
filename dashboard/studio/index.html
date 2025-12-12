@@ -282,8 +282,13 @@ title: Studio Booking
                     document.getElementById('booking-form').reset();
                     await loadBookings();
                 } else {
-                    const errorMsg = 'Failed to book studio: ' + (response.error || 'Unknown error');
-                    toast.error(errorMsg);
+                    // Check for conflict error
+                    if (response.error === 'CONFLICT' || response.error?.includes('already booked') || response.error?.includes('Time slot')) {
+                        toast.error('This time slot is already booked. Please choose a different time.');
+                    } else {
+                        const errorMsg = 'Failed to book studio: ' + (response.error || 'Unknown error');
+                        toast.error(errorMsg);
+                    }
                 }
             } catch (error) {
                 console.error('Error booking studio:', error);
