@@ -407,10 +407,23 @@ body {
   background: var(--bg-darker) !important;
   border: 1px solid var(--border-color) !important;
   box-shadow: var(--shadow-lg) !important;
+  color: var(--text-primary) !important; /* Default text color for dropdown */
+}
+
+.dropdown-menu p {
+  color: var(--text-secondary) !important;
+}
+
+.dropdown-menu label {
+  color: var(--text-primary) !important;
+}
+
+.dropdown-menu span {
+  color: var(--text-primary) !important;
 }
 
 .dropdown-item {
-  color: var(--text-secondary) !important;
+  color: var(--text-primary) !important;
 }
 
 .dropdown-item:hover {
