@@ -154,8 +154,13 @@ title: Studio Booking
         async function loadEquipment() {
             try {
                 const response = await api.get('/api/equipment');
-                if (response.success) {
-                    const equipment = response.data || [];
+                if (response.success && response.data) {
+                    // Equipment endpoint returns { all: [...], grouped: {...} }
+                    const equipment = response.data.all || response.data || [];
+                    if (!Array.isArray(equipment)) {
+                        console.error('Equipment data is not an array:', equipment);
+                        return;
+                    }
                     const select = document.getElementById('equipment');
                     equipment.forEach(item => {
                         if (item.type === 'borrowable' || item.category === 'studio') {
