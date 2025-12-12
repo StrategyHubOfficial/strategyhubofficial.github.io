@@ -162,14 +162,41 @@ title: Studio Booking
                         return;
                     }
                     const select = document.getElementById('equipment');
-                    equipment.forEach(item => {
-                        if (item.type === 'borrowable' || item.category === 'studio') {
+                    
+                    // Separate studio default equipment from optional equipment
+                    const studioDefaults = equipment.filter(item => item.studioParent && (item.studioParent === 'default' || item.studioParent === 'studio'));
+                    const optionalEquipment = equipment.filter(item => 
+                        (item.type === 'borrowable' || item.category === 'studio') && 
+                        !item.studioParent
+                    );
+                    
+                    // Show studio defaults as a disabled option group
+                    if (studioDefaults.length > 0) {
+                        const defaultGroup = document.createElement('optgroup');
+                        defaultGroup.label = 'Studio Default Equipment (Auto-included)';
+                        studioDefaults.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item.id;
+                            option.textContent = `✓ ${item.name}`;
+                            option.disabled = true;
+                            option.style.color = '#4ade80';
+                            defaultGroup.appendChild(option);
+                        });
+                        select.appendChild(defaultGroup);
+                    }
+                    
+                    // Add optional equipment
+                    if (optionalEquipment.length > 0) {
+                        const optionalGroup = document.createElement('optgroup');
+                        optionalGroup.label = 'Additional Equipment (Optional)';
+                        optionalEquipment.forEach(item => {
                             const option = document.createElement('option');
                             option.value = item.id;
                             option.textContent = item.name;
-                            select.appendChild(option);
-                        }
-                    });
+                            optionalGroup.appendChild(option);
+                        });
+                        select.appendChild(optionalGroup);
+                    }
                 }
             } catch (error) {
                 console.error('Error loading equipment:', error);
