@@ -115,6 +115,35 @@ class StrategyHubAPI {
     });
   }
 
+  // Invites (admin only)
+  async createInvite(email, expiresInDays) {
+    return this.request('/api/invites', {
+      method: 'POST',
+      body: JSON.stringify({ email, expiresInDays })
+    });
+  }
+
+  async getInvites() {
+    return this.request('/api/invites');
+  }
+
+  async deleteInvite(inviteId) {
+    return this.request(`/api/invites/${inviteId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async verifyInviteToken(token) {
+    return this.request(`/api/invites/verify/${token}`);
+  }
+
+  async registerWithInvite(inviteData) {
+    return this.request('/api/invites/register', {
+      method: 'POST',
+      body: JSON.stringify(inviteData)
+    });
+  }
+
   async getMember(id) {
     return this.request(`/api/members/${id}`);
   }

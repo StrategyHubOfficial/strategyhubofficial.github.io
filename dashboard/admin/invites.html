@@ -1,0 +1,318 @@
+---
+layout: default
+title: Invite Users
+---
+
+<style>
+.invites-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.invites-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.invite-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--bitcoin-orange);
+    box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+}
+
+.invites-list {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.invite-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: var(--transition);
+}
+
+.invite-item:last-child {
+    border-bottom: none;
+}
+
+.invite-item:hover {
+    background: var(--bg-darker);
+}
+
+.invite-info {
+    flex: 1;
+}
+
+.invite-email {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.invite-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.invite-status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-right: 1rem;
+}
+
+.status-pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.status-accepted {
+    background: rgba(0, 184, 148, 0.15);
+    color: #00b894;
+}
+
+.status-expired {
+    background: rgba(214, 48, 49, 0.15);
+    color: #d63031;
+}
+
+.invite-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+</style>
+
+<div class="invites-container">
+    <div class="invites-header">
+        <h1>Invite Users</h1>
+    </div>
+
+    <div class="invite-form">
+        <h2 style="margin-bottom: 1.5rem;">Send Invitation</h2>
+        <form id="invite-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="invite-email">Email Address *</label>
+                    <input type="email" id="invite-email" name="email" required placeholder="user@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="expires-days">Expires In (days)</label>
+                    <input type="number" id="expires-days" name="expiresInDays" value="7" min="1" max="30">
+                </div>
+            </div>
+            <button type="submit" class="btn">Send Invitation</button>
+        </form>
+    </div>
+
+    <div class="invites-list">
+        <h2 style="margin-bottom: 1.5rem;">Invitations</h2>
+        <div id="loading" class="loading" style="text-align: center; padding: 2rem;">
+            <div class="loading-spinner"></div>
+            <p>Loading invitations...</p>
+        </div>
+        <div id="invites-container"></div>
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <p>No invitations yet. Send your first invite above!</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    (async function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+
+        // Check admin access
+        await auth.requireAuth();
+        const user = auth.getCurrentUser();
+        if (!user || user.role !== 'admin') {
+            toast.error('Admin access required');
+            window.location.href = '/dashboard/';
+            return;
+        }
+
+        async function loadInvites() {
+            try {
+                const response = await api.get('/api/invites');
+                if (response.success) {
+                    renderInvites(response.data || []);
+                } else {
+                    toast.error('Failed to load invitations');
+                }
+            } catch (error) {
+                console.error('Error loading invites:', error);
+                toast.error('Error loading invitations');
+            }
+        }
+
+        function renderInvites(invites) {
+            const container = document.getElementById('invites-container');
+            const loading = document.getElementById('loading');
+            const empty = document.getElementById('empty-state');
+
+            loading.style.display = 'none';
+
+            if (invites.length === 0) {
+                empty.style.display = 'block';
+                container.innerHTML = '';
+                return;
+            }
+
+            empty.style.display = 'none';
+            container.innerHTML = invites.map(invite => {
+                const statusClass = `status-${invite.status}`;
+                const expiresDate = new Date(invite.expiresAt);
+                const isExpired = expiresDate < new Date() && invite.status === 'pending';
+                const statusText = isExpired ? 'expired' : invite.status;
+
+                return `
+                    <div class="invite-item">
+                        <div class="invite-info">
+                            <div class="invite-email">${invite.email}</div>
+                            <div class="invite-meta">
+                                <span class="invite-status status-${statusText}">${statusText}</span>
+                                Sent ${new Date(invite.createdAt).toLocaleDateString()} • 
+                                Expires ${expiresDate.toLocaleDateString()}
+                                ${invite.acceptedAt ? ` • Accepted ${new Date(invite.acceptedAt).toLocaleDateString()}` : ''}
+                            </div>
+                        </div>
+                        <div class="invite-actions">
+                            ${invite.status === 'pending' && !isExpired ? `
+                                <button class="btn btn-small" onclick="cancelInvite('${invite.id}')">Cancel</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.cancelInvite = async function(inviteId) {
+            if (!confirm('Are you sure you want to cancel this invitation?')) {
+                return;
+            }
+
+            try {
+                const response = await api.delete(`/api/invites/${inviteId}`);
+                if (response.success) {
+                    toast.success('Invitation cancelled');
+                    await loadInvites();
+                } else {
+                    toast.error(response.error || 'Failed to cancel invitation');
+                }
+            } catch (error) {
+                console.error('Error cancelling invite:', error);
+                toast.error('Error cancelling invitation');
+            }
+        };
+
+        // Form submission
+        document.getElementById('invite-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('invite-email').value.trim();
+            const expiresInDays = parseInt(document.getElementById('expires-days').value) || 7;
+
+            try {
+                const response = await api.post('/api/invites', {
+                    email: email,
+                    expiresInDays: expiresInDays
+                });
+
+                if (response.success) {
+                    toast.success(`Invitation sent to ${email}`);
+                    document.getElementById('invite-form').reset();
+                    document.getElementById('expires-days').value = '7';
+                    await loadInvites();
+                } else {
+                    toast.error(response.error || 'Failed to send invitation');
+                }
+            } catch (error) {
+                console.error('Error sending invite:', error);
+                toast.error('Error sending invitation');
+            }
+        });
+
+        // Add invite methods to API if not present
+        if (!api.createInvite) {
+            api.createInvite = async function(email, expiresInDays) {
+                return this.post('/api/invites', { email, expiresInDays });
+            };
+        }
+
+        if (!api.getInvites) {
+            api.getInvites = async function() {
+                return this.get('/api/invites');
+            };
+        }
+
+        if (!api.deleteInvite) {
+            api.deleteInvite = async function(inviteId) {
+                return this.request(`/api/invites/${inviteId}`, { method: 'DELETE' });
+            };
+        }
+
+        // Initialize
+        await loadInvites();
+    })();
+</script>
+

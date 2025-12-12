@@ -31,6 +31,12 @@
                 <li class="nav-item">
                     <a class="nav-link {% if page.url contains '/events' %}active{% endif %}" href="/dashboard/events">Events</a>
                 </li>
+                <li class="nav-item dropdown" id="admin-menu" style="display: none;">
+                    <a class="nav-link dropdown-toggle {% if page.url contains '/admin' %}active{% endif %}" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Admin</a>
+                    <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                        <li><a class="dropdown-item {% if page.url contains '/admin/invites' %}active{% endif %}" href="/dashboard/admin/invites.html">Invite Users</a></li>
+                    </ul>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#" id="logout-link">Logout</a>
                 </li>
