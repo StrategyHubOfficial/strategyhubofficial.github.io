@@ -230,22 +230,22 @@ class StrategyHubAPI {
 
   // Sponsorships
   async getMySponsorship() {
-    return this.request('/sponsorships/me');
+    return this.request('/api/sponsorships/me');
   }
 
   async getSponsorships() {
-    return this.request('/sponsorships');
+    return this.request('/api/sponsorships');
   }
 
   async createSponsorship(tier) {
-    return this.request('/sponsorships', {
+    return this.request('/api/sponsorships', {
       method: 'POST',
       body: JSON.stringify({ tier })
     });
   }
 
   async cancelSponsorship(id) {
-    return this.request(`/sponsorships/${id}/cancel`, {
+    return this.request(`/api/sponsorships/${id}/cancel`, {
       method: 'POST'
     });
   }

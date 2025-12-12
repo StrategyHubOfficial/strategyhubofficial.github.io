@@ -5,10 +5,20 @@
 class ToastManager {
   constructor() {
     this.container = null;
-    this.init();
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => this.init());
+    } else {
+      this.init();
+    }
   }
 
   init() {
+    // Ensure document.body exists
+    if (!document.body) {
+      setTimeout(() => this.init(), 10);
+      return;
+    }
+    
     // Create toast container if it doesn't exist
     if (!document.getElementById('toast-container')) {
       this.container = document.createElement('div');
@@ -21,6 +31,16 @@ class ToastManager {
   }
 
   show(message, type = 'info', duration = 5000) {
+    // Ensure container is initialized
+    if (!this.container || !document.body) {
+      this.init();
+      // If still not ready, wait a bit
+      if (!this.container) {
+        setTimeout(() => this.show(message, type, duration), 50);
+        return null;
+      }
+    }
+    
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
 
@@ -81,4 +101,5 @@ class ToastManager {
 
 // Initialize toast manager
 window.toast = new ToastManager();
+
 
