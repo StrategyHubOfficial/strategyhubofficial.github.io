@@ -106,6 +106,44 @@ body {
   position: relative;
 }
 
+.nav-links li.has-dropdown:hover .dropdown {
+  display: block;
+}
+
+.dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--bg-darker);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+  min-width: 180px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+}
+
+.dropdown a {
+  display: block;
+  padding: 0.75rem 1.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: var(--transition);
+  border-radius: 0;
+}
+
+.dropdown a:hover {
+  background: rgba(247, 147, 26, 0.1);
+  color: var(--bitcoin-orange);
+}
+
+.dropdown a.active {
+  background: rgba(247, 147, 26, 0.15);
+  color: var(--bitcoin-orange);
+}
+
 .nav-links a {
   color: var(--text-secondary);
   text-decoration: none;
