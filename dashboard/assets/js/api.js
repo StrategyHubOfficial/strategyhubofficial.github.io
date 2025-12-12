@@ -1,10 +1,10 @@
 /**
- * StrategyHub API Client
+ * Hub API Client
  */
 
-class StrategyHubAPI {
+class HubAPI {
   constructor(baseURL) {
-    this.baseURL = baseURL || 'https://dashboard.securesovereigns.workers.dev';
+    this.baseURL = baseURL || (window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev');
   }
 
   async request(endpoint, options = {}) {
@@ -303,6 +303,6 @@ class StrategyHubAPI {
 }
 
 // Export for use
-window.StrategyHubAPI = StrategyHubAPI;
-window.api = new StrategyHubAPI();
+window.HubAPI = HubAPI;
+window.api = new HubAPI();
 

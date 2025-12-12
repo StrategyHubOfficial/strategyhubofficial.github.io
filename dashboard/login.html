@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - StrategyHub</title>
     <link rel="stylesheet" href="assets/css/main.css">
+    <script src="assets/js/config.js"></script>
     <script src="assets/js/api.js"></script>
     <script src="assets/js/auth.js"></script>
     <script src="assets/js/toast.js"></script>
@@ -214,16 +215,19 @@
                 const result = await auth.login(email, password);
                 
                 if (result.success) {
-                    toast.success('Login successful! Redirecting...');
+                    // Don't show toast here - just redirect (toast might be shown elsewhere)
                     setTimeout(() => {
                         window.location.href = '/dashboard/';
-                    }, 500);
+                    }, 100);
                 } else {
                     // Show error
                     const errorMsg = result.error || 'Login failed. Please check your credentials.';
                     errorDiv.textContent = errorMsg;
                     errorDiv.classList.add('show');
-                    toast.error(errorMsg);
+                    // Only show toast if it's not already shown in the error div
+                    if (typeof toast !== 'undefined') {
+                        toast.error(errorMsg);
+                    }
                     loginBtn.disabled = false;
                     loginBtn.textContent = 'Sign In';
                 }
@@ -231,7 +235,10 @@
                 const errorMsg = error.message || 'An error occurred. Please try again.';
                 errorDiv.textContent = errorMsg;
                 errorDiv.classList.add('show');
-                toast.error(errorMsg);
+                // Only show toast if it's not already shown in the error div
+                if (typeof toast !== 'undefined') {
+                    toast.error(errorMsg);
+                }
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Sign In';
             }

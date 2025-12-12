@@ -148,14 +148,28 @@ title: Invite Users
     <div class="invite-form">
         <h2 style="margin-bottom: 1.5rem;">Send Invitation</h2>
         <form id="invite-form">
+            <div class="form-group">
+                <label for="invite-email">Email Address *</label>
+                <input type="email" id="invite-email" name="email" required placeholder="user@example.com">
+            </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label for="invite-email">Email Address *</label>
-                    <input type="email" id="invite-email" name="email" required placeholder="user@example.com">
+                    <label for="prefill-name">Name (pre-fill)</label>
+                    <input type="text" id="prefill-name" name="prefillName" placeholder="Optional: from hub roster">
                 </div>
                 <div class="form-group">
                     <label for="expires-days">Expires In (days)</label>
                     <input type="number" id="expires-days" name="expiresInDays" value="7" min="1" max="30">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="prefill-website">Website (pre-fill)</label>
+                    <input type="url" id="prefill-website" name="prefillWebsite" placeholder="Optional: from hub roster">
+                </div>
+                <div class="form-group">
+                    <label for="prefill-company">Company (pre-fill)</label>
+                    <input type="text" id="prefill-company" name="prefillCompany" placeholder="Optional: from hub roster">
                 </div>
             </div>
             <button type="submit" class="btn">Send Invitation</button>
@@ -271,11 +285,20 @@ title: Invite Users
 
             const email = document.getElementById('invite-email').value.trim();
             const expiresInDays = parseInt(document.getElementById('expires-days').value) || 7;
+            const prefillName = document.getElementById('prefill-name').value.trim();
+            const prefillWebsite = document.getElementById('prefill-website').value.trim();
+            const prefillCompany = document.getElementById('prefill-company').value.trim();
+
+            const prefillData = {};
+            if (prefillName) prefillData.name = prefillName;
+            if (prefillWebsite) prefillData.website = prefillWebsite;
+            if (prefillCompany) prefillData.company = prefillCompany;
 
             try {
                 const response = await api.post('/api/invites', {
                     email: email,
-                    expiresInDays: expiresInDays
+                    expiresInDays: expiresInDays,
+                    prefillData: Object.keys(prefillData).length > 0 ? prefillData : undefined
                 });
 
                 if (response.success) {
