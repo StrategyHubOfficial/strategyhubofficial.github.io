@@ -92,24 +92,24 @@
         <a href="/dashboard" class="nav-logo">StrategyHub</a>
         <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
         <ul class="nav-links" id="nav-links">
-            <li><a href="/dashboard">Dashboard</a></li>
-            <li class="has-dropdown">
-                <a href="/dashboard/studio" class="active">Studio</a>
-                <ul class="dropdown">
-                    <li><a href="/dashboard/studio">Book Studio</a></li>
-                    <li><a href="/dashboard/resources">Equipment</a></li>
+            <li><a href="/dashboard" class="nav-link">Dashboard</a></li>
+            <li class="dropdown">
+                <a class="nav-link dropdown-toggle active" href="#" id="studioDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Studio</a>
+                <ul class="dropdown-menu" aria-labelledby="studioDropdown">
+                    <li><a class="dropdown-item" href="/dashboard/studio">Book Studio</a></li>
+                    <li><a class="dropdown-item" href="/dashboard/resources">Equipment</a></li>
                 </ul>
             </li>
-            <li class="has-dropdown">
-                <a href="/dashboard/members">Users</a>
-                <ul class="dropdown">
-                    <li><a href="/dashboard/members">Members</a></li>
-                    <li><a href="/dashboard/sponsors">Supporters</a></li>
+            <li class="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Users</a>
+                <ul class="dropdown-menu" aria-labelledby="usersDropdown">
+                    <li><a class="dropdown-item" href="/dashboard/members">Members</a></li>
+                    <li><a class="dropdown-item" href="/dashboard/sponsors">Supporters</a></li>
                 </ul>
             </li>
-            <li><a href="/dashboard/projects">Projects</a></li>
-            <li><a href="/dashboard/events">Events</a></li>
-            <li><a href="#" id="logout-link">Logout</a></li>
+            <li><a href="/dashboard/projects" class="nav-link">Projects</a></li>
+            <li><a href="/dashboard/events" class="nav-link">Events</a></li>
+            <li><a href="#" id="logout-link" class="nav-link">Logout</a></li>
         </ul>
     </nav>
     <script>
