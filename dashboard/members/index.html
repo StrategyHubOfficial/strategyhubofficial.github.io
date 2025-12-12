@@ -151,3 +151,30 @@ title: Members
         }
 </style>
 
+<div class="container">
+        <div class="members-header">
+            <h1>Members Directory</h1>
+            <div class="search-bar">
+                <input type="text" id="search-input" placeholder="Search members by name, email, or skills...">
+            </div>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">All Members</button>
+            <button class="filter-btn" data-filter="active">Active</button>
+            <button class="filter-btn" data-filter="pending">Pending</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading members...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="members-content" style="display: none;">
+            <div id="members-grid" class="grid"></div>
+            <div id="no-results" style="display: none; text-align: center; padding: 3rem; color: var(--text-secondary);">
+                <p>No members found matching your search.</p>
+            </div>
+        </div>
+    </div>

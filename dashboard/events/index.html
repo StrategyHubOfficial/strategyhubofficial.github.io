@@ -123,3 +123,61 @@ title: Events
         }
 </style>
 
+<div class="container">
+        <div class="events-header">
+            <h1>Events & Calendar</h1>
+            <button class="btn" onclick="showCreateEvent()">Create Event</button>
+        </div>
+
+        <div id="subscriptions-panel" class="subscriptions-panel">
+            <h3>Notification Preferences</h3>
+            <p style="color: #888; margin-bottom: 1rem;">Choose which event types you want to receive notifications for:</p>
+            <div class="checkbox-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="notify-meetup" value="meetup">
+                    <span>Meetups</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="notify-workshop" value="workshop">
+                    <span>Workshops</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="notify-talk" value="talk">
+                    <span>Talks</span>
+                </label>
+                <label class="checkbox-item">
+                    <input type="checkbox" id="notify-networking" value="networking">
+                    <span>Networking</span>
+                </label>
+            </div>
+            <div style="margin-top: 1rem;">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="notify-new">
+                    <span>Notify me when new events are created</span>
+                </label>
+            </div>
+            <div style="margin-top: 1rem;">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="notify-reminder">
+                    <span>Send reminders before events</span>
+                </label>
+            </div>
+            <button class="btn btn-small" onclick="saveSubscriptions()" style="margin-top: 1rem;">Save Preferences</button>
+        </div>
+
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading events...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="events-content" style="display: none;">
+            <div class="tabs" style="margin-bottom: 2rem;">
+                <button class="tab-btn active" data-view="list">List View</button>
+                <button class="tab-btn" data-view="calendar">Calendar View</button>
+            </div>
+
+            <div id="events-list"></div>
+            <div id="calendar-view" class="calendar-view" style="display: none;"></div>
+        </div>
+    </div>

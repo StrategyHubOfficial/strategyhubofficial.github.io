@@ -130,3 +130,88 @@ title: Supporters
         }
 </style>
 
+<div class="container">
+        <h1>Support StrategyHub</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;">
+            Help us build better Bitcoin infrastructure. Choose a sponsorship tier and get exclusive benefits.
+        </p>
+
+        <div id="current-sponsorship" style="display: none;"></div>
+
+        <div class="pricing-cards">
+            <!-- Supporter Tier -->
+            <div class="pricing-card">
+                <div class="pricing-tier">Supporter</div>
+                <div class="pricing-amount">$25<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Supporter badge on profile</li>
+                    <li>Name on supporters page</li>
+                    <li>Monthly infrastructure update email</li>
+                    <li>Vote on next tool to build</li>
+                </ul></div></div>
+                <button class="btn" onclick="purchaseSponsorship('supporter')">Become a Supporter</button>
+            </div>
+
+            <!-- Contributor Tier -->
+            <div class="pricing-card featured">
+                <div class="pricing-tier">Contributor</div>
+                <div class="pricing-amount">$50<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Contributor badge (distinct color)</li>
+                    <li>Everything in Supporter</li>
+                    <li>Beta access to new tools</li>
+                    <li>Private dev channel access</li>
+                    <li>Feature request submission</li>
+                </ul></div></div>
+                <button class="btn" onclick="purchaseSponsorship('contributor')">Become a Contributor</button>
+            </div>
+
+            <!-- Patron Tier -->
+            <div class="pricing-card">
+                <div class="pricing-tier">Patron</div>
+                <div class="pricing-amount">$100<span>/month</span></div>
+                <ul class="pricing-features">
+                    <li>Patron badge</li>
+                    <li>Everything in Contributor</li>
+                    <li>Quarterly 1-on-1 with dev team</li>
+                    <li>Logo on supporters page</li>
+                    <li>Public thank-you at hub events</li>
+                </ul></div></div>
+                <button class="btn" onclick="purchaseSponsorship('patron')">Become a Patron</button>
+            </div>
+        </div>
+
+        <h2 style="margin: 4rem 0 2rem 0;">Our Supporters</h2>
+
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading supporters...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="supporters-content" style="display: none;">
+            <div id="patrons-section" class="tier-section">
+                <div class="tier-header">
+                    <h3>Patrons</h3>
+                    <span class="tier-badge badge-patron">$100/month</span>
+                </div>
+                <div id="patrons-list"></div>
+            </div>
+
+            <div id="contributors-section" class="tier-section">
+                <div class="tier-header">
+                    <h3>Contributors</h3>
+                    <span class="tier-badge badge-contributor">$50/month</span>
+                </div>
+                <div id="contributors-list"></div>
+            </div>
+
+            <div id="supporters-section" class="tier-section">
+                <div class="tier-header">
+                    <h3>Supporters</h3>
+                    <span class="tier-badge badge-supporter">$25/month</span>
+                </div>
+                <div id="supporters-list"></div>
+            </div>
+        </div>
+    </div>

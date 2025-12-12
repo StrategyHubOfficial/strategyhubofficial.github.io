@@ -82,3 +82,47 @@ title: Studio Booking
         }
 </style>
 
+<div class="container">
+        <h1>Studio Booking</h1>
+        
+        <div class="booking-form">
+            <h2>Book Studio Time</h2>
+            <form id="booking-form">
+                <div class="form-group">
+                    <label>Start Time:</label>
+                    <input type="datetime-local" id="start-time" required>
+                </div>
+                <div class="form-group">
+                    <label>End Time:</label>
+                    <input type="datetime-local" id="end-time" required>
+                </div>
+                <div class="form-group">
+                    <label>Equipment Needed (optional):</label>
+                    <select id="equipment" multiple>
+                        <option value="">Select equipment...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-group">
+                        <input type="checkbox" id="technical-assistance">
+                        <span>I need technical assistance</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Notes (optional):</label>
+                    <textarea id="notes" rows="3" placeholder="Any additional information..."></textarea>
+                </div>
+                <button type="submit" class="btn">Book Studio</button>
+            </form>
+        </div>
+
+        <div class="bookings-list">
+            <h2>My Bookings</h2>
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading bookings...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+            <div id="bookings-container"></div>
+        </div>
+    </div>
