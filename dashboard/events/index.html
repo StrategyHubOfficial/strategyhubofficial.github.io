@@ -215,7 +215,10 @@ title: Events
 
         async function loadEvents() {
             try {
-                const response = await api.get('/api/events');
+                // Admins can see pending events, regular users only see approved
+                const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+                const url = isAdmin ? '/api/events?includePending=true' : '/api/events';
+                const response = await api.get(url);
                 if (response.success) {
                     events = response.data || [];
                     renderEvents();
@@ -478,7 +481,12 @@ title: Events
             try {
                 const response = await api.post('/api/events', data);
                 if (response.success) {
-                    toast.success('Event created!');
+                    const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+                    if (isAdmin) {
+                        toast.success('Event created!');
+                    } else {
+                        toast.success('Event submitted for approval!');
+                    }
                     await loadEvents();
                 } else {
                     toast.error('Failed to create event: ' + (response.error || 'Unknown error'));
@@ -488,6 +496,43 @@ title: Events
                 toast.error('Error creating event');
             }
         }
+
+        async function approveEvent(id) {
+            try {
+                const response = await api.approveEvent(id);
+                if (response.success) {
+                    toast.success('Event approved!');
+                    await loadEvents();
+                } else {
+                    toast.error('Failed to approve event');
+                }
+            } catch (error) {
+                console.error('Error approving event:', error);
+                toast.error('Error approving event');
+            }
+        }
+
+        async function rejectEvent(id) {
+            if (!confirm('Are you sure you want to reject this event?')) {
+                return;
+            }
+            try {
+                const response = await api.rejectEvent(id);
+                if (response.success) {
+                    toast.success('Event rejected');
+                    await loadEvents();
+                } else {
+                    toast.error('Failed to reject event');
+                }
+            } catch (error) {
+                console.error('Error rejecting event:', error);
+                toast.error('Error rejecting event');
+            }
+        }
+
+        // Expose to global scope for onclick handlers
+        window.approveEvent = approveEvent;
+        window.rejectEvent = rejectEvent;
 
 
         // Initialize
