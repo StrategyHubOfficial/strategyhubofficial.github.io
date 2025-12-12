@@ -329,11 +329,30 @@ title: Events
                 const rsvpCount = event.rsvps ? event.rsvps.length : 0;
                 const maxAttendees = event.maxAttendees || 'Unlimited';
 
+                const approvalStatus = event.approvalStatus || 'approved';
+                const approvalBadge = approvalStatus === 'pending' 
+                    ? '<span class="event-type" style="background: #78350f; color: #fbbf24; margin-left: 0.5rem;">Pending Approval</span>'
+                    : approvalStatus === 'rejected'
+                    ? '<span class="event-type" style="background: #7f1d1d; color: #f87171; margin-left: 0.5rem;">Rejected</span>'
+                    : '';
+                const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+
                 return `
                     <div class="event-card">
                         <div class="event-header">
-                            <h2 class="event-title">${event.title}</h2>
-                            <span class="event-type ${event.type}">${event.type}</span>
+                            <div>
+                                <h2 class="event-title">${event.title}</h2>
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <span class="event-type ${event.type}">${event.type}</span>
+                                    ${approvalBadge}
+                                </div>
+                            </div>
+                            ${isAdmin && approvalStatus === 'pending' ? `
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="approveEvent('${event.id}')">Approve</button>
+                                    <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="rejectEvent('${event.id}')">Reject</button>
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="event-details">
                             <p><strong>When:</strong> ${eventDate.toLocaleString()}</p>

@@ -295,6 +295,43 @@ class HubAPI {
     });
   }
 
+  // Approval endpoints
+  async approveProject(projectId) {
+    return this.request(`/api/projects/${projectId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'approve' })
+    });
+  }
+
+  async rejectProject(projectId) {
+    return this.request(`/api/projects/${projectId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'reject' })
+    });
+  }
+
+  async getPendingProjects() {
+    return this.request('/api/projects/pending');
+  }
+
+  async approveEvent(eventId) {
+    return this.request(`/api/events/${eventId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'approve' })
+    });
+  }
+
+  async rejectEvent(eventId) {
+    return this.request(`/api/events/${eventId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'reject' })
+    });
+  }
+
+  async getPendingEvents() {
+    return this.request('/api/events/pending');
+  }
+
   async cancelSponsorship(id) {
     return this.request(`/api/sponsorships/${id}/cancel`, {
       method: 'POST'

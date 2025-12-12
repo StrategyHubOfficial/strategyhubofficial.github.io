@@ -280,13 +280,27 @@ title: Projects
                 const tags = project.tags || [];
                 const teamMembers = project.teamMembers || [];
 
+                const approvalStatus = project.approvalStatus || 'approved';
+                const approvalBadge = approvalStatus === 'pending' 
+                    ? '<span class="project-status status pending" style="background: #78350f; color: #fbbf24; margin-left: 0.5rem;">Pending Approval</span>'
+                    : approvalStatus === 'rejected'
+                    ? '<span class="project-status status rejected" style="background: #7f1d1d; color: #f87171; margin-left: 0.5rem;">Rejected</span>'
+                    : '';
+
                 return `
                     <div class="project-card" id="project-${project.id}">
                         <div class="project-header">
                             <div>
                                 <div class="project-title">${project.name}</div>
                                 <span class="project-status status ${statusClass}">${statusClass}</span>
+                                ${approvalBadge}
                             </div>
+                            ${isAdmin() && approvalStatus === 'pending' ? `
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="approveProject('${project.id}')">Approve</button>
+                                    <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="rejectProject('${project.id}')">Reject</button>
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="project-description">${project.description || 'No description'}</div>
                         <div class="project-meta">
@@ -334,10 +348,6 @@ title: Projects
         }
 
         function showCreateProject() {
-            if (!isAdmin()) {
-                toast.error('Only admins can create projects');
-                return;
-            }
             document.getElementById('create-project-modal').classList.add('active');
         }
         
@@ -368,10 +378,45 @@ title: Projects
             toast.info('Edit functionality coming soon');
         }
         
+        async function approveProject(id) {
+            try {
+                const response = await api.approveProject(id);
+                if (response.success) {
+                    toast.success('Project approved!');
+                    await loadProjects();
+                } else {
+                    toast.error('Failed to approve project');
+                }
+            } catch (error) {
+                console.error('Error approving project:', error);
+                toast.error('Error approving project');
+            }
+        }
+
+        async function rejectProject(id) {
+            if (!confirm('Are you sure you want to reject this project?')) {
+                return;
+            }
+            try {
+                const response = await api.rejectProject(id);
+                if (response.success) {
+                    toast.success('Project rejected');
+                    await loadProjects();
+                } else {
+                    toast.error('Failed to reject project');
+                }
+            } catch (error) {
+                console.error('Error rejecting project:', error);
+                toast.error('Error rejecting project');
+            }
+        }
+
         // Expose to global scope for onclick handlers
         window.viewProject = viewProject;
         window.editProject = editProject;
         window.donateToProject = donateToProject;
+        window.approveProject = approveProject;
+        window.rejectProject = rejectProject;
 
         document.getElementById('create-project-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -394,7 +439,12 @@ title: Projects
                 });
 
                 if (response.success) {
-                    toast.success('Project created!');
+                    const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+                    if (isAdmin) {
+                        toast.success('Project created!');
+                    } else {
+                        toast.success('Project submitted for approval!');
+                    }
                     closeCreateProject();
                     await loadProjects();
                 } else {
