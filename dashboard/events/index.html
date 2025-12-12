@@ -450,6 +450,24 @@ title: Events
             }
         }
 
+        // Toggle subscriptions dropdown
+        document.getElementById('subscriptions-toggle')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const menu = document.getElementById('subscriptions-panel');
+            if (menu) {
+                menu.classList.toggle('show');
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.querySelector('.subscriptions-dropdown');
+            const menu = document.getElementById('subscriptions-panel');
+            if (dropdown && menu && !dropdown.contains(e.target as Node)) {
+                menu.classList.remove('show');
+            }
+        });
+
         // Initialize
         (async () => {
             await auth.requireAuth();
