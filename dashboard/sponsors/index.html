@@ -37,30 +37,47 @@ title: Supporters
             border: 1px solid var(--border-color);
             border-radius: 12px;
             padding: 1.5rem;
-            margin-bottom: 1rem;
+            transition: var(--transition);
             display: flex;
+            flex-direction: column;
             align-items: center;
+            text-align: center;
             gap: 1rem;
         }
+        .supporter-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            background: var(--bg-card-hover);
+        }
+        .supporters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
         .supporter-avatar {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--bitcoin-orange) 0%, var(--bitcoin-orange-light) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: var(--bg-darker);
             flex-shrink: 0;
+            box-shadow: var(--shadow);
         }
         .supporter-info {
-            flex: 1;
+            width: 100%;
         }
         .supporter-name {
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
         }
         .pricing-cards {
             display: grid;
@@ -148,7 +165,7 @@ title: Supporters
                     <li>Name on supporters page</li>
                     <li>Monthly infrastructure update email</li>
                     <li>Vote on next tool to build</li>
-                </ul></div></div>
+                </ul>
                 <button class="btn" onclick="purchaseSponsorship('supporter')">Become a Supporter</button>
             </div>
 
@@ -162,7 +179,7 @@ title: Supporters
                     <li>Beta access to new tools</li>
                     <li>Private dev channel access</li>
                     <li>Feature request submission</li>
-                </ul></div></div>
+                </ul>
                 <button class="btn" onclick="purchaseSponsorship('contributor')">Become a Contributor</button>
             </div>
 
@@ -176,7 +193,7 @@ title: Supporters
                     <li>Quarterly 1-on-1 with dev team</li>
                     <li>Logo on supporters page</li>
                     <li>Public thank-you at hub events</li>
-                </ul></div></div>
+                </ul>
                 <button class="btn" onclick="purchaseSponsorship('patron')">Become a Patron</button>
             </div>
         </div>
@@ -195,7 +212,7 @@ title: Supporters
                     <h3>Patrons</h3>
                     <span class="tier-badge badge-patron">100k sats/month</span>
                 </div>
-                <div id="patrons-list"></div>
+                <div id="patrons-list" class="supporters-grid"></div>
             </div>
 
             <div id="contributors-section" class="tier-section">
@@ -203,7 +220,7 @@ title: Supporters
                     <h3>Contributors</h3>
                     <span class="tier-badge badge-contributor">50k sats/month</span>
                 </div>
-                <div id="contributors-list"></div>
+                <div id="contributors-list" class="supporters-grid"></div>
             </div>
 
             <div id="supporters-section" class="tier-section">
@@ -211,7 +228,111 @@ title: Supporters
                     <h3>Supporters</h3>
                     <span class="tier-badge badge-supporter">25k sats/month</span>
                 </div>
-                <div id="supporters-list"></div>
+                <div id="supporters-list" class="supporters-grid"></div>
             </div>
         </div>
     </div>
+
+<script>
+    (async function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+
+        async function loadSupporters() {
+            try {
+                const response = await api.get('/api/members');
+                if (!response.success) {
+                    throw new Error(response.error || 'Failed to load supporters');
+                }
+
+                const members = response.data || [];
+                const supporters = members.filter(m => 
+                    m.sponsorship && 
+                    m.sponsorship.status === 'active'
+                );
+
+                // Group by tier
+                const patrons = supporters.filter(s => s.sponsorship.tier === 'patron');
+                const contributors = supporters.filter(s => s.sponsorship.tier === 'contributor');
+                const supporterTier = supporters.filter(s => s.sponsorship.tier === 'supporter');
+
+                // Render each tier
+                renderTier('patrons-list', patrons);
+                renderTier('contributors-list', contributors);
+                renderTier('supporters-list', supporterTier);
+
+                // Hide empty sections
+                document.getElementById('patrons-section').style.display = patrons.length > 0 ? 'block' : 'none';
+                document.getElementById('contributors-section').style.display = contributors.length > 0 ? 'block' : 'none';
+                document.getElementById('supporters-section').style.display = supporterTier.length > 0 ? 'block' : 'none';
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('supporters-content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading supporters:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = error.message || 'Failed to load supporters';
+                document.getElementById('error').style.display = 'block';
+                if (typeof toast !== 'undefined') {
+                    toast.error('Failed to load supporters');
+                }
+            }
+        }
+
+        function renderTier(containerId, supporters) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (supporters.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary); padding: 2rem; text-align: center;">No supporters yet. Be the first!</p>';
+                return;
+            }
+
+            container.innerHTML = supporters.map(supporter => {
+                const initials = supporter.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '?';
+                const tier = supporter.sponsorship?.tier || 'supporter';
+                
+                return `
+                    <div class="supporter-card">
+                        <div class="supporter-avatar">${initials}</div>
+                        <div class="supporter-info">
+                            <div class="supporter-name">${supporter.name || 'Unknown'}</div>
+                            ${supporter.bio ? `<div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">${supporter.bio}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.purchaseSponsorship = async function(tier) {
+            try {
+                if (!auth.isAuthenticated()) {
+                    toast.error('Please log in to become a supporter');
+                    window.location.href = '/dashboard/login.html';
+                    return;
+                }
+
+                const response = await api.post('/api/sponsorships', { tier });
+                if (!response.success) {
+                    throw new Error(response.error || 'Failed to create sponsorship');
+                }
+
+                if (response.data.paymentUrl) {
+                    window.location.href = response.data.paymentUrl;
+                } else {
+                    toast.success('Sponsorship created successfully');
+                    await loadSupporters();
+                }
+            } catch (error) {
+                console.error('Error purchasing sponsorship:', error);
+                toast.error(error.message || 'Failed to purchase sponsorship');
+            }
+        };
+
+        // Initialize
+        await auth.requireAuth();
+        await loadSupporters();
+    })();
+</script>
