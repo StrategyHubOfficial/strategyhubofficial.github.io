@@ -1,0 +1,231 @@
+---
+layout: default
+title: User Management
+---
+
+<style>
+.users-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.user-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: var(--transition);
+}
+
+.user-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.user-email {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.user-status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+.status.active {
+    background: #2d5016;
+    color: #4ade80;
+}
+
+.status.inactive {
+    background: #7f1d1d;
+    color: #f87171;
+}
+
+.status.pending {
+    background: #78350f;
+    color: #fbbf24;
+}
+
+.user-role {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    background: rgba(247, 147, 26, 0.2);
+    color: var(--bitcoin-orange);
+}
+
+.user-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-small {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+</style>
+
+<div class="container">
+    <div class="users-header">
+        <h1>User Management</h1>
+    </div>
+
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading users...</p>
+    </div>
+    <div id="error" class="error" style="display: none;"></div>
+
+    <div id="users-content" style="display: none;">
+        <div id="users-list"></div>
+    </div>
+</div>
+
+<script>
+    (async function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+
+        // Check admin access
+        const currentUser = auth.getCurrentUser();
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = '/dashboard';
+            return;
+        }
+
+        async function loadUsers() {
+            try {
+                const response = await api.get('/api/users');
+                if (response.success) {
+                    renderUsers(response.data || []);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('users-content').style.display = 'block';
+                } else {
+                    toast.error('Failed to load users');
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('error').textContent = 'Failed to load users';
+                    document.getElementById('error').style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                toast.error('Error loading users');
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = 'Error loading users';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function renderUsers(users) {
+            const container = document.getElementById('users-list');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p>No users found.</p>';
+                return;
+            }
+
+            container.innerHTML = users.map(user => {
+                const statusClass = user.status || 'pending';
+                const roleBadge = user.role === 'admin' ? '<span class="user-role">Admin</span>' : '';
+
+                return `
+                    <div class="user-card">
+                        <div class="user-header">
+                            <div class="user-info">
+                                <div class="user-name">${user.name || 'Unnamed User'}</div>
+                                <div class="user-email">${user.email}</div>
+                                <div style="margin-top: 0.5rem;">
+                                    <span class="user-status status ${statusClass}">${statusClass}</span>
+                                    ${roleBadge}
+                                </div>
+                            </div>
+                            <div class="user-actions">
+                                ${user.status === 'active' 
+                                    ? `<button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="disableUser('${user.id}')">Disable</button>`
+                                    : `<button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="enableUser('${user.id}')">Enable</button>`
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function disableUser(userId) {
+            if (!confirm('Are you sure you want to disable this user? They will not be able to log in.')) {
+                return;
+            }
+
+            try {
+                const response = await api.put(`/api/users/${userId}`, { status: 'inactive' });
+                if (response.success) {
+                    toast.success('User disabled');
+                    await loadUsers();
+                } else {
+                    toast.error('Failed to disable user: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error disabling user:', error);
+                toast.error('Error disabling user');
+            }
+        }
+
+        async function enableUser(userId) {
+            try {
+                const response = await api.put(`/api/users/${userId}`, { status: 'active' });
+                if (response.success) {
+                    toast.success('User enabled');
+                    await loadUsers();
+                } else {
+                    toast.error('Failed to enable user: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error enabling user:', error);
+                toast.error('Error enabling user');
+            }
+        }
+
+        // Expose to global scope
+        window.disableUser = disableUser;
+        window.enableUser = enableUser;
+
+        // Initialize
+        await auth.requireAuth();
+        await loadUsers();
+    })();
+</script>
+
