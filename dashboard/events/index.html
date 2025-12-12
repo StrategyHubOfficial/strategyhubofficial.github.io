@@ -461,7 +461,7 @@ title: Events
         document.addEventListener('click', (e) => {
             const dropdown = document.querySelector('.subscriptions-dropdown');
             const menu = document.getElementById('subscriptions-panel');
-            if (dropdown && menu && !dropdown.contains(e.target as Node)) {
+            if (dropdown && menu && e.target && !dropdown.contains(e.target)) {
                 menu.classList.remove('show');
             }
         });
@@ -474,10 +474,4 @@ title: Events
             await loadEvents();
             await loadSubscriptions();
         })();
-
-        
-            await auth.logout();
-        });
-
-    })();
-</script>
+    })();</script>
