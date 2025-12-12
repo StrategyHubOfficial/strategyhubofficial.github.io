@@ -16,7 +16,6 @@ class StrategyHubAPI {
     
     const config = {
       ...options,
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...authHeaders,
