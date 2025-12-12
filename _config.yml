@@ -24,4 +24,7 @@ exclude:
 include:
   - _includes
   - _layouts
+  - _help
+
+markdown_ext: markdown,mkdown,mkdn,mkd,md
 

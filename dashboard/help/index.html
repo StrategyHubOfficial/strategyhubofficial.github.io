@@ -1,0 +1,257 @@
+---
+layout: default
+title: Help & Documentation
+---
+
+<style>
+.help-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.help-sidebar {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.help-sidebar h3 {
+    color: var(--bitcoin-orange);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.help-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.help-nav li {
+    margin-bottom: 0.5rem;
+}
+
+.help-nav a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.5rem;
+    display: block;
+    border-radius: 6px;
+    transition: var(--transition);
+}
+
+.help-nav a:hover {
+    background: rgba(247, 147, 26, 0.1);
+    color: var(--bitcoin-orange);
+}
+
+.help-nav a.active {
+    background: rgba(247, 147, 26, 0.15);
+    color: var(--bitcoin-orange);
+    font-weight: 600;
+}
+
+.help-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    min-height: 500px;
+}
+
+.help-content h1 {
+    color: var(--bitcoin-orange);
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+}
+
+.help-content h2 {
+    color: var(--text-primary);
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.help-content h3 {
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 1.2rem;
+}
+
+.help-content p {
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.help-content ul, .help-content ol {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.help-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+
+.help-content code {
+    background: rgba(247, 147, 26, 0.1);
+    color: var(--bitcoin-orange);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.help-content pre {
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.help-content pre code {
+    background: none;
+    color: var(--text-primary);
+    padding: 0;
+}
+
+.help-content blockquote {
+    border-left: 4px solid var(--bitcoin-orange);
+    padding-left: 1rem;
+    margin-left: 0;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.help-content a {
+    color: var(--bitcoin-orange);
+    text-decoration: none;
+}
+
+.help-content a:hover {
+    text-decoration: underline;
+}
+
+.help-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.help-content table th,
+.help-content table td {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.help-content table th {
+    background: rgba(247, 147, 26, 0.1);
+    color: var(--bitcoin-orange);
+    font-weight: 600;
+}
+
+.help-category {
+    margin-bottom: 2rem;
+}
+
+.help-category h2 {
+    color: var(--bitcoin-orange);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.help-article-list {
+    list-style: none;
+    padding: 0;
+}
+
+.help-article-list li {
+    margin-bottom: 0.75rem;
+}
+
+.help-article-list a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 0.75rem;
+    display: block;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.help-article-list a:hover {
+    background: rgba(247, 147, 26, 0.1);
+    border-color: var(--bitcoin-orange);
+    color: var(--bitcoin-orange);
+}
+
+@media (min-width: 768px) {
+    .help-layout {
+        display: grid;
+        grid-template-columns: 250px 1fr;
+        gap: 2rem;
+    }
+    
+    .help-sidebar {
+        position: sticky;
+        top: 2rem;
+        height: fit-content;
+    }
+}
+</style>
+
+<div class="help-container">
+    <div class="help-layout">
+        <div class="help-sidebar">
+            <h3>Documentation</h3>
+            <ul class="help-nav">
+                <li><a href="/dashboard/help/" class="{% if page.url == '/dashboard/help/' %}active{% endif %}">Overview</a></li>
+                <li><a href="/dashboard/help/getting-started/" class="{% if page.url == '/dashboard/help/getting-started/' %}active{% endif %}">Getting Started</a></li>
+                <li><a href="/dashboard/help/studio/" class="{% if page.url == '/dashboard/help/studio/' %}active{% endif %}">Studio Booking</a></li>
+                <li><a href="/dashboard/help/projects/" class="{% if page.url == '/dashboard/help/projects/' %}active{% endif %}">Projects</a></li>
+                <li><a href="/dashboard/help/equipment/" class="{% if page.url == '/dashboard/help/equipment/' %}active{% endif %}">Equipment</a></li>
+                <li><a href="/dashboard/help/faq/" class="{% if page.url == '/dashboard/help/faq/' %}active{% endif %}">FAQ</a></li>
+            </ul>
+        </div>
+        
+        <div class="help-content">
+            <h1>Help & Documentation</h1>
+            <p>Welcome to the StrategyHub knowledge base. Here you'll find guides, tutorials, and answers to common questions.</p>
+            
+            <div class="help-category">
+                <h2>Getting Started</h2>
+                <ul class="help-article-list">
+                    <li><a href="/dashboard/help/getting-started/">Getting Started with StrategyHub</a></li>
+                </ul>
+            </div>
+            
+            <div class="help-category">
+                <h2>Features</h2>
+                <ul class="help-article-list">
+                    <li><a href="/dashboard/help/studio/">Studio Booking Guide</a></li>
+                    <li><a href="/dashboard/help/projects/">Projects Guide</a></li>
+                    <li><a href="/dashboard/help/equipment/">Equipment Guide</a></li>
+                </ul>
+            </div>
+            
+            <div class="help-category">
+                <h2>Support</h2>
+                <ul class="help-article-list">
+                    <li><a href="/dashboard/help/faq/">Frequently Asked Questions</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
