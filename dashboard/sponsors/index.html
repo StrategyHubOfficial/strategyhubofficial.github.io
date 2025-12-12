@@ -136,29 +136,29 @@
     </style>
 </head>
 <body>
-    <nav class="nav">
-        <a href="/dashboard" class="nav-logo">StrategyHub</a>
-        <button class="mobile-menu-toggle" id="mobile-menu-toggle">☰</button>
-        <ul class="nav-links" id="nav-links">
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid"><a class="navbar-brand" href="/dashboard">StrategyHub</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse" id="navbarNav"><ul class="navbar-nav ms-auto">
             <li><a href="/dashboard">Dashboard</a></li>
             <li class="dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="studioDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Studio</a>
                 <ul class="dropdown-menu" aria-labelledby="studioDropdown">
                     <li><a class="dropdown-item" href="/dashboard/studio">Book Studio</a></li>
                     <li><a class="dropdown-item" href="/dashboard/resources">Equipment</a></li>
-                </ul>
+                </ul></div></div>
             </li>
             <li class="dropdown">
                 <a class="nav-link dropdown-toggle active" href="#" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Users</a>
                 <ul class="dropdown-menu" aria-labelledby="usersDropdown">
                     <li><a class="dropdown-item" href="/dashboard/members">Members</a></li>
                     <li><a class="dropdown-item active" href="/dashboard/sponsors">Supporters</a></li>
-                </ul>
+                </ul></div></div>
             </li>
             <li><a href="/dashboard/projects" class="nav-link">Projects</a></li>
             <li><a href="/dashboard/events" class="nav-link">Events</a></li>
             <li><a href="#" id="logout-link" class="nav-link">Logout</a></li>
-        </ul>
+        </ul></div></div>
     </nav>
     <script>
         document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
@@ -184,7 +184,7 @@
                     <li>Name on supporters page</li>
                     <li>Monthly infrastructure update email</li>
                     <li>Vote on next tool to build</li>
-                </ul>
+                </ul></div></div>
                 <button class="btn" onclick="purchaseSponsorship('supporter')">Become a Supporter</button>
             </div>
 
@@ -198,7 +198,7 @@
                     <li>Beta access to new tools</li>
                     <li>Private dev channel access</li>
                     <li>Feature request submission</li>
-                </ul>
+                </ul></div></div>
                 <button class="btn" onclick="purchaseSponsorship('contributor')">Become a Contributor</button>
             </div>
 
@@ -212,7 +212,7 @@
                     <li>Quarterly 1-on-1 with dev team</li>
                     <li>Logo on supporters page</li>
                     <li>Public thank-you at hub events</li>
-                </ul>
+                </ul></div></div>
                 <button class="btn" onclick="purchaseSponsorship('patron')">Become a Patron</button>
             </div>
         </div>
