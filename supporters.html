@@ -198,29 +198,7 @@
             <div id="error" class="error" style="display: none;"></div>
             
             <div id="supporters-content" style="display: none;">
-                <div id="patrons-section" class="tier-section">
-                    <div class="tier-header">
-                        <h2>Patrons</h2>
-                        <span class="tier-badge badge-patron">100k sats/month</span>
-                    </div>
-                    <div id="patrons-list" class="supporters-grid"></div>
-                </div>
-
-                <div id="contributors-section" class="tier-section">
-                    <div class="tier-header">
-                        <h2>Contributors</h2>
-                        <span class="tier-badge badge-contributor">50k sats/month</span>
-                    </div>
-                    <div id="contributors-list" class="supporters-grid"></div>
-                </div>
-
-                <div id="supporters-section" class="tier-section">
-                    <div class="tier-header">
-                        <h2>Supporters</h2>
-                        <span class="tier-badge badge-supporter">25k sats/month</span>
-                    </div>
-                    <div id="supporters-list" class="supporters-grid"></div>
-                </div>
+                <div id="supporters-list" class="supporters-grid"></div>
             </div>
         </div>
     </div>
@@ -248,20 +226,8 @@
                     m.sponsorship.status === 'active'
                 );
 
-                // Group by tier
-                const patrons = supporters.filter(s => s.sponsorship.tier === 'patron');
-                const contributors = supporters.filter(s => s.sponsorship.tier === 'contributor');
-                const supporterTier = supporters.filter(s => s.sponsorship.tier === 'supporter');
-
-                // Render each tier
-                renderTier('patrons-list', patrons);
-                renderTier('contributors-list', contributors);
-                renderTier('supporters-list', supporterTier);
-
-                // Hide empty sections
-                document.getElementById('patrons-section').style.display = patrons.length > 0 ? 'block' : 'none';
-                document.getElementById('contributors-section').style.display = contributors.length > 0 ? 'block' : 'none';
-                document.getElementById('supporters-section').style.display = supporterTier.length > 0 ? 'block' : 'none';
+                // Render all supporters
+                renderTier('supporters-list', supporters);
 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('supporters-content').style.display = 'block';

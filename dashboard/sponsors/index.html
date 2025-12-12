@@ -150,51 +150,20 @@ title: Supporters
 <div class="container">
         <h1>Support StrategyHub</h1>
         <p style="color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;">
-            Help us build better Bitcoin infrastructure. Choose a sponsorship tier and get exclusive benefits.
+            Support Bitcoin infrastructure development. Become a supporter and get a badge on your profile.
         </p>
 
         <div id="current-sponsorship" style="display: none;"></div>
 
-        <div class="pricing-cards">
-            <!-- Supporter Tier -->
-            <div class="pricing-card">
+        <div style="max-width: 500px; margin: 0 auto;">
+            <div class="pricing-card" style="text-align: center;">
                 <div class="pricing-tier">Supporter</div>
                 <div class="pricing-amount">25,000<span> sats/month</span></div>
-                <ul class="pricing-features">
-                    <li>Supporter badge on profile</li>
+                <ul class="pricing-features" style="text-align: left; margin: 2rem 0;">
+                    <li>Supporter badge on your profile</li>
                     <li>Name on supporters page</li>
-                    <li>Monthly infrastructure update email</li>
-                    <li>Vote on next tool to build</li>
                 </ul>
-                <button class="btn" onclick="purchaseSponsorship('supporter')">Become a Supporter</button>
-            </div>
-
-            <!-- Contributor Tier -->
-            <div class="pricing-card featured">
-                <div class="pricing-tier">Contributor</div>
-                <div class="pricing-amount">50,000<span> sats/month</span></div>
-                <ul class="pricing-features">
-                    <li>Contributor badge (distinct color)</li>
-                    <li>Everything in Supporter</li>
-                    <li>Beta access to new tools</li>
-                    <li>Private dev channel access</li>
-                    <li>Feature request submission</li>
-                </ul>
-                <button class="btn" onclick="purchaseSponsorship('contributor')">Become a Contributor</button>
-            </div>
-
-            <!-- Patron Tier -->
-            <div class="pricing-card">
-                <div class="pricing-tier">Patron</div>
-                <div class="pricing-amount">100,000<span> sats/month</span></div>
-                <ul class="pricing-features">
-                    <li>Patron badge</li>
-                    <li>Everything in Contributor</li>
-                    <li>Quarterly 1-on-1 with dev team</li>
-                    <li>Logo on supporters page</li>
-                    <li>Public thank-you at hub events</li>
-                </ul>
-                <button class="btn" onclick="purchaseSponsorship('patron')">Become a Patron</button>
+                <button class="btn" onclick="purchaseSponsorship()">Become a Supporter</button>
             </div>
         </div>
 
@@ -207,29 +176,7 @@ title: Supporters
         <div id="error" class="error" style="display: none;"></div>
         
         <div id="supporters-content" style="display: none;">
-            <div id="patrons-section" class="tier-section">
-                <div class="tier-header">
-                    <h3>Patrons</h3>
-                    <span class="tier-badge badge-patron">100k sats/month</span>
-                </div>
-                <div id="patrons-list" class="supporters-grid"></div>
-            </div>
-
-            <div id="contributors-section" class="tier-section">
-                <div class="tier-header">
-                    <h3>Contributors</h3>
-                    <span class="tier-badge badge-contributor">50k sats/month</span>
-                </div>
-                <div id="contributors-list" class="supporters-grid"></div>
-            </div>
-
-            <div id="supporters-section" class="tier-section">
-                <div class="tier-header">
-                    <h3>Supporters</h3>
-                    <span class="tier-badge badge-supporter">25k sats/month</span>
-                </div>
-                <div id="supporters-list" class="supporters-grid"></div>
-            </div>
+            <div id="supporters-list" class="supporters-grid"></div>
         </div>
     </div>
 
@@ -253,20 +200,8 @@ title: Supporters
                     m.sponsorship.status === 'active'
                 );
 
-                // Group by tier
-                const patrons = supporters.filter(s => s.sponsorship.tier === 'patron');
-                const contributors = supporters.filter(s => s.sponsorship.tier === 'contributor');
-                const supporterTier = supporters.filter(s => s.sponsorship.tier === 'supporter');
-
-                // Render each tier
-                renderTier('patrons-list', patrons);
-                renderTier('contributors-list', contributors);
-                renderTier('supporters-list', supporterTier);
-
-                // Hide empty sections
-                document.getElementById('patrons-section').style.display = patrons.length > 0 ? 'block' : 'none';
-                document.getElementById('contributors-section').style.display = contributors.length > 0 ? 'block' : 'none';
-                document.getElementById('supporters-section').style.display = supporterTier.length > 0 ? 'block' : 'none';
+                // Render all supporters
+                renderTier('supporters-list', supporters);
 
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('supporters-content').style.display = 'block';
@@ -307,7 +242,7 @@ title: Supporters
             }).join('');
         }
 
-        window.purchaseSponsorship = async function(tier) {
+        window.purchaseSponsorship = async function() {
             try {
                 if (!auth.isAuthenticated()) {
                     toast.error('Please log in to become a supporter');
@@ -315,7 +250,7 @@ title: Supporters
                     return;
                 }
 
-                const response = await api.post('/api/sponsorships', { tier });
+                const response = await api.post('/api/sponsorships', {});
                 if (!response.success) {
                     throw new Error(response.error || 'Failed to create sponsorship');
                 }
