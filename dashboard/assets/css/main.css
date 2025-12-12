@@ -98,50 +98,57 @@ body {
 .nav-links {
   display: flex;
   gap: 1.5rem;
-  list-style: none;
+  list-style: none !important;
   align-items: center;
+  margin: 0;
+  padding: 0;
 }
 
 .nav-links li {
   position: relative;
+  list-style: none !important;
 }
 
-.nav-links li.has-dropdown:hover .dropdown {
-  display: block;
+.nav-links ul {
+  list-style: none !important;
+  margin: 0;
+  padding: 0;
 }
 
-.dropdown {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
+/* Bootstrap dropdown integration */
+.nav-links .dropdown-toggle::after {
+  margin-left: 0.5rem;
+}
+
+.nav-links .dropdown-menu {
   background: var(--bg-darker);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 0.5rem 0;
-  margin-top: 0.5rem;
   min-width: 180px;
   box-shadow: var(--shadow-lg);
-  z-index: 1000;
+  margin-top: 0 !important; /* Remove gap - Bootstrap default adds margin */
+  top: 100% !important; /* Ensure it's right below the button */
 }
 
-.dropdown a {
-  display: block;
-  padding: 0.75rem 1.5rem;
+.nav-links .dropdown-menu a {
   color: var(--text-secondary);
-  text-decoration: none;
-  transition: var(--transition);
-  border-radius: 0;
+  padding: 0.75rem 1.5rem;
 }
 
-.dropdown a:hover {
+.nav-links .dropdown-menu a:hover {
   background: rgba(247, 147, 26, 0.1);
   color: var(--bitcoin-orange);
 }
 
-.dropdown a.active {
+.nav-links .dropdown-menu a.active {
   background: rgba(247, 147, 26, 0.15);
   color: var(--bitcoin-orange);
+}
+
+/* Ensure dropdown stays visible when hovering */
+.nav-links .dropdown:hover .dropdown-menu {
+  display: block;
 }
 
 .nav-links a {
