@@ -60,7 +60,13 @@ body {
   }
 }
 
-/* Navigation */
+/* Navigation - Bootstrap navbar */
+.navbar {
+  background: var(--bg-darker) !important;
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 2rem;
+}
+
 .nav {
   background: var(--bg-darker);
   border-bottom: 1px solid var(--border-color);
@@ -73,6 +79,27 @@ body {
   z-index: 100;
   backdrop-filter: blur(10px);
   background: rgba(0, 0, 0, 0.8);
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--bitcoin-orange) !important;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+  color: var(--bitcoin-orange) !important;
+}
+
+.navbar-brand::before {
+  content: "₿";
+  font-size: 1.8rem;
 }
 
 .nav-logo {
@@ -114,41 +141,19 @@ body {
   padding: 0;
 }
 
-/* Bootstrap dropdown - standard implementation */
-.nav-links .dropdown {
-  position: relative;
-}
-
-.nav-links .dropdown-toggle::after {
-  margin-left: 0.5rem;
-  vertical-align: 0.255em;
-}
-
+/* Bootstrap standard dropdown - no custom positioning */
 .nav-links .dropdown-menu {
-  position: absolute !important;
-  top: 100% !important;
-  left: 0 !important;
   background: var(--bg-darker);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 0.5rem 0;
   min-width: 180px;
   box-shadow: var(--shadow-lg);
-  margin-top: 0 !important;
-  z-index: 1000;
-  display: none;
-}
-
-.nav-links .dropdown-menu.show {
-  display: block !important;
 }
 
 .nav-links .dropdown-item {
   color: var(--text-secondary);
   padding: 0.75rem 1.5rem;
-  display: block;
-  text-decoration: none;
-  transition: var(--transition);
 }
 
 .nav-links .dropdown-item:hover {
@@ -159,6 +164,24 @@ body {
 .nav-links .dropdown-item.active {
   background: rgba(247, 147, 26, 0.15);
   color: var(--bitcoin-orange);
+}
+
+.navbar-nav .nav-link {
+  color: var(--text-secondary) !important;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--bitcoin-orange) !important;
+  background: rgba(247, 147, 26, 0.1);
+}
+
+.navbar-nav .nav-link.active {
+  color: var(--bitcoin-orange) !important;
+  background: rgba(247, 147, 26, 0.15);
 }
 
 .nav-links a {
