@@ -89,9 +89,13 @@
 
   // Initialize navbar when DOM is ready
   function initNavbar() {
-    // Find existing nav element or create placeholder
+    // Find placeholder or existing nav element
+    const placeholder = document.getElementById('navbar-placeholder');
     const existingNav = document.querySelector('nav.navbar, nav.nav');
-    if (existingNav) {
+    
+    if (placeholder) {
+      placeholder.outerHTML = generateNavbar();
+    } else if (existingNav) {
       existingNav.outerHTML = generateNavbar();
     } else {
       // If no nav found, prepend to body
