@@ -173,7 +173,13 @@ title: Equipment
         async function loadEquipment() {
             try {
                 const response = await api.get('/api/equipment');
-                if (response.success) {
+                if (response.success && response.data) {
+                    // Equipment endpoint returns { all: [...], grouped: {...} }
+                    const equipment = response.data.all || response.data || [];
+                    if (!Array.isArray(equipment)) {
+                        console.error('Equipment data is not an array:', equipment);
+                        return;
+                    }
                     allEquipment = response.data.all || [];
                     renderEquipment();
                 } else {
