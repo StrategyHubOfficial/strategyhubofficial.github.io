@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipment - StrategyHub Dashboard</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
-    <style>
-        .equipment-grid {
+---
+layout: default
+title: Equipment
+---
+
+<style>
+.equipment-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
@@ -114,75 +109,23 @@
             border-radius: 4px;
             cursor: pointer;
         }
-    </style>
-</head>
+</style>
+
+<!DOCTYPE html>
+<html lang="en">
+
 <body>
-    <!-- Navbar will be injected by navbar.js -->
-    <div id="navbar-placeholder"></div>
-    <script>
-        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+    
+    
+</body>
+</html>
+
+<script>
+document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
             document.getElementById('nav-links').classList.toggle('active');
         });
-    </script>
 
-    <div class="container">
-        <h1>Equipment & Infrastructure</h1>
-        
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading equipment...</p>
-        </div>
-        <div id="error" class="error" style="display: none;"></div>
-        
-        <div id="equipment-content" style="display: none;">
-            <div class="tabs" style="margin-bottom: 2rem;">
-                <button class="tab-btn active" data-tab="all">All Equipment</button>
-                <button class="tab-btn" data-tab="borrowable">Borrowable</button>
-                <button class="tab-btn" data-tab="servers">Servers</button>
-                <button class="tab-btn" data-tab="infrastructure">Infrastructure</button>
-            </div>
-
-            <div id="equipment-grid" class="equipment-grid"></div>
-        </div>
-    </div>
-
-    <!-- Checkout Modal -->
-    <div id="checkout-modal" class="checkout-modal">
-        <div class="modal-content">
-            <h2>Request Equipment</h2>
-            <div id="selected-items" class="selected-items">
-                <p>No items selected</p>
-            </div>
-            <form id="checkout-form">
-                <div class="form-group">
-                    <label>Checkout Date:</label>
-                    <input type="datetime-local" id="checkout-date" required>
-                </div>
-                <div class="form-group">
-                    <label>Return Date:</label>
-                    <input type="datetime-local" id="return-date" required>
-                </div>
-                <div class="form-group">
-                    <label>Notes (optional):</label>
-                    <textarea id="checkout-notes" rows="3"></textarea>
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button type="submit" class="btn">Request Equipment</button>
-                    <button type="button" class="btn-secondary" onclick="closeCheckoutModal()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="../assets/js/api.js"></script>
-    <script src="../assets/js/auth.js"></script>
-    <script src="../assets/js/protected-route.js"></script>
-    <script src="../assets/js/toast.js"></script>
-    <script src="../assets/js/navbar.js"></script>
-    <script>
-        let allEquipment = [];
+let allEquipment = [];
         let selectedItems = [];
         let currentTab = 'all';
 
@@ -342,7 +285,4 @@
             e.preventDefault();
             await auth.logout();
         });
-    </script>
-</body>
-</html>
-
+</script>

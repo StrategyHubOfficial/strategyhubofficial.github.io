@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if page.title %}{{ page.title }} - {% endif %}StrategyHub Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link rel="stylesheet" href="{% if page.url contains '/dashboard/' and page.url != '/dashboard/' %}../{% endif %}assets/css/main.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    {% if page.styles %}{{ page.styles }}{% endif %}
+</head>
+<body>
+    {% include navbar.html %}
+    
+    {{ content }}
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+    <script src="{% if page.url contains '/dashboard/' and page.url != '/dashboard/' %}../{% endif %}assets/js/api.js"></script>
+    <script src="{% if page.url contains '/dashboard/' and page.url != '/dashboard/' %}../{% endif %}assets/js/auth.js"></script>
+    {% unless page.url == '/dashboard/login.html' %}<script src="{% if page.url contains '/dashboard/' and page.url != '/dashboard/' %}../{% endif %}assets/js/protected-route.js"></script>{% endunless %}
+    <script src="{% if page.url contains '/dashboard/' and page.url != '/dashboard/' %}../{% endif %}assets/js/toast.js"></script>
+    {% if page.scripts %}{{ page.scripts }}{% endif %}
+    
+    <script>
+        // Logout handler
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink && typeof auth !== 'undefined') {
+            logoutLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    if (typeof toast !== 'undefined') {
+                        toast.info('Logging out...');
+                    }
+                    await auth.logout();
+                } catch (error) {
+                    console.error('Logout failed:', error);
+                    if (typeof auth !== 'undefined') {
+                        auth.clearToken();
+                    }
+                    window.location.href = '/dashboard/login.html';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

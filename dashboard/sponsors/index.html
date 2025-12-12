@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supporters - StrategyHub Dashboard</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
-    <style>
-        .tier-section {
+---
+layout: default
+title: Supporters
+---
+
+<style>
+.tier-section {
             margin-bottom: 3rem;
         }
         .tier-header {
@@ -133,112 +128,23 @@
             color: var(--success);
             margin-bottom: 1rem;
         }
-    </style>
-</head>
+</style>
+
+<!DOCTYPE html>
+<html lang="en">
+
 <body>
-    <!-- Navbar will be injected by navbar.js -->
-    <div id="navbar-placeholder"></div>
-    <script>
-        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+    
+    
+</body>
+</html>
+
+<script>
+document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
             document.getElementById('nav-links').classList.toggle('active');
         });
-    </script>
 
-    <div class="container">
-        <h1>Support StrategyHub</h1>
-        <p style="color: var(--text-secondary); margin-bottom: 3rem; font-size: 1.1rem;">
-            Help us build better Bitcoin infrastructure. Choose a sponsorship tier and get exclusive benefits.
-        </p>
-
-        <div id="current-sponsorship" style="display: none;"></div>
-
-        <div class="pricing-cards">
-            <!-- Supporter Tier -->
-            <div class="pricing-card">
-                <div class="pricing-tier">Supporter</div>
-                <div class="pricing-amount">$25<span>/month</span></div>
-                <ul class="pricing-features">
-                    <li>Supporter badge on profile</li>
-                    <li>Name on supporters page</li>
-                    <li>Monthly infrastructure update email</li>
-                    <li>Vote on next tool to build</li>
-                </ul></div></div>
-                <button class="btn" onclick="purchaseSponsorship('supporter')">Become a Supporter</button>
-            </div>
-
-            <!-- Contributor Tier -->
-            <div class="pricing-card featured">
-                <div class="pricing-tier">Contributor</div>
-                <div class="pricing-amount">$50<span>/month</span></div>
-                <ul class="pricing-features">
-                    <li>Contributor badge (distinct color)</li>
-                    <li>Everything in Supporter</li>
-                    <li>Beta access to new tools</li>
-                    <li>Private dev channel access</li>
-                    <li>Feature request submission</li>
-                </ul></div></div>
-                <button class="btn" onclick="purchaseSponsorship('contributor')">Become a Contributor</button>
-            </div>
-
-            <!-- Patron Tier -->
-            <div class="pricing-card">
-                <div class="pricing-tier">Patron</div>
-                <div class="pricing-amount">$100<span>/month</span></div>
-                <ul class="pricing-features">
-                    <li>Patron badge</li>
-                    <li>Everything in Contributor</li>
-                    <li>Quarterly 1-on-1 with dev team</li>
-                    <li>Logo on supporters page</li>
-                    <li>Public thank-you at hub events</li>
-                </ul></div></div>
-                <button class="btn" onclick="purchaseSponsorship('patron')">Become a Patron</button>
-            </div>
-        </div>
-
-        <h2 style="margin: 4rem 0 2rem 0;">Our Supporters</h2>
-
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading supporters...</p>
-        </div>
-        <div id="error" class="error" style="display: none;"></div>
-        
-        <div id="supporters-content" style="display: none;">
-            <div id="patrons-section" class="tier-section">
-                <div class="tier-header">
-                    <h3>Patrons</h3>
-                    <span class="tier-badge badge-patron">$100/month</span>
-                </div>
-                <div id="patrons-list"></div>
-            </div>
-
-            <div id="contributors-section" class="tier-section">
-                <div class="tier-header">
-                    <h3>Contributors</h3>
-                    <span class="tier-badge badge-contributor">$50/month</span>
-                </div>
-                <div id="contributors-list"></div>
-            </div>
-
-            <div id="supporters-section" class="tier-section">
-                <div class="tier-header">
-                    <h3>Supporters</h3>
-                    <span class="tier-badge badge-supporter">$25/month</span>
-                </div>
-                <div id="supporters-list"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="../assets/js/api.js"></script>
-    <script src="../assets/js/auth.js"></script>
-    <script src="../assets/js/protected-route.js"></script>
-    <script src="../assets/js/toast.js"></script>
-    <script src="../assets/js/navbar.js"></script>
-    <script>
-        let currentSponsorship = null;
+let currentSponsorship = null;
         let allSupporters = [];
 
         async function loadCurrentSponsorship() {
@@ -397,8 +303,4 @@
             e.preventDefault();
             await auth.logout();
         });
-    </script>
-</body>
-</html>
-
-
+</script>

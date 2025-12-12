@@ -1,0 +1,27 @@
+# Jekyll Configuration for StrategyHub
+title: StrategyHub
+description: Bitcoin Infrastructure Hub
+baseurl: "" # the subpath of your site, e.g. /blog
+url: "https://strategyhubofficial.github.io" # the base hostname & protocol for your site
+
+# Build settings
+markdown: kramdown
+theme: minima
+plugins:
+  - jekyll-feed
+
+# Exclude files from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor
+  - README.md
+  - .git
+  - .gitignore
+
+# Include files that start with underscore
+include:
+  - _includes
+  - _layouts
+

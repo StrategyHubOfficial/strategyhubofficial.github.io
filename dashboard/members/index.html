@@ -1,15 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Members - StrategyHub Dashboard</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="../assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
-    <style>
-        .members-header {
+---
+layout: default
+title: Members
+---
+
+<style>
+.members-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -154,54 +149,23 @@
             color: var(--bitcoin-orange);
             background: rgba(247, 147, 26, 0.1);
         }
-    </style>
-</head>
+</style>
+
+<!DOCTYPE html>
+<html lang="en">
+
 <body>
-    <!-- Navbar will be injected by navbar.js -->
-    <div id="navbar-placeholder"></div>
-    <script>
-        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
+    
+    
+</body>
+</html>
+
+<script>
+document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
             document.getElementById('nav-links').classList.toggle('active');
         });
-    </script>
 
-    <div class="container">
-        <div class="members-header">
-            <h1>Members Directory</h1>
-            <div class="search-bar">
-                <input type="text" id="search-input" placeholder="Search members by name, email, or skills...">
-            </div>
-        </div>
-
-        <div class="filters">
-            <button class="filter-btn active" data-filter="all">All Members</button>
-            <button class="filter-btn" data-filter="active">Active</button>
-            <button class="filter-btn" data-filter="pending">Pending</button>
-        </div>
-
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading members...</p>
-        </div>
-        <div id="error" class="error" style="display: none;"></div>
-        
-        <div id="members-content" style="display: none;">
-            <div id="members-grid" class="grid"></div>
-            <div id="no-results" style="display: none; text-align: center; padding: 3rem; color: var(--text-secondary);">
-                <p>No members found matching your search.</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="../assets/js/api.js"></script>
-    <script src="../assets/js/auth.js"></script>
-    <script src="../assets/js/protected-route.js"></script>
-    <script src="../assets/js/toast.js"></script>
-    <script src="../assets/js/navbar.js"></script>
-    <script>
-        let allMembers = [];
+let allMembers = [];
         let filteredMembers = [];
         let currentFilter = 'all';
         let searchQuery = '';
@@ -326,7 +290,4 @@
             e.preventDefault();
             await auth.logout();
         });
-    </script>
-</body>
-</html>
-
+</script>

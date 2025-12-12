@@ -1,169 +1,133 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StrategyHub Dashboard</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
-    <link rel="stylesheet" href="assets/css/main.css">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
-</head>
-<body>
-    <!-- Navbar will be injected by navbar.js -->
-    <div id="navbar-placeholder"></div>
-    <script>
-        // Mobile menu toggle
-        document.getElementById('mobile-menu-toggle')?.addEventListener('click', () => {
-            document.getElementById('nav-links').classList.toggle('active');
-        });
+---
+layout: default
+title: StrategyHub Dashboard
+---
 
-        // Set active nav link
-        const currentPath = window.location.pathname;
-        document.querySelectorAll('.nav-links a').forEach(link => {
-            if (link.getAttribute('href') === currentPath || 
-                (currentPath === '/dashboard/' && link.getAttribute('href') === '/dashboard')) {
-                link.classList.add('active');
-            }
-        });
-    </script>
-
-    <div class="container">
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading dashboard...</p>
-        </div>
-        <div id="content" style="display: none;">
-            <div style="margin-bottom: 2rem;">
-                <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--bitcoin-orange) 0%, var(--bitcoin-orange-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Welcome back!</h1>
-                <p style="color: var(--text-secondary); font-size: 1.1rem;" id="user-greeting">Loading your dashboard...</p>
-            </div>
-
-            <div class="stats-grid" id="stats-grid" style="display: none;">
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-bookings">-</div>
-                    <div class="stat-label">Upcoming Bookings</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-events">-</div>
-                    <div class="stat-label">Events This Week</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-projects">-</div>
-                    <div class="stat-label">Active Projects</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-equipment">-</div>
-                    <div class="stat-label">Equipment Available</div>
-                </div>
-            </div>
-
-            <h2 style="margin: 3rem 0 1.5rem 0; font-size: 1.75rem;">Quick Actions</h2>
-            <div class="grid">
-                <div class="card">
-                    <h2 class="card-title">🎬 Studio</h2>
-                    <p class="card-content">Book studio time and equipment for your content creation needs. Schedule your session and request technical assistance.</p>
-                    <a href="/dashboard/studio" class="btn">Book Studio</a>
-                </div>
-                <div class="card">
-                    <h2 class="card-title">👥 Members</h2>
-                    <p class="card-content">Connect with other Bitcoin builders and developers. Find collaborators and build together.</p>
-                    <a href="/dashboard/members" class="btn">View Members</a>
-                </div>
-                <div class="card">
-                    <h2 class="card-title">🚀 Projects</h2>
-                    <p class="card-content">Explore active projects and find collaboration opportunities. Join teams and contribute.</p>
-                    <a href="/dashboard/projects" class="btn">View Projects</a>
-                </div>
-                <div class="card">
-                    <h2 class="card-title">📅 Events</h2>
-                    <p class="card-content">View upcoming events, RSVP, and manage your notification preferences.</p>
-                    <a href="/dashboard/events" class="btn">View Events</a>
-                </div>
-                <div class="card">
-                    <h2 class="card-title">🔧 Equipment</h2>
-                    <p class="card-content">Browse available equipment, check server status, and request to borrow items.</p>
-                    <a href="/dashboard/resources" class="btn">View Equipment</a>
-                </div>
-            </div>
-        </div>
-        <div id="error" style="display: none;"></div>
+<div class="container">
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <p>Loading dashboard...</p>
     </div>
+    <div id="content" style="display: none;">
+        <div style="margin-bottom: 2rem;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--bitcoin-orange) 0%, var(--bitcoin-orange-light) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Welcome back!</h1>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;" id="user-greeting">Loading your dashboard...</p>
+        </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
-    <script src="assets/js/api.js"></script>
-    <script src="assets/js/auth.js"></script>
-    <script src="assets/js/toast.js"></script>
-    <script src="assets/js/navbar.js"></script>
-    <script>
-        // Initialize dashboard with protected route
-        (async () => {
-            try {
-                // Check authentication first
-                const isAuthenticated = await auth.requireAuth();
+        <div class="stats-grid" id="stats-grid" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-bookings">-</div>
+                <div class="stat-label">Upcoming Bookings</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-events">-</div>
+                <div class="stat-label">Events This Week</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-projects">-</div>
+                <div class="stat-label">Active Projects</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-equipment">-</div>
+                <div class="stat-label">Equipment Available</div>
+            </div>
+        </div>
+
+        <h2 style="margin: 3rem 0 1.5rem 0; font-size: 1.75rem;">Quick Actions</h2>
+        <div class="grid">
+            <div class="card">
+                <h2 class="card-title">🎬 Studio</h2>
+                <p class="card-content">Book studio time and equipment for your content creation needs. Schedule your session and request technical assistance.</p>
+                <a href="/dashboard/studio" class="btn">Book Studio</a>
+            </div>
+            <div class="card">
+                <h2 class="card-title">👥 Members</h2>
+                <p class="card-content">Connect with other Bitcoin builders and developers. Find collaborators and build together.</p>
+                <a href="/dashboard/members" class="btn">View Members</a>
+            </div>
+            <div class="card">
+                <h2 class="card-title">🚀 Projects</h2>
+                <p class="card-content">Explore active projects and find collaboration opportunities. Join teams and contribute.</p>
+                <a href="/dashboard/projects" class="btn">View Projects</a>
+            </div>
+            <div class="card">
+                <h2 class="card-title">📅 Events</h2>
+                <p class="card-content">View upcoming events, RSVP, and manage your notification preferences.</p>
+                <a href="/dashboard/events" class="btn">View Events</a>
+            </div>
+            <div class="card">
+                <h2 class="card-title">🔧 Equipment</h2>
+                <p class="card-content">Browse available equipment, check server status, and request to borrow items.</p>
+                <a href="/dashboard/resources" class="btn">View Equipment</a>
+            </div>
+        </div>
+    </div>
+    <div id="error" style="display: none;"></div>
+</div>
+
+<script>
+    // Initialize dashboard with protected route
+    (async () => {
+        try {
+            // Check authentication first
+            const isAuthenticated = await auth.requireAuth();
+            
+            if (isAuthenticated) {
+                // Load user info
+                const user = auth.getCurrentUser();
                 
-                if (isAuthenticated) {
-                    // Load user info
-                    const user = auth.getCurrentUser();
-                    
-                    // Update UI with user info
-                    if (user) {
-                        const greeting = document.getElementById('user-greeting');
-                        if (greeting) {
-                            const hour = new Date().getHours();
-                            const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-                            greeting.textContent = `${timeGreeting}, ${user.name}!`;
-                        }
+                // Update UI with user info
+                if (user) {
+                    const greeting = document.getElementById('user-greeting');
+                    if (greeting) {
+                        const hour = new Date().getHours();
+                        const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+                        greeting.textContent = `${timeGreeting}, ${user.name}!`;
                     }
-                    
-                    // Load stats
-                    try {
-                        const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
-                            api.get('/api/studio/bookings'),
-                            api.get('/api/events'),
-                            api.get('/api/projects'),
-                            api.get('/api/equipment')
-                        ]);
-
-                        const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []).filter(b => new Date(b.startTime) > new Date()).length : 0;
-                        const events = eventsRes.status === 'fulfilled' ? (eventsRes.value.data || []).filter(e => {
-                            const eventDate = new Date(e.startTime);
-                            const weekFromNow = new Date();
-                            weekFromNow.setDate(weekFromNow.getDate() + 7);
-                            return eventDate > new Date() && eventDate < weekFromNow;
-                        }).length : 0;
-                        const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value.data || []).filter(p => p.status === 'active').length : 0;
-                        const equipment = equipmentRes.status === 'fulfilled' ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length : 0;
-
-                        document.getElementById('stat-bookings').textContent = bookings;
-                        document.getElementById('stat-events').textContent = events;
-                        document.getElementById('stat-projects').textContent = projects;
-                        document.getElementById('stat-equipment').textContent = equipment;
-                        document.getElementById('stats-grid').style.display = 'grid';
-                    } catch (err) {
-                        console.error('Error loading stats:', err);
-                    }
-                    
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('content').style.display = 'block';
-                } else {
-                    // Redirect handled by requireAuth
-                    return;
                 }
-            } catch (error) {
-                console.error('Dashboard init error:', error);
+                
+                // Load stats
+                try {
+                    const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
+                        api.get('/api/studio/bookings'),
+                        api.get('/api/events'),
+                        api.get('/api/projects'),
+                        api.get('/api/equipment')
+                    ]);
+
+                    const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []).filter(b => new Date(b.startTime) > new Date()).length : 0;
+                    const events = eventsRes.status === 'fulfilled' ? (eventsRes.value.data || []).filter(e => {
+                        const eventDate = new Date(e.startTime);
+                        const weekFromNow = new Date();
+                        weekFromNow.setDate(weekFromNow.getDate() + 7);
+                        return eventDate > new Date() && eventDate < weekFromNow;
+                    }).length : 0;
+                    const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value.data || []).filter(p => p.status === 'active').length : 0;
+                    const equipment = equipmentRes.status === 'fulfilled' ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length : 0;
+
+                    document.getElementById('stat-bookings').textContent = bookings;
+                    document.getElementById('stat-events').textContent = events;
+                    document.getElementById('stat-projects').textContent = projects;
+                    document.getElementById('stat-equipment').textContent = equipment;
+                    document.getElementById('stats-grid').style.display = 'grid';
+                } catch (err) {
+                    console.error('Error loading stats:', err);
+                }
+                
                 document.getElementById('loading').style.display = 'none';
-                const errorDiv = document.getElementById('error');
-                errorDiv.className = 'error';
-                errorDiv.textContent = 'Failed to load dashboard. Please try again.';
-                errorDiv.style.display = 'block';
-                toast.error('Failed to load dashboard');
+                document.getElementById('content').style.display = 'block';
+            } else {
+                // Redirect handled by requireAuth
+                return;
             }
-        })();
-
-        // Logout handler is now in navbar.js
-    </script>
-</body>
-</html>
-
+        } catch (error) {
+            console.error('Dashboard init error:', error);
+            document.getElementById('loading').style.display = 'none';
+            const errorDiv = document.getElementById('error');
+            errorDiv.className = 'error';
+            errorDiv.textContent = 'Failed to load dashboard. Please try again.';
+            errorDiv.style.display = 'block';
+            toast.error('Failed to load dashboard');
+        }
+    })();
+</script>
