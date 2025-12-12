@@ -27,6 +27,26 @@
     <script src="{{ asset_path }}assets/js/toast.js"></script>
     
     <script>
+        // Show admin menu if user is admin
+        (async function() {
+            if (typeof auth !== 'undefined') {
+                try {
+                    const isAuthenticated = auth.isAuthenticated();
+                    if (isAuthenticated) {
+                        const user = auth.getCurrentUser();
+                        if (user && user.role === 'admin') {
+                            const adminMenu = document.getElementById('admin-menu');
+                            if (adminMenu) {
+                                adminMenu.style.display = 'block';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error checking admin status:', error);
+                }
+            }
+        })();
+
         // Logout handler
         const logoutLink = document.getElementById('logout-link');
         if (logoutLink && typeof auth !== 'undefined') {
