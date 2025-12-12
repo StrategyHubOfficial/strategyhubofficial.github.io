@@ -447,6 +447,9 @@ title: Events
 
             createEvent({ title, description, location, startTime, endTime, type });
         }
+        
+        // Expose to global scope for onclick handlers
+        window.showCreateEvent = showCreateEvent;
 
         async function createEvent(data) {
             try {

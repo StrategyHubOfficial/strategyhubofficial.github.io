@@ -320,6 +320,9 @@ title: Projects
             }
             document.getElementById('create-project-modal').classList.add('active');
         }
+        
+        // Expose to global scope for onclick handlers
+        window.showCreateProject = showCreateProject;
 
         function closeCreateProject() {
             document.getElementById('create-project-modal').classList.remove('active');
@@ -340,10 +343,15 @@ title: Projects
                 toast.error('Error loading project');
             }
         }
-
+        
         function editProject(id) {
             toast.info('Edit functionality coming soon');
         }
+        
+        // Expose to global scope for onclick handlers
+        window.viewProject = viewProject;
+        window.editProject = editProject;
+        window.donateToProject = donateToProject;
 
         document.getElementById('create-project-form').addEventListener('submit', async (e) => {
             e.preventDefault();
