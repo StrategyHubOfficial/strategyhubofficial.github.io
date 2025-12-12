@@ -250,7 +250,7 @@
 
         async function loadCurrentSponsorship() {
             try {
-                const response = await api.get('/sponsorships/me');
+                const response = await api.get('/api/sponsorships/me');
                 if (response.success && response.data) {
                     currentSponsorship = response.data;
                     renderCurrentSponsorship();
@@ -284,7 +284,7 @@
 
         async function loadSupporters() {
             try {
-                const response = await api.get('/sponsorships');
+                const response = await api.get('/api/sponsorships');
                 if (response.success) {
                     allSupporters = response.data.all || [];
                     renderSupporters(response.data.grouped || {});
@@ -299,7 +299,7 @@
 
         async function loadMemberNames() {
             try {
-                const membersResponse = await api.get('/members');
+                const membersResponse = await api.get('/api/members');
                 if (membersResponse.success) {
                     return membersResponse.data || [];
                 }
@@ -346,7 +346,7 @@
 
         async function purchaseSponsorship(tier) {
             try {
-                const response = await api.post('/sponsorships', { tier });
+                const response = await api.post('/api/sponsorships', { tier });
                 if (response.success) {
                     if (response.data.paymentUrl) {
                         // Redirect to payment page

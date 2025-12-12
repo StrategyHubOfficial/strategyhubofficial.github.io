@@ -217,7 +217,7 @@
 
         async function loadEvents() {
             try {
-                const response = await api.get('/events');
+                const response = await api.get('/api/events');
                 if (response.success) {
                     events = response.data || [];
                     renderEvents();
@@ -236,7 +236,7 @@
 
         async function loadSubscriptions() {
             try {
-                const response = await api.get('/subscriptions/events');
+                const response = await api.get('/api/subscriptions/events');
                 if (response.success) {
                     subscriptions = response.data;
                     updateSubscriptionUI();
@@ -265,7 +265,7 @@
             if (document.getElementById('notify-networking').checked) eventTypes.push('networking');
 
             try {
-                const response = await api.put('/subscriptions/events', {
+                const response = await api.put('/api/subscriptions/events', {
                     eventTypes,
                     notifyOnNewEvent: document.getElementById('notify-new').checked,
                     notifyBeforeEvent: document.getElementById('notify-reminder').checked
@@ -285,7 +285,7 @@
 
         async function rsvpToEvent(eventId) {
             try {
-                const response = await api.post(`/events/${eventId}/rsvp`);
+                const response = await api.post(`/api/events/${eventId}/rsvp`);
                 if (response.success) {
                     toast.success('RSVP confirmed!');
                     await loadEvents();
@@ -300,7 +300,7 @@
 
         async function cancelRSVP(eventId) {
             try {
-                const response = await api.delete(`/events/${eventId}/rsvp`);
+                const response = await api.delete(`/api/events/${eventId}/rsvp`);
                 if (response.success) {
                     toast.success('RSVP cancelled');
                     await loadEvents();
@@ -452,7 +452,7 @@
 
         async function createEvent(data) {
             try {
-                const response = await api.post('/events', data);
+                const response = await api.post('/api/events', data);
                 if (response.success) {
                     toast.success('Event created!');
                     await loadEvents();

@@ -158,7 +158,7 @@
     <script>
         async function loadBookings() {
             try {
-                const response = await api.get('/studio/bookings');
+                const response = await api.get('/api/studio/bookings');
                 if (response.success) {
                     renderBookings(response.data || []);
                 } else {
@@ -176,7 +176,7 @@
 
         async function loadEquipment() {
             try {
-                const response = await api.get('/resources/equipment');
+                const response = await api.get('/api/equipment');
                 if (response.success) {
                     const equipment = response.data || [];
                     const select = document.getElementById('equipment');
@@ -237,7 +237,7 @@
             }
             
             try {
-                const response = await api.delete(`/studio/bookings/${id}`);
+                const response = await api.delete(`/api/studio/bookings/${id}`);
                 if (response.success) {
                     toast.success('Booking cancelled successfully');
                     await loadBookings();
@@ -260,7 +260,7 @@
             const notes = document.getElementById('notes').value;
 
             try {
-                const response = await api.post('/studio/bookings', {
+                const response = await api.post('/api/studio/bookings', {
                     startTime: new Date(startTime).toISOString(),
                     endTime: new Date(endTime).toISOString(),
                     equipment,

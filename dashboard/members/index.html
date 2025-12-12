@@ -215,7 +215,7 @@
 
         async function loadMembers() {
             try {
-                const response = await api.get('/members');
+                const response = await api.get('/api/members');
                 if (response.success) {
                     allMembers = response.data || [];
                     applyFilters();

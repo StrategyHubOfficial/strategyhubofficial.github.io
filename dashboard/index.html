@@ -127,10 +127,10 @@
                     // Load stats
                     try {
                         const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
-                            api.get('/studio/bookings'),
-                            api.get('/events'),
-                            api.get('/projects'),
-                            api.get('/equipment')
+                            api.get('/api/studio/bookings'),
+                            api.get('/api/events'),
+                            api.get('/api/projects'),
+                            api.get('/api/equipment')
                         ]);
 
                         const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []).filter(b => new Date(b.startTime) > new Date()).length : 0;

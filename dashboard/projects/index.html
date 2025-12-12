@@ -239,7 +239,7 @@
 
         async function loadProjects() {
             try {
-                const response = await api.get('/projects');
+                const response = await api.get('/api/projects');
                 if (response.success) {
                     allProjects = response.data || [];
                     applyFilters();
@@ -350,7 +350,7 @@
 
         async function viewProject(id) {
             try {
-                const response = await api.get(`/projects/${id}`);
+                const response = await api.get(`/api/projects/${id}`);
                 if (response.success) {
                     const project = response.data;
                     alert(`Project: ${project.name}\n\n${project.description}\n\nStatus: ${project.status}\nTeam: ${project.teamMembers.length} members`);
@@ -378,7 +378,7 @@
             const visibility = document.getElementById('project-visibility').value;
 
             try {
-                const response = await api.post('/projects', {
+                const response = await api.post('/api/projects', {
                     name,
                     description,
                     status,

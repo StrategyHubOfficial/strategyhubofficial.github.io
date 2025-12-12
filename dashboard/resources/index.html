@@ -195,7 +195,7 @@
 
         async function loadEquipment() {
             try {
-                const response = await api.get('/equipment');
+                const response = await api.get('/api/equipment');
                 if (response.success) {
                     allEquipment = response.data.all || [];
                     renderEquipment();
@@ -307,7 +307,7 @@
             const notes = document.getElementById('checkout-notes').value;
 
             try {
-                const response = await api.post('/equipment/checkout/request', {
+                const response = await api.post('/api/equipment/checkout/request', {
                     equipmentIds: selectedItems.map(i => i.id),
                     checkoutDate: new Date(checkoutDate).toISOString(),
                     returnDate: new Date(returnDate).toISOString(),
