@@ -32,7 +32,7 @@ Technical assistance costs 10,000 satoshis per hour, payable via OpenNode.
 
 ### Can anyone create a project?
 
-Currently, only admins can create projects. Contact an admin if you have a project idea.
+Yes. Feel free to submit your project.
 
 ### How do I get my project in the portfolio?
 
