@@ -388,6 +388,43 @@ title: Projects
             });
         });
 
+        // Donate to project
+        async function donateToProject(projectId, projectName) {
+            const amount = prompt(`Enter donation amount in sats for "${projectName}":`);
+            if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) {
+                if (amount !== null) {
+                    toast.error('Please enter a valid amount in sats');
+                }
+                return;
+            }
+
+            try {
+                const response = await api.post(`/api/projects/${projectId}/donate`, {
+                    amount: parseInt(amount)
+                });
+
+                if (response.success && response.data) {
+                    if (response.data.paymentUrl) {
+                        // Redirect to OpenNode payment page
+                        window.open(response.data.paymentUrl, '_blank');
+                        toast.success(`Opening payment page for ${amount} sats donation to ${projectName}`);
+                    } else if (response.data.lightningInvoice) {
+                        // Show Lightning invoice
+                        const invoice = response.data.lightningInvoice.payreq;
+                        if (confirm(`Lightning Invoice:\n\n${invoice}\n\nCopy to clipboard?`)) {
+                            navigator.clipboard.writeText(invoice);
+                            toast.success('Lightning invoice copied to clipboard');
+                        }
+                    }
+                } else {
+                    toast.error('Failed to create donation: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error creating donation:', error);
+                toast.error('Error creating donation');
+            }
+        }
+
         // Initialize
         (async () => {
             await auth.requireAuth();
