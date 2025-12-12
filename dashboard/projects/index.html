@@ -137,12 +137,12 @@ title: Projects
             <button class="btn" onclick="showCreateProject()">Create Project</button>
         </div>
 
-        <div class="filters" style="margin-bottom: 2rem;">
-            <button class="filter-btn active" data-filter="all">All Projects</button>
-            <button class="filter-btn" data-filter="idea">Ideas</button>
-            <button class="filter-btn" data-filter="active">Active</button>
-            <button class="filter-btn" data-filter="completed">Completed</button>
-            <button class="filter-btn" data-filter="archived">Archived</button>
+        <div class="filters" style="margin-bottom: 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button class="btn btn-secondary filter-btn active" data-filter="all">All Projects</button>
+            <button class="btn btn-secondary filter-btn" data-filter="idea">Ideas</button>
+            <button class="btn btn-secondary filter-btn" data-filter="active">Active</button>
+            <button class="btn btn-secondary filter-btn" data-filter="completed">Completed</button>
+            <button class="btn btn-secondary filter-btn" data-filter="archived">Archived</button>
         </div>
 
         <div id="loading" class="loading">
