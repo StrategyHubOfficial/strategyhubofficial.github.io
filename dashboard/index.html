@@ -66,11 +66,18 @@ title: StrategyHub Dashboard
 </div>
 
 <script>
-    // Initialize dashboard with protected route
-    (async () => {
-        try {
-            // Check authentication first
-            const isAuthenticated = await auth.requireAuth();
+    // Wait for scripts to load, then initialize dashboard
+    (function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+        
+        // Initialize dashboard with protected route
+        (async () => {
+            try {
+                // Check authentication first
+                const isAuthenticated = await auth.requireAuth();
             
             if (isAuthenticated) {
                 // Load user info

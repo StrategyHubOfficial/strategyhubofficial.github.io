@@ -205,7 +205,12 @@ title: Projects
     </div>
 
 <script>
-let allProjects = [];
+    (function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+        let allProjects = [];
         let filteredProjects = [];
         let currentFilter = 'all';
 
@@ -393,4 +398,6 @@ let allProjects = [];
         
             await auth.logout();
         });
+
+    })();
 </script>

@@ -183,7 +183,12 @@ title: Events
     </div>
 
 <script>
-let events = [];
+    (function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+        let events = [];
         let currentView = 'list';
         let subscriptions = null;
 
@@ -449,4 +454,6 @@ let events = [];
         
             await auth.logout();
         });
+
+    })();
 </script>

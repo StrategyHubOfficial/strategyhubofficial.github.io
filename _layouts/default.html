@@ -25,7 +25,18 @@
     <script src="{{ asset_path }}assets/js/auth.js"></script>
     {% unless page.url == '/dashboard/login.html' %}<script src="{{ asset_path }}assets/js/protected-route.js"></script>{% endunless %}
     <script src="{{ asset_path }}assets/js/toast.js"></script>
-    {% if page.scripts %}{{ page.scripts }}{% endif %}
+    <script>
+        // Wait for all scripts to load before executing page scripts
+        (function() {
+            if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+                // Scripts not loaded yet, wait a bit
+                setTimeout(arguments.callee, 50);
+                return;
+            }
+            // All scripts loaded, execute page scripts
+            {% if page.scripts %}{{ page.scripts }}{% endif %}
+        })();
+    </script>
     
     <script>
         // Logout handler

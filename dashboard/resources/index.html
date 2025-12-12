@@ -161,7 +161,12 @@ title: Equipment
     </div>
 
 <script>
-let allEquipment = [];
+    (function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+        let allEquipment = [];
         let selectedItems = [];
         let currentTab = 'all';
 
@@ -320,4 +325,6 @@ let allEquipment = [];
         
             await auth.logout();
         });
+
+    })();
 </script>

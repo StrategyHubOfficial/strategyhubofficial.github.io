@@ -128,7 +128,12 @@ title: Studio Booking
     </div>
 
 <script>
-async function loadBookings() {
+    (function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+        async function loadBookings() {
             try {
                 const response = await api.get('/api/studio/bookings');
                 if (response.success) {
@@ -265,4 +270,6 @@ async function loadBookings() {
         
             await auth.logout();
         });
+
+    })();
 </script>

@@ -180,7 +180,12 @@ title: Members
     </div>
 
 <script>
-let allMembers = [];
+    (function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+        let allMembers = [];
         let filteredMembers = [];
         let currentFilter = 'all';
         let searchQuery = '';
@@ -304,4 +309,6 @@ let allMembers = [];
         
             await auth.logout();
         });
+
+    })();
 </script>
