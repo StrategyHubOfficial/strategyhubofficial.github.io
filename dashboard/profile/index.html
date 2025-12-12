@@ -1,0 +1,400 @@
+---
+layout: default
+title: My Profile
+---
+
+<style>
+.profile-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.profile-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--bitcoin-orange);
+    box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.skills-input {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.skill-tag {
+    background: rgba(247, 147, 26, 0.15);
+    color: var(--bitcoin-orange);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.skill-tag button {
+    background: none;
+    border: none;
+    color: var(--bitcoin-orange);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 0;
+    line-height: 1;
+}
+
+.socials-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+.visibility-group {
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.visibility-group label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    font-weight: normal;
+}
+
+.visibility-group select {
+    width: auto;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.help-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+</style>
+
+<div class="profile-container">
+    <div class="profile-header">
+        <h1>My Profile</h1>
+    </div>
+
+    <form id="profile-form" class="profile-form">
+        <div class="form-group">
+            <label for="name">Name *</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" readonly style="opacity: 0.6; cursor: not-allowed;">
+            <div class="help-text">Email cannot be changed</div>
+        </div>
+
+        <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" placeholder="Tell us about yourself..."></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="website">Website</label>
+                <input type="url" id="website" name="website" placeholder="https://example.com">
+            </div>
+            <div class="form-group">
+                <label for="company">Company</label>
+                <input type="text" id="company" name="company" placeholder="Your company name">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Social Links</label>
+            <div class="socials-group">
+                <div>
+                    <label for="twitter" style="font-size: 0.9rem; margin-bottom: 0.25rem;">Twitter/X</label>
+                    <input type="text" id="twitter" name="twitter" placeholder="@username">
+                </div>
+                <div>
+                    <label for="github" style="font-size: 0.9rem; margin-bottom: 0.25rem;">GitHub</label>
+                    <input type="text" id="github" name="github" placeholder="username">
+                </div>
+                <div>
+                    <label for="linkedin" style="font-size: 0.9rem; margin-bottom: 0.25rem;">LinkedIn</label>
+                    <input type="text" id="linkedin" name="linkedin" placeholder="username">
+                </div>
+                <div>
+                    <label for="nostr" style="font-size: 0.9rem; margin-bottom: 0.25rem;">Nostr</label>
+                    <input type="text" id="nostr" name="nostr" placeholder="npub...">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="skills">Skills</label>
+            <input type="text" id="skill-input" placeholder="Type a skill and press Enter">
+            <div class="skills-input" id="skills-container"></div>
+        </div>
+
+        <div class="form-group">
+            <label>Visibility Settings</label>
+            <div class="help-text">Control who can see your information (Public = everyone, Members = logged-in members only, Private = only you)</div>
+            <div class="visibility-group">
+                <label>
+                    <span>Email</span>
+                    <select id="visibility-email" name="visibility-email">
+                        <option value="members">Members</option>
+                        <option value="private">Private</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Bio</span>
+                    <select id="visibility-bio" name="visibility-bio">
+                        <option value="public">Public</option>
+                        <option value="members">Members</option>
+                        <option value="private">Private</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Skills</span>
+                    <select id="visibility-skills" name="visibility-skills">
+                        <option value="public">Public</option>
+                        <option value="members">Members</option>
+                        <option value="private">Private</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Website</span>
+                    <select id="visibility-website" name="visibility-website">
+                        <option value="public">Public</option>
+                        <option value="members">Members</option>
+                        <option value="private">Private</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Company</span>
+                    <select id="visibility-company" name="visibility-company">
+                        <option value="public">Public</option>
+                        <option value="members">Members</option>
+                        <option value="private">Private</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Social Links</span>
+                    <select id="visibility-socials" name="visibility-socials">
+                        <option value="public">Public</option>
+                        <option value="members">Members</option>
+                        <option value="private">Private</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Save Profile</button>
+            <button type="button" class="btn" style="background: var(--bg-darker);" onclick="window.location.href='/dashboard/members'">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (async function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+
+        let currentSkills = [];
+        let profileData = null;
+
+        // Load current profile
+        async function loadProfile() {
+            try {
+                const response = await api.get('/api/members/me');
+                if (response.success) {
+                    profileData = response.data;
+                    populateForm(response.data);
+                } else {
+                    toast.error('Failed to load profile');
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                toast.error('Error loading profile');
+            }
+        }
+
+        function populateForm(data) {
+            document.getElementById('name').value = data.name || '';
+            document.getElementById('email').value = data.email || '';
+            document.getElementById('bio').value = data.bio || '';
+            document.getElementById('website').value = data.website || '';
+            document.getElementById('company').value = data.company || '';
+            
+            if (data.socials) {
+                document.getElementById('twitter').value = data.socials.twitter || '';
+                document.getElementById('github').value = data.socials.github || '';
+                document.getElementById('linkedin').value = data.socials.linkedin || '';
+                document.getElementById('nostr').value = data.socials.nostr || '';
+            }
+
+            currentSkills = data.skills || [];
+            renderSkills();
+
+            if (data.visibility) {
+                document.getElementById('visibility-email').value = data.visibility.email || 'members';
+                document.getElementById('visibility-bio').value = data.visibility.bio || 'members';
+                document.getElementById('visibility-skills').value = data.visibility.skills || 'members';
+                document.getElementById('visibility-website').value = data.visibility.website || 'members';
+                document.getElementById('visibility-company').value = data.visibility.company || 'members';
+                document.getElementById('visibility-socials').value = data.visibility.socials || 'members';
+            }
+        }
+
+        function renderSkills() {
+            const container = document.getElementById('skills-container');
+            container.innerHTML = currentSkills.map(skill => `
+                <span class="skill-tag">
+                    ${skill}
+                    <button type="button" onclick="removeSkill('${skill}')" aria-label="Remove skill">×</button>
+                </span>
+            `).join('');
+        }
+
+        window.removeSkill = function(skill) {
+            currentSkills = currentSkills.filter(s => s !== skill);
+            renderSkills();
+        };
+
+        // Add skill on Enter
+        document.getElementById('skill-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const skill = e.target.value.trim();
+                if (skill && !currentSkills.includes(skill)) {
+                    currentSkills.push(skill);
+                    renderSkills();
+                    e.target.value = '';
+                }
+            }
+        });
+
+        // Form submission
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById('name').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                bio: document.getElementById('bio').value.trim(),
+                website: document.getElementById('website').value.trim(),
+                company: document.getElementById('company').value.trim(),
+                socials: {
+                    twitter: document.getElementById('twitter').value.trim(),
+                    github: document.getElementById('github').value.trim(),
+                    linkedin: document.getElementById('linkedin').value.trim(),
+                    nostr: document.getElementById('nostr').value.trim()
+                },
+                skills: currentSkills,
+                visibility: {
+                    email: document.getElementById('visibility-email').value,
+                    bio: document.getElementById('visibility-bio').value,
+                    skills: document.getElementById('visibility-skills').value,
+                    website: document.getElementById('visibility-website').value,
+                    company: document.getElementById('visibility-company').value,
+                    socials: document.getElementById('visibility-socials').value
+                }
+            };
+
+            // Remove empty social fields
+            Object.keys(formData.socials).forEach(key => {
+                if (!formData.socials[key]) {
+                    delete formData.socials[key];
+                }
+            });
+
+            try {
+                const memberId = profileData?.id || 'new';
+                const response = await api.put(`/api/members/${memberId}`, formData);
+                
+                if (response.success) {
+                    toast.success('Profile updated successfully!');
+                    profileData = response.data;
+                } else {
+                    toast.error(response.error || 'Failed to update profile');
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                toast.error('Error updating profile');
+            }
+        });
+
+        // Initialize
+        await auth.requireAuth();
+        await loadProfile();
+    })();
+</script>
+

@@ -299,7 +299,8 @@ title: Supporters
                         <div class="supporter-avatar">${initials}</div>
                         <div class="supporter-info">
                             <div class="supporter-name">${supporter.name || 'Unknown'}</div>
-                            ${supporter.bio ? `<div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">${supporter.bio}</div>` : ''}
+                            ${supporter.company ? `<div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">${supporter.company}</div>` : ''}
+                            ${supporter.bio ? `<div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.5;">${supporter.bio}</div>` : ''}
                         </div>
                     </div>
                 `;

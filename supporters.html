@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Supporters - StrategyHub</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #e0e0e0;
+            background: #0a0a0a;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #fff5e6 0%, #ffeaa7 25%, #fdcb6e 50%, #e17055 75%, #d63031 100%);
+            color: #111111;
+            padding: 4rem 0;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            color: #333333;
+        }
+        
+        .section {
+            padding: 4rem 0;
+        }
+        
+        .tier-section {
+            margin-bottom: 4rem;
+        }
+        
+        .tier-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid rgba(247, 147, 26, 0.3);
+        }
+        
+        .tier-header h2 {
+            font-size: 2rem;
+            color: #ffffff;
+        }
+        
+        .tier-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .badge-supporter {
+            background: #2d5016;
+            color: #4ade80;
+        }
+        
+        .badge-contributor {
+            background: #1e3a8a;
+            color: #60a5fa;
+        }
+        
+        .badge-patron {
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            color: #000;
+        }
+        
+        .supporters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .supporter-card {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+            border: 1px solid rgba(247, 147, 26, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .supporter-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(247, 147, 26, 0.4);
+            box-shadow: 0 20px 60px rgba(247, 147, 26, 0.15);
+        }
+        
+        .supporter-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f7931a 0%, #ffb84d 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #000;
+            margin: 0 auto 1rem;
+            box-shadow: 0 10px 30px rgba(247, 147, 26, 0.3);
+        }
+        
+        .supporter-name {
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+        
+        .supporter-company {
+            color: #b0b0b0;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .supporter-bio {
+            color: #b0b0b0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            margin-top: 0.75rem;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 4rem;
+            color: #b0b0b0;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 4rem;
+            color: #d63031;
+        }
+        
+        .footer {
+            background: #000000;
+            color: #b0b0b0;
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(247, 147, 26, 0.1);
+        }
+        
+        .footer a {
+            color: #f7931a;
+            text-decoration: none;
+        }
+        
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .supporters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Our Supporters</h1>
+            <p>Thank you to everyone supporting StrategyHub's mission to build Bitcoin infrastructure</p>
+        </div>
+    </div>
+    
+    <div class="section">
+        <div class="container">
+            <div id="loading" class="loading">Loading supporters...</div>
+            <div id="error" class="error" style="display: none;"></div>
+            
+            <div id="supporters-content" style="display: none;">
+                <div id="patrons-section" class="tier-section">
+                    <div class="tier-header">
+                        <h2>Patrons</h2>
+                        <span class="tier-badge badge-patron">100k sats/month</span>
+                    </div>
+                    <div id="patrons-list" class="supporters-grid"></div>
+                </div>
+
+                <div id="contributors-section" class="tier-section">
+                    <div class="tier-header">
+                        <h2>Contributors</h2>
+                        <span class="tier-badge badge-contributor">50k sats/month</span>
+                    </div>
+                    <div id="contributors-list" class="supporters-grid"></div>
+                </div>
+
+                <div id="supporters-section" class="tier-section">
+                    <div class="tier-header">
+                        <h2>Supporters</h2>
+                        <span class="tier-badge badge-supporter">25k sats/month</span>
+                    </div>
+                    <div id="supporters-list" class="supporters-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <div class="container">
+            <p><a href="/">← Back to StrategyHub</a> | <a href="/dashboard/login.html">Login</a></p>
+        </div>
+    </div>
+    
+    <script>
+        async function loadSupporters() {
+            try {
+                // Public endpoint - no auth required
+                const response = await fetch('https://dashboard.securesovereigns.workers.dev/api/members');
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load supporters');
+                }
+
+                const members = data.data || [];
+                const supporters = members.filter(m => 
+                    m.sponsorship && 
+                    m.sponsorship.status === 'active'
+                );
+
+                // Group by tier
+                const patrons = supporters.filter(s => s.sponsorship.tier === 'patron');
+                const contributors = supporters.filter(s => s.sponsorship.tier === 'contributor');
+                const supporterTier = supporters.filter(s => s.sponsorship.tier === 'supporter');
+
+                // Render each tier
+                renderTier('patrons-list', patrons);
+                renderTier('contributors-list', contributors);
+                renderTier('supporters-list', supporterTier);
+
+                // Hide empty sections
+                document.getElementById('patrons-section').style.display = patrons.length > 0 ? 'block' : 'none';
+                document.getElementById('contributors-section').style.display = contributors.length > 0 ? 'block' : 'none';
+                document.getElementById('supporters-section').style.display = supporterTier.length > 0 ? 'block' : 'none';
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('supporters-content').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading supporters:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').textContent = error.message || 'Failed to load supporters';
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function renderTier(containerId, supporters) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+
+            if (supporters.length === 0) {
+                container.innerHTML = '<p style="color: #666; padding: 2rem; text-align: center; grid-column: 1 / -1;">No supporters yet. Be the first!</p>';
+                return;
+            }
+
+            container.innerHTML = supporters.map(supporter => {
+                const initials = supporter.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '?';
+                
+                return `
+                    <div class="supporter-card">
+                        <div class="supporter-avatar">${initials}</div>
+                        <div class="supporter-name">${supporter.name || 'Unknown'}</div>
+                        ${supporter.company ? `<div class="supporter-company">${supporter.company}</div>` : ''}
+                        ${supporter.bio ? `<div class="supporter-bio">${supporter.bio}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load on page load
+        loadSupporters();
+    </script>
+</body>
+</html>
+

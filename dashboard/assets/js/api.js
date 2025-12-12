@@ -104,6 +104,17 @@ class StrategyHubAPI {
     return this.request('/api/members');
   }
 
+  async getMyProfile() {
+    return this.request('/api/members/me');
+  }
+
+  async updateProfile(memberId, profileData) {
+    return this.request(`/api/members/${memberId}`, {
+      method: 'PUT',
+      body: JSON.stringify(profileData)
+    });
+  }
+
   async getMember(id) {
     return this.request(`/api/members/${id}`);
   }

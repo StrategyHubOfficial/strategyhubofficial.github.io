@@ -250,13 +250,23 @@ title: Members
                 const initials = member.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '?';
                 const statusClass = member.status || 'pending';
 
+                const socials = member.socials || {};
+                const socialLinks = [];
+                if (socials.twitter) socialLinks.push(`<a href="https://twitter.com/${socials.twitter.replace('@', '')}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">🐦 Twitter</a>`);
+                if (socials.github) socialLinks.push(`<a href="https://github.com/${socials.github}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">💻 GitHub</a>`);
+                if (socials.linkedin) socialLinks.push(`<a href="https://linkedin.com/in/${socials.linkedin}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">💼 LinkedIn</a>`);
+                if (socials.nostr) socialLinks.push(`<a href="https://nostr.com/${socials.nostr}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">⚡ Nostr</a>`);
+
                 return `
                     <div class="member-card">
                         <div class="member-avatar">${initials}</div>
                         <div class="member-info">
                             <div class="member-name">${member.name || 'Unknown'}</div>
+                            ${member.company ? `<div style="color: var(--text-secondary); margin-bottom: 0.5rem; font-size: 0.95rem;">🏢 ${member.company}</div>` : ''}
                             <div class="member-email">${member.email || ''}</div>
+                            ${member.website ? `<div style="margin-bottom: 0.5rem;"><a href="${member.website}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none;">🌐 ${member.website}</a></div>` : ''}
                             ${member.bio ? `<div class="member-bio">${member.bio}</div>` : ''}
+                            ${socialLinks.length > 0 ? `<div style="margin-bottom: 1rem; display: flex; flex-wrap: wrap; align-items: center;">${socialLinks.join('')}</div>` : ''}
                             ${member.skills && member.skills.length > 0 ? `
                                 <div class="member-skills">
                                     ${member.skills.map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
