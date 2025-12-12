@@ -402,6 +402,31 @@ body {
   color: var(--bg-darker);
 }
 
+/* Bootstrap Dropdown Overrides (for notification preferences) */
+.dropdown-menu {
+  background: var(--bg-darker) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.dropdown-item {
+  color: var(--text-secondary) !important;
+}
+
+.dropdown-item:hover {
+  background: rgba(247, 147, 26, 0.1) !important;
+  color: var(--bitcoin-orange) !important;
+}
+
+.dropdown-header {
+  color: var(--text-primary) !important;
+  font-weight: 600;
+}
+
+.dropdown-divider {
+  border-color: var(--border-color) !important;
+}
+
 .btn-small {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
