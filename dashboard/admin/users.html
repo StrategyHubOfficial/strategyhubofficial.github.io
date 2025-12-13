@@ -128,11 +128,43 @@ title: User Management
             return;
         }
 
+        let allRoles = [];
+        let userRolesMap = {};
+
+        async function loadRoles() {
+            try {
+                const response = await api.getRoles();
+                if (response.success) {
+                    allRoles = response.data || [];
+                }
+            } catch (error) {
+                console.error('Error loading roles:', error);
+            }
+        }
+
+        async function loadUserRoles() {
+            userRolesMap = {};
+            for (const user of users) {
+                try {
+                    const response = await api.getUserRoles(user.id);
+                    if (response.success) {
+                        userRolesMap[user.id] = response.data || [];
+                    }
+                } catch (error) {
+                    console.error(`Error loading roles for user ${user.id}:`, error);
+                }
+            }
+        }
+
+        let users = [];
+
         async function loadUsers() {
             try {
                 const response = await api.get('/api/users');
                 if (response.success) {
-                    renderUsers(response.data || []);
+                    users = response.data || [];
+                    await loadUserRoles();
+                    renderUsers(users);
                     document.getElementById('loading').style.display = 'none';
                     document.getElementById('users-content').style.display = 'block';
                 } else {
@@ -161,6 +193,10 @@ title: User Management
             container.innerHTML = users.map(user => {
                 const statusClass = user.status || 'pending';
                 const roleBadge = user.role === 'admin' ? '<span class="user-role">Admin</span>' : '';
+                const userRoles = userRolesMap[user.id] || [];
+                const rolesBadges = userRoles.map(ur => 
+                    `<span class="badge bg-info me-1">${escapeHtml(ur.role?.name || ur.roleId)}</span>`
+                ).join('');
 
                 return `
                     <div class="user-card">
@@ -171,6 +207,10 @@ title: User Management
                                 <div style="margin-top: 0.5rem;">
                                     <span class="user-status status ${statusClass}">${statusClass}</span>
                                     ${roleBadge}
+                                    ${rolesBadges}
+                                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="manageUserRoles('${user.id}')" title="Manage Roles">
+                                        <i class="bi bi-gear"></i> Roles
+                                    </button>
                                 </div>
                             </div>
                             <div class="user-actions">
@@ -219,12 +259,113 @@ title: User Management
             }
         }
 
+        window.manageUserRoles = async function(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            // Load roles if not already loaded
+            if (allRoles.length === 0) {
+                await loadRoles();
+            }
+
+            // Get current user roles
+            const currentRoles = userRolesMap[userId] || [];
+            const currentRoleIds = currentRoles.map(ur => ur.roleId);
+
+            // Create modal content
+            const modalHtml = `
+                <div class="modal fade" id="user-roles-modal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content bg-dark text-light">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Manage Roles for ${escapeHtml(user.name || user.email)}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="user-roles-list">
+                                    ${allRoles.map(role => `
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   id="user-role-${role.id}" 
+                                                   value="${role.id}"
+                                                   ${currentRoleIds.includes(role.id) ? 'checked' : ''}>
+                                            <label class="form-check-label" for="user-role-${role.id}">
+                                                <strong>${escapeHtml(role.name)}</strong>
+                                                ${role.description ? `<br><small class="text-muted">${escapeHtml(role.description)}</small>` : ''}
+                                            </label>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" onclick="saveUserRoles('${userId}')">Save</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Remove existing modal if any
+            const existingModal = document.getElementById('user-roles-modal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Add modal to page
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('user-roles-modal'));
+            modal.show();
+
+            // Clean up on hide
+            document.getElementById('user-roles-modal').addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        };
+
+        window.saveUserRoles = async function(userId) {
+            const checkboxes = document.querySelectorAll('#user-roles-list input[type="checkbox"]:checked');
+            const selectedRoleIds = Array.from(checkboxes).map(cb => cb.value);
+            const currentRoleIds = (userRolesMap[userId] || []).map(ur => ur.roleId);
+
+            // Determine which roles to add and remove
+            const toAdd = selectedRoleIds.filter(id => !currentRoleIds.includes(id));
+            const toRemove = currentRoleIds.filter(id => !selectedRoleIds.includes(id));
+
+            try {
+                // Add new roles
+                for (const roleId of toAdd) {
+                    await api.assignRole(userId, roleId);
+                }
+
+                // Remove roles
+                for (const roleId of toRemove) {
+                    await api.removeRole(userId, roleId);
+                }
+
+                toast.success('User roles updated successfully');
+                bootstrap.Modal.getInstance(document.getElementById('user-roles-modal')).hide();
+                await loadUsers();
+            } catch (error) {
+                console.error('Error updating user roles:', error);
+                toast.error('Error updating user roles');
+            }
+        };
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Expose to global scope
         window.disableUser = disableUser;
         window.enableUser = enableUser;
 
         // Initialize
         await auth.requireAuth();
+        await loadRoles();
         await loadUsers();
     })();
 </script>
