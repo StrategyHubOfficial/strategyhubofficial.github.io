@@ -543,6 +543,7 @@ title: Projects
 
         // Donate to project
         async function donateToProject(projectId, projectName) {
+            // Show donation form with optional name/email for guest members
             const amount = prompt(`Enter donation amount in sats for "${projectName}":`);
             if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) {
                 if (amount !== null) {
@@ -551,9 +552,15 @@ title: Projects
                 return;
             }
 
+            // Optional: Ask for name/email to create guest member badge
+            const donorName = prompt(`Your name (optional, for supporter badge):`) || '';
+            const donorEmail = prompt(`Your email (optional, for supporter badge):`) || '';
+
             try {
                 const response = await api.post(`/api/projects/${projectId}/donate`, {
-                    amount: parseInt(amount)
+                    amount: parseInt(amount),
+                    donorName: donorName.trim() || undefined,
+                    donorEmail: donorEmail.trim() || undefined,
                 });
 
                 if (response.success && response.data) {

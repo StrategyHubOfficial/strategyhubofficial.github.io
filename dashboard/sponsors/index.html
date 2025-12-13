@@ -166,18 +166,14 @@ title: Supporters
 
         async function loadSupporters() {
             try {
-                const response = await api.get('/api/members');
+                const response = await api.get('/api/supporters');
                 if (!response.success) {
                     throw new Error(response.error || 'Failed to load supporters');
                 }
 
-                const members = response.data || [];
-                const supporters = members.filter(m => 
-                    m.sponsorship && 
-                    m.sponsorship.status === 'active'
-                );
+                const supporters = response.data || [];
 
-                // Render all supporters
+                // Render all supporters (includes sponsorships and guest donors)
                 renderTier('supporters-list', supporters);
 
                 document.getElementById('loading').style.display = 'none';
@@ -204,15 +200,45 @@ title: Supporters
 
             container.innerHTML = supporters.map(supporter => {
                 const initials = supporter.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '?';
-                const tier = supporter.sponsorship?.tier || 'supporter';
+                const isDonor = supporter.contributionType === 'donation';
+                const badgeTier = supporter.donorBadge || (supporter.sponsorship?.tier || 'supporter');
+                
+                // Badge display
+                let badgeHtml = '';
+                if (isDonor && supporter.donorBadge) {
+                    const badgeColors = {
+                        bronze: '#cd7f32',
+                        silver: '#c0c0c0',
+                        gold: '#ffd700',
+                        platinum: '#e5e4e2'
+                    };
+                    const badgeColor = badgeColors[supporter.donorBadge] || '#f7931a';
+                    badgeHtml = `<span style="display: inline-block; background: ${badgeColor}20; color: ${badgeColor}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; margin-top: 0.5rem; text-transform: capitalize;">${supporter.donorBadge} Donor</span>`;
+                } else if (supporter.sponsorship) {
+                    badgeHtml = `<span style="display: inline-block; background: rgba(247, 147, 26, 0.2); color: var(--bitcoin-orange); padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; margin-top: 0.5rem;">Supporter</span>`;
+                }
+                
+                // Contribution info
+                let contributionHtml = '';
+                if (isDonor) {
+                    const totalSats = supporter.totalDonated || 0;
+                    const donationText = totalSats >= 1000000 
+                        ? `${(totalSats / 1000000).toFixed(2)}M sats`
+                        : totalSats >= 1000
+                        ? `${(totalSats / 1000).toFixed(1)}k sats`
+                        : `${totalSats} sats`;
+                    contributionHtml = `<div style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">Total: ${donationText} (${supporter.donationCount || 0} donation${(supporter.donationCount || 0) !== 1 ? 's' : ''})</div>`;
+                }
                 
                 return `
                     <div class="supporter-card">
                         <div class="supporter-avatar">${initials}</div>
                         <div class="supporter-info">
                             <div class="supporter-name">${supporter.name || 'Unknown'}</div>
+                            ${badgeHtml}
                             ${supporter.company ? `<div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">${supporter.company}</div>` : ''}
                             ${supporter.bio ? `<div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem; line-height: 1.5;">${supporter.bio}</div>` : ''}
+                            ${contributionHtml}
                         </div>
                     </div>
                 `;

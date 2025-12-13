@@ -382,6 +382,11 @@ class HubAPI {
   async getUserPermissions(userId) {
     return this.get(`/api/users/${userId}/permissions`);
   }
+
+  // Supporters (includes sponsorships and guest donors)
+  async getSupporters() {
+    return this.get('/api/supporters');
+  }
 }
 
 // Export for use

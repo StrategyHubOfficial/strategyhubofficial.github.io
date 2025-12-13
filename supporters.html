@@ -180,11 +180,7 @@
                     throw new Error(data.error || 'Failed to load supporters');
                 }
 
-                const members = data.data || [];
-                const supporters = members.filter(m => 
-                    m.sponsorship && 
-                    m.sponsorship.status === 'active'
-                );
+                const supporters = data.data || []; // Already includes sponsorships and guest donors
 
                 // Render all supporters
                 renderTier('supporters-list', supporters);
