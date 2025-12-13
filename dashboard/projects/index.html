@@ -85,6 +85,33 @@ title: Projects
             padding-top: 1rem;
             border-top: 1px solid var(--border-color);
         }
+        .search-bar {
+            position: relative;
+            width: 100%;
+        }
+        .search-bar input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+        .search-bar input:focus {
+            outline: none;
+            border-color: var(--bitcoin-orange);
+            box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+        }
+        .search-bar::before {
+            content: '🔍';
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
         .team-title {
             font-size: 0.9rem;
             color: var(--text-secondary);
@@ -135,6 +162,12 @@ title: Projects
         <div class="projects-header">
             <h1>Projects</h1>
             <button class="btn" onclick="showCreateProject()">Create Project</button>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+            <div class="search-bar" style="max-width: 500px;">
+                <input type="text" id="search-input" placeholder="Search projects by name, description, tags, or skills...">
+            </div>
         </div>
 
         <div class="filters" style="margin-bottom: 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
@@ -256,13 +289,34 @@ title: Projects
             }
         }
 
-        function applyFilters() {
-            filteredProjects = allProjects.filter(project => {
-                if (currentFilter !== 'all' && project.status !== currentFilter) {
-                    return false;
+        async function applyFilters() {
+            // If search query exists, use search endpoint
+            if (searchQuery.trim()) {
+                try {
+                    const response = await api.get(`/api/projects/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                    if (response.success) {
+                        filteredProjects = (response.data?.data || []).filter(project => {
+                            if (currentFilter !== 'all' && project.status !== currentFilter) {
+                                return false;
+                            }
+                            return true;
+                        });
+                    } else {
+                        filteredProjects = [];
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    filteredProjects = [];
                 }
-                return true;
-            });
+            } else {
+                // Use local filtering
+                filteredProjects = allProjects.filter(project => {
+                    if (currentFilter !== 'all' && project.status !== currentFilter) {
+                        return false;
+                    }
+                    return true;
+                });
+            }
 
             renderProjects();
         }
@@ -458,6 +512,24 @@ title: Projects
                 toast.error('Error creating project');
             }
         });
+
+        // Search functionality with debouncing
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                
+                // Clear existing timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                // Debounce search (wait 300ms after user stops typing)
+                searchTimeout = setTimeout(() => {
+                    applyFilters();
+                }, 300);
+            });
+        }
 
         // Filter buttons
         document.querySelectorAll('.filter-btn').forEach(btn => {

@@ -127,6 +127,9 @@ title: Events
         <div class="events-header">
             <h1>Events & Calendar</h1>
             <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div class="search-bar" style="max-width: 400px;">
+                    <input type="text" id="search-input" placeholder="Search events by title, description, or location...">
+                </div>
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="subscriptionsDropdown" data-bs-toggle="dropdown" aria-expanded="false" title="Notification Preferences">
                         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 0.5rem;">
@@ -210,8 +213,11 @@ title: Events
             return;
         }
         let events = [];
+        let filteredEvents = [];
         let currentView = 'list';
         let subscriptions = null;
+        let searchQuery = '';
+        let searchTimeout = null;
 
         async function loadEvents() {
             try {
@@ -221,7 +227,8 @@ title: Events
                 const response = await api.get(url);
                 if (response.success) {
                     events = response.data || [];
-                    renderEvents();
+                    filteredEvents = events;
+                    applyFilters();
                 } else {
                     toast.error('Failed to load events');
                     document.getElementById('error').textContent = 'Failed to load events';
@@ -319,6 +326,7 @@ title: Events
         window.cancelRSVP = cancelRSVP;
 
         function renderEvents() {
+            const eventsToRender = filteredEvents;
             const container = document.getElementById('events-list');
             if (events.length === 0) {
                 container.innerHTML = '<p>No events scheduled.</p>';
