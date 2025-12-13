@@ -440,7 +440,7 @@ title: Events
                 dayDiv.innerHTML = `<div class="calendar-day-number">${currentDate.getDate()}</div>`;
                 
                 // Add events for this day
-                const dayEvents = events.filter(e => {
+                const dayEvents = filteredEvents.filter(e => {
                     const eventDate = new Date(e.startTime);
                     return eventDate.toDateString() === currentDate.toDateString();
                 });
