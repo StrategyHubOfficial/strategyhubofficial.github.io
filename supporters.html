@@ -206,13 +206,43 @@
 
             container.innerHTML = supporters.map(supporter => {
                 const initials = supporter.name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || '?';
+                const isDonor = supporter.contributionType === 'donation';
+                
+                // Badge display
+                let badgeHtml = '';
+                if (isDonor && supporter.donorBadge) {
+                    const badgeColors = {
+                        bronze: '#cd7f32',
+                        silver: '#c0c0c0',
+                        gold: '#ffd700',
+                        platinum: '#e5e4e2'
+                    };
+                    const badgeColor = badgeColors[supporter.donorBadge] || '#f7931a';
+                    badgeHtml = `<div style="display: inline-block; background: ${badgeColor}30; color: ${badgeColor}; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem; text-transform: capitalize; border: 1px solid ${badgeColor}60;">${supporter.donorBadge} Donor</div>`;
+                } else if (supporter.sponsorship) {
+                    badgeHtml = `<div style="display: inline-block; background: rgba(247, 147, 26, 0.2); color: #f7931a; padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-top: 0.75rem; border: 1px solid rgba(247, 147, 26, 0.4);">Supporter</div>`;
+                }
+                
+                // Contribution info
+                let contributionHtml = '';
+                if (isDonor) {
+                    const totalSats = supporter.totalDonated || 0;
+                    const donationText = totalSats >= 1000000 
+                        ? `${(totalSats / 1000000).toFixed(2)}M sats`
+                        : totalSats >= 1000
+                        ? `${(totalSats / 1000).toFixed(1)}k sats`
+                        : `${totalSats} sats`;
+                    contributionHtml = `<div style="color: #888; font-size: 0.9rem; margin-top: 0.5rem;">Total: ${donationText} (${supporter.donationCount || 0} donation${(supporter.donationCount || 0) !== 1 ? 's' : ''})</div>`;
+                }
                 
                 return `
                     <div class="supporter-card">
                         <div class="supporter-avatar">${initials}</div>
                         <div class="supporter-name">${supporter.name || 'Unknown'}</div>
+                        ${badgeHtml}
                         ${supporter.company ? `<div class="supporter-company">${supporter.company}</div>` : ''}
                         ${supporter.bio ? `<div class="supporter-bio">${supporter.bio}</div>` : ''}
+                        ${contributionHtml}
                     </div>
                 `;
             }).join('');
