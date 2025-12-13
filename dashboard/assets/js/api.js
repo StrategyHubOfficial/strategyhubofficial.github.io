@@ -337,6 +337,51 @@ class HubAPI {
       method: 'POST'
     });
   }
+
+  // ACL methods
+  async getRoles() {
+    return this.get('/api/roles');
+  }
+
+  async getRole(roleId) {
+    return this.get(`/api/roles/${roleId}`);
+  }
+
+  async createRole(roleData) {
+    return this.post('/api/roles', roleData);
+  }
+
+  async updateRole(roleId, roleData) {
+    return this.put(`/api/roles/${roleId}`, roleData);
+  }
+
+  async updateRolePermissions(roleId, permissions) {
+    return this.put(`/api/roles/${roleId}/permissions`, { permissions });
+  }
+
+  async deleteRole(roleId) {
+    return this.delete(`/api/roles/${roleId}`);
+  }
+
+  async getPermissions() {
+    return this.get('/api/permissions');
+  }
+
+  async getUserRoles(userId) {
+    return this.get(`/api/users/${userId}/roles`);
+  }
+
+  async assignRole(userId, roleId) {
+    return this.post(`/api/users/${userId}/roles`, { roleId });
+  }
+
+  async removeRole(userId, roleId) {
+    return this.delete(`/api/users/${userId}/roles/${roleId}`);
+  }
+
+  async getUserPermissions(userId) {
+    return this.get(`/api/users/${userId}/permissions`);
+  }
 }
 
 // Export for use
