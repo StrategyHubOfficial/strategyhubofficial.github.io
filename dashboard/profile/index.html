@@ -465,6 +465,42 @@ title: My Profile
             }
         });
 
+        // Change password form handler
+        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (newPassword !== confirmPassword) {
+                toast.error('New passwords do not match');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                toast.error('Password must be at least 8 characters');
+                return;
+            }
+            
+            try {
+                const response = await api.put('/api/auth/change-password', {
+                    currentPassword,
+                    newPassword
+                });
+                
+                if (response.success) {
+                    toast.success('Password changed successfully');
+                    document.getElementById('change-password-form').reset();
+                } else {
+                    toast.error(response.error || 'Failed to change password');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                toast.error('Error changing password');
+            }
+        });
+
         // Initialize
         await auth.requireAuth();
         await loadProfile();
