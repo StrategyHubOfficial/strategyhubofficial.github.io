@@ -1,0 +1,338 @@
+---
+layout: default
+title: System Settings
+---
+
+<style>
+    .settings-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .settings-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .settings-section h2 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
+        font-size: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 0.75rem;
+        background: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 1rem;
+        transition: var(--transition);
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--bitcoin-orange);
+        box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+    }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .form-group small {
+        display: block;
+        margin-top: 0.5rem;
+        color: var(--text-secondary);
+        font-size: 0.85rem;
+    }
+
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .checkbox-group input[type="checkbox"] {
+        width: auto;
+        cursor: pointer;
+    }
+
+    .btn-save {
+        background: var(--bitcoin-orange);
+        color: #000;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .btn-save:hover {
+        background: #ffa64d;
+        transform: translateY(-2px);
+    }
+
+    .btn-save:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .settings-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        border: 1px solid;
+    }
+
+    .alert-success {
+        background: rgba(45, 80, 22, 0.2);
+        border-color: #4ade80;
+        color: #4ade80;
+    }
+
+    .alert-error {
+        background: rgba(127, 29, 29, 0.2);
+        border-color: #f87171;
+        color: #f87171;
+    }
+</style>
+
+<div class="settings-container">
+    <div class="page-header">
+        <h1>System Settings</h1>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <form id="settings-form">
+        <!-- General Settings -->
+        <div class="settings-section">
+            <h2>General Settings</h2>
+            
+            <div class="form-group">
+                <label for="site-name">Site Name</label>
+                <input type="text" id="site-name" name="siteName" placeholder="Strategy Hub">
+                <small>The name of your organization/hub</small>
+            </div>
+
+            <div class="form-group">
+                <label for="support-email">Support Email</label>
+                <input type="email" id="support-email" name="supportEmail" placeholder="support@example.com">
+                <small>Email address for user support inquiries</small>
+            </div>
+        </div>
+
+        <!-- Lightning Network Settings -->
+        <div class="settings-section">
+            <h2>Lightning Network Settings</h2>
+            
+            <div class="form-group">
+                <label for="hub-fee-percent">Hub Fee Percent</label>
+                <input type="number" id="hub-fee-percent" name="hubFeePercent" min="0" max="100" step="0.1" placeholder="0.5">
+                <small>Percentage fee (0.5 = 0.5%) taken by the hub when forwarding Lightning payments to projects</small>
+            </div>
+        </div>
+
+        <!-- File Upload Settings -->
+        <div class="settings-section">
+            <h2>File Upload Settings</h2>
+            
+            <div class="form-group">
+                <label for="max-file-size">Max File Upload Size (MB)</label>
+                <input type="number" id="max-file-size" name="maxFileUploadSize" min="1" max="100" step="1" placeholder="10">
+                <small>Maximum file size in megabytes (will be converted to bytes)</small>
+            </div>
+
+            <div class="form-group">
+                <label for="allowed-file-types">Allowed File Types</label>
+                <input type="text" id="allowed-file-types" name="allowedFileTypes" placeholder="image/jpeg,image/png,image/gif,application/pdf">
+                <small>Comma-separated list of MIME types (e.g., image/jpeg,image/png)</small>
+            </div>
+        </div>
+
+        <!-- Maintenance Mode -->
+        <div class="settings-section">
+            <h2>Maintenance Mode</h2>
+            
+            <div class="form-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="maintenance-mode" name="maintenanceMode">
+                    <label for="maintenance-mode" style="margin: 0; cursor: pointer;">Enable Maintenance Mode</label>
+                </div>
+                <small>When enabled, users will see a maintenance message instead of the normal interface</small>
+            </div>
+
+            <div class="form-group">
+                <label for="maintenance-message">Maintenance Message</label>
+                <textarea id="maintenance-message" name="maintenanceMessage" placeholder="The system is currently under maintenance. Please check back later."></textarea>
+                <small>Message displayed to users when maintenance mode is enabled</small>
+            </div>
+        </div>
+
+        <!-- Default Roles -->
+        <div class="settings-section">
+            <h2>Default Roles</h2>
+            
+            <div class="form-group">
+                <label for="default-roles">Default Roles (comma-separated)</label>
+                <input type="text" id="default-roles" name="defaultRoles" placeholder="member">
+                <small>Role IDs assigned to new users by default (comma-separated)</small>
+            </div>
+        </div>
+
+        <div class="settings-actions">
+            <button type="submit" class="btn-save" id="save-button">Save Settings</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (async function() {
+        if (typeof auth === 'undefined' || typeof api === 'undefined' || typeof toast === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+
+        await auth.requireAuth();
+
+        // Check if user has permission
+        const user = auth.getCurrentUser();
+        if (!user || (user.role !== 'admin' && !user.roles?.includes('admin'))) {
+            window.location.href = '/dashboard/';
+            return;
+        }
+
+        let settings = {};
+
+        // Load settings
+        async function loadSettings() {
+            try {
+                const response = await api.get('/api/settings');
+                if (response.success) {
+                    settings = response.data;
+                    populateForm(settings);
+                } else {
+                    toast.error('Failed to load settings');
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+                toast.error('Error loading settings');
+            }
+        }
+
+        // Populate form with settings
+        function populateForm(data) {
+            document.getElementById('site-name').value = data.siteName || '';
+            document.getElementById('support-email').value = data.supportEmail || '';
+            document.getElementById('hub-fee-percent').value = data.hubFeePercent || '';
+            document.getElementById('max-file-size').value = data.maxFileUploadSize ? (data.maxFileUploadSize / (1024 * 1024)).toFixed(0) : '';
+            document.getElementById('allowed-file-types').value = Array.isArray(data.allowedFileTypes) ? data.allowedFileTypes.join(',') : (data.allowedFileTypes || '');
+            document.getElementById('maintenance-mode').checked = data.maintenanceMode || false;
+            document.getElementById('maintenance-message').value = data.maintenanceMessage || '';
+            document.getElementById('default-roles').value = Array.isArray(data.defaultRoles) ? data.defaultRoles.join(',') : (data.defaultRoles || '');
+        }
+
+        // Save settings
+        document.getElementById('settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const saveButton = document.getElementById('save-button');
+            saveButton.disabled = true;
+            saveButton.textContent = 'Saving...';
+
+            try {
+                const formData = new FormData(e.target);
+                const data = {};
+                
+                for (const [key, value] of formData.entries()) {
+                    if (key === 'maintenanceMode') {
+                        data[key] = document.getElementById('maintenance-mode').checked;
+                    } else if (key === 'maxFileUploadSize') {
+                        // Convert MB to bytes
+                        data[key] = parseInt(value) * 1024 * 1024;
+                    } else if (key === 'allowedFileTypes') {
+                        // Convert comma-separated string to array
+                        data[key] = value.split(',').map(t => t.trim()).filter(t => t);
+                    } else if (key === 'defaultRoles') {
+                        // Convert comma-separated string to array
+                        data[key] = value.split(',').map(r => r.trim()).filter(r => r);
+                    } else if (key === 'hubFeePercent') {
+                        data[key] = parseFloat(value);
+                    } else {
+                        data[key] = value;
+                    }
+                }
+
+                const response = await api.put('/api/settings', data);
+                if (response.success) {
+                    toast.success('Settings saved successfully');
+                    settings = response.data;
+                    showAlert('Settings saved successfully', 'success');
+                } else {
+                    toast.error('Failed to save settings: ' + (response.error || 'Unknown error'));
+                    showAlert('Failed to save settings: ' + (response.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                toast.error('Error saving settings');
+                showAlert('Error saving settings', 'error');
+            } finally {
+                saveButton.disabled = false;
+                saveButton.textContent = 'Save Settings';
+            }
+        });
+
+        function showAlert(message, type) {
+            const container = document.getElementById('alert-container');
+            container.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Load settings on page load
+        await loadSettings();
+    })();
+</script>
+

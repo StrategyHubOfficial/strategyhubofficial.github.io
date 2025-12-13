@@ -6,7 +6,10 @@ title: Audit Logs
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Audit Logs</h1>
-        <button class="btn btn-secondary" onclick="exportLogs()">Export CSV</button>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="exportLogs()">Export CSV</button>
+            <button class="btn btn-primary" onclick="exportAllData()">Export All Data</button>
+        </div>
     </div>
 
     <div id="error" class="alert alert-danger" style="display: none;"></div>
@@ -191,6 +194,40 @@ function clearFilters() {
     currentFilters = {};
     currentPage = 0;
     loadLogs();
+}
+
+async function exportAllData() {
+    try {
+        const response = await fetch('https://dashboard.securesovereigns.workers.dev/api/admin/export', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Export failed');
+        }
+
+        const data = await response.json();
+        const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `strategyhub-export-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        if (typeof toast !== 'undefined') {
+            toast.success('Data export downloaded');
+        }
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        if (typeof toast !== 'undefined') {
+            toast.error('Failed to export data');
+        }
+    }
 }
 
 function exportLogs() {

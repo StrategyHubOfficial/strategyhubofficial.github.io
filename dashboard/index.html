@@ -208,11 +208,12 @@ title: StrategyHub Dashboard
                     
                     // Load stats
                     try {
-                        const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
+                        const [bookingsRes, eventsRes, projectsRes, equipmentRes, adminStatsRes] = await Promise.allSettled([
                             api.get('/api/studio/bookings'),
                             api.get('/api/events'),
                             api.get('/api/projects'),
-                            api.get('/api/equipment')
+                            api.get('/api/equipment'),
+                            api.get('/api/admin/stats').catch(() => ({ status: 'rejected' })) // Optional admin stats
                         ]);
 
                         const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []).filter(b => new Date(b.startTime) > new Date()).length : 0;
@@ -230,6 +231,55 @@ title: StrategyHub Dashboard
                         document.getElementById('stat-projects').textContent = projects;
                         document.getElementById('stat-equipment').textContent = equipment;
                         document.getElementById('stats-grid').style.display = 'grid';
+
+                        // Load enhanced admin stats if available
+                        if (adminStatsRes.status === 'fulfilled' && adminStatsRes.value.success && adminStatsRes.value.data) {
+                            const stats = adminStatsRes.value.data;
+                            
+                            // Add admin stats section if user is admin
+                            const isAdmin = auth.isAdmin();
+                            if (isAdmin) {
+                                const adminStatsHtml = `
+                                    <div class="card">
+                                        <h3 style="margin-bottom: 1rem;">Admin Statistics</h3>
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                                            <div>
+                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.projects.pending || 0}</div>
+                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Pending Projects</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.events.pending || 0}</div>
+                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Pending Events</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.members.newThisMonth || 0}</div>
+                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">New Members (Month)</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.sponsorships.active || 0}</div>
+                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Active Sponsorships</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.donations.donorCount || 0}</div>
+                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Donors</div>
+                                            </div>
+                                            <div>
+                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.activity.last24Hours || 0}</div>
+                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Activity (24h)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                                
+                                const statsGrid = document.getElementById('stats-grid');
+                                if (statsGrid && !document.getElementById('admin-stats')) {
+                                    const adminStatsDiv = document.createElement('div');
+                                    adminStatsDiv.id = 'admin-stats';
+                                    adminStatsDiv.innerHTML = adminStatsHtml;
+                                    statsGrid.parentElement.insertBefore(adminStatsDiv, statsGrid.nextSibling);
+                                }
+                            }
+                        }
                     } catch (err) {
                         console.error('Error loading stats:', err);
                     }

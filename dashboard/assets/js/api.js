@@ -218,6 +218,19 @@ class HubAPI {
     });
   }
 
+  async updateEvent(eventId, updates) {
+    return this.request(`/api/events/${eventId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
+    });
+  }
+
+  async deleteEvent(eventId) {
+    return this.request(`/api/events/${eventId}`, {
+      method: 'DELETE'
+    });
+  }
+
   async rsvpToEvent(eventId) {
     return this.request(`/api/events/${eventId}/rsvp`, {
       method: 'POST'
@@ -227,6 +240,39 @@ class HubAPI {
   async cancelRSVP(eventId) {
     return this.request(`/api/events/${eventId}/rsvp`, {
       method: 'DELETE'
+    });
+  }
+
+  async addEventGuest(eventId, guest) {
+    return this.request(`/api/events/${eventId}/guests`, {
+      method: 'POST',
+      body: JSON.stringify(guest)
+    });
+  }
+
+  async removeEventGuest(eventId, guestEmail) {
+    return this.request(`/api/events/${eventId}/guests/${encodeURIComponent(guestEmail)}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async addStudioGuest(bookingId, guest) {
+    return this.request(`/api/studio/bookings/${bookingId}/guests`, {
+      method: 'POST',
+      body: JSON.stringify(guest)
+    });
+  }
+
+  async removeStudioGuest(bookingId, guestEmail) {
+    return this.request(`/api/studio/bookings/${bookingId}/guests/${encodeURIComponent(guestEmail)}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async updateStudioBooking(bookingId, updates) {
+    return this.request(`/api/studio/bookings/${bookingId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates)
     });
   }
 
@@ -386,6 +432,24 @@ class HubAPI {
   // Supporters (includes sponsorships and guest donors)
   async getSupporters() {
     return this.get('/api/supporters');
+  }
+
+  // Create guest employee account (admin only)
+  async createGuestEmployee(data) {
+    return this.post('/api/members/guest-employee', data);
+  }
+
+  // Bulk operations
+  async bulkProjects(projectIds, action) {
+    return this.post('/api/projects/bulk', { projectIds, action });
+  }
+
+  async bulkEvents(eventIds, action) {
+    return this.post('/api/events/bulk', { eventIds, action });
+  }
+
+  async bulkUsers(userIds, action) {
+    return this.post('/api/users/bulk', { userIds, action });
   }
 }
 

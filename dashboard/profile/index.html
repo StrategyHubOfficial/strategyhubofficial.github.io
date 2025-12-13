@@ -193,7 +193,7 @@ title: My Profile
             <label>Social Links</label>
             <div class="socials-group">
                 <div>
-                    <label for="twitter" style="font-size: 0.9rem; margin-bottom: 0.25rem;">Twitter/X</label>
+                    <label for="twitter" style="font-size: 0.9rem; margin-bottom: 0.25rem;">X (Twitter)</label>
                     <input type="text" id="twitter" name="twitter" placeholder="@username">
                 </div>
                 <div>
@@ -276,6 +276,99 @@ title: My Profile
             <button type="button" class="btn" style="background: var(--bg-darker);" onclick="window.location.href='/dashboard/members'">Cancel</button>
         </div>
     </form>
+
+    <!-- User Preferences Section -->
+    <div class="profile-form" style="margin-top: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Preferences</h2>
+        
+        <form id="preferences-form">
+            <!-- Timezone & Locale -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="timezone">Timezone</label>
+                    <select id="timezone" name="timezone">
+                        <option value="">Loading...</option>
+                    </select>
+                    <div class="help-text">Your local timezone for displaying dates and times</div>
+                </div>
+                <div class="form-group">
+                    <label for="locale">Locale</label>
+                    <select id="locale" name="locale">
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                        <option value="es-ES">Español</option>
+                        <option value="fr-FR">Français</option>
+                        <option value="de-DE">Deutsch</option>
+                        <option value="pt-BR">Português (BR)</option>
+                        <option value="ja-JP">日本語</option>
+                        <option value="zh-CN">中文</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Date & Time Format -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="date-format">Date Format</label>
+                    <select id="date-format" name="dateFormat">
+                        <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                        <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                        <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="time-format">Time Format</label>
+                    <select id="time-format" name="timeFormat">
+                        <option value="12h">12-hour (AM/PM)</option>
+                        <option value="24h">24-hour</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Theme -->
+            <div class="form-group">
+                <label for="theme">Theme</label>
+                <select id="theme" name="theme">
+                    <option value="auto">Auto (System)</option>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+                <div class="help-text">UI theme preference (auto follows your system settings)</div>
+            </div>
+
+            <!-- Email Notifications -->
+            <div class="form-group">
+                <label>Email Notifications</label>
+                <div class="help-text" style="margin-bottom: 1rem;">Choose which email notifications you want to receive</div>
+                <div class="visibility-group">
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span>Event Notifications</span>
+                        <input type="checkbox" id="notify-events" name="notifyEvents" style="width: auto; cursor: pointer;">
+                    </label>
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span>Project Notifications</span>
+                        <input type="checkbox" id="notify-projects" name="notifyProjects" style="width: auto; cursor: pointer;">
+                    </label>
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span>Announcement Notifications</span>
+                        <input type="checkbox" id="notify-announcements" name="notifyAnnouncements" style="width: auto; cursor: pointer;">
+                    </label>
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <span>Sponsorship Notifications</span>
+                        <input type="checkbox" id="notify-sponsorships" name="notifySponsorships" style="width: auto; cursor: pointer;">
+                    </label>
+                    <label style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>Mention Notifications</span>
+                        <input type="checkbox" id="notify-mentions" name="notifyMentions" style="width: auto; cursor: pointer;">
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn">Save Preferences</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
@@ -501,9 +594,134 @@ title: My Profile
             }
         });
 
+        // Load and save preferences
+        let preferencesData = null;
+
+        async function loadPreferences() {
+            try {
+                const response = await api.get('/api/user/preferences');
+                if (response.success) {
+                    preferencesData = response.data;
+                    populatePreferencesForm(response.data);
+                } else {
+                    toast.error('Failed to load preferences');
+                }
+            } catch (error) {
+                console.error('Error loading preferences:', error);
+                toast.error('Error loading preferences');
+            }
+        }
+
+        function populatePreferencesForm(data) {
+            // Timezone - populate with common timezones
+            const timezoneSelect = document.getElementById('timezone');
+            const commonTimezones = [
+                { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
+                { value: 'America/New_York', label: 'America/New_York (Eastern Time)' },
+                { value: 'America/Chicago', label: 'America/Chicago (Central Time)' },
+                { value: 'America/Denver', label: 'America/Denver (Mountain Time)' },
+                { value: 'America/Los_Angeles', label: 'America/Los_Angeles (Pacific Time)' },
+                { value: 'America/Phoenix', label: 'America/Phoenix (Mountain Time - No DST)' },
+                { value: 'America/Anchorage', label: 'America/Anchorage (Alaska Time)' },
+                { value: 'Pacific/Honolulu', label: 'Pacific/Honolulu (Hawaii Time)' },
+                { value: 'Europe/London', label: 'Europe/London (GMT/BST)' },
+                { value: 'Europe/Paris', label: 'Europe/Paris (CET/CEST)' },
+                { value: 'Europe/Berlin', label: 'Europe/Berlin (CET/CEST)' },
+                { value: 'Europe/Rome', label: 'Europe/Rome (CET/CEST)' },
+                { value: 'Europe/Madrid', label: 'Europe/Madrid (CET/CEST)' },
+                { value: 'Europe/Amsterdam', label: 'Europe/Amsterdam (CET/CEST)' },
+                { value: 'Europe/Athens', label: 'Europe/Athens (EET/EEST)' },
+                { value: 'Europe/Moscow', label: 'Europe/Moscow (MSK)' },
+                { value: 'Asia/Dubai', label: 'Asia/Dubai (GST)' },
+                { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST)' },
+                { value: 'Asia/Shanghai', label: 'Asia/Shanghai (CST)' },
+                { value: 'Asia/Hong_Kong', label: 'Asia/Hong_Kong (HKT)' },
+                { value: 'Asia/Singapore', label: 'Asia/Singapore (SGT)' },
+                { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST)' },
+                { value: 'Australia/Sydney', label: 'Australia/Sydney (AEDT/AEST)' },
+                { value: 'Australia/Melbourne', label: 'Australia/Melbourne (AEDT/AEST)' },
+                { value: 'Pacific/Auckland', label: 'Pacific/Auckland (NZDT/NZST)' },
+            ];
+
+            // Try to detect user's timezone
+            const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const detectedOption = commonTimezones.find(tz => tz.value === detectedTimezone);
+            
+            timezoneSelect.innerHTML = '';
+            if (detectedOption) {
+                const option = document.createElement('option');
+                option.value = detectedOption.value;
+                option.textContent = `${detectedOption.label} (Detected)`;
+                option.selected = true;
+                timezoneSelect.appendChild(option);
+            }
+            
+            commonTimezones.forEach(tz => {
+                if (!detectedOption || tz.value !== detectedTimezone) {
+                    const option = document.createElement('option');
+                    option.value = tz.value;
+                    option.textContent = tz.label;
+                    timezoneSelect.appendChild(option);
+                }
+            });
+
+            // Set selected timezone from data
+            if (data.timezone) {
+                timezoneSelect.value = data.timezone;
+            }
+
+            document.getElementById('locale').value = data.locale || 'en-US';
+            document.getElementById('date-format').value = data.dateFormat || 'MM/DD/YYYY';
+            document.getElementById('time-format').value = data.timeFormat || '12h';
+            document.getElementById('theme').value = data.theme || 'auto';
+            
+            if (data.emailNotifications) {
+                document.getElementById('notify-events').checked = data.emailNotifications.events !== false;
+                document.getElementById('notify-projects').checked = data.emailNotifications.projects !== false;
+                document.getElementById('notify-announcements').checked = data.emailNotifications.announcements !== false;
+                document.getElementById('notify-sponsorships').checked = data.emailNotifications.sponsorships !== false;
+                document.getElementById('notify-mentions').checked = data.emailNotifications.mentions !== false;
+            }
+        }
+
+        // Preferences form submission
+        document.getElementById('preferences-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            try {
+                const preferences = {
+                    timezone: document.getElementById('timezone').value || 'UTC',
+                    locale: document.getElementById('locale').value,
+                    dateFormat: document.getElementById('date-format').value,
+                    timeFormat: document.getElementById('time-format').value,
+                    theme: document.getElementById('theme').value,
+                    emailNotifications: {
+                        events: document.getElementById('notify-events').checked,
+                        projects: document.getElementById('notify-projects').checked,
+                        announcements: document.getElementById('notify-announcements').checked,
+                        sponsorships: document.getElementById('notify-sponsorships').checked,
+                        mentions: document.getElementById('notify-mentions').checked,
+                    },
+                };
+
+                const response = await api.put('/api/user/preferences', preferences);
+                
+                if (response.success) {
+                    toast.success('Preferences saved successfully!');
+                    preferencesData = response.data;
+                } else {
+                    toast.error(response.error || 'Failed to save preferences');
+                }
+            } catch (error) {
+                console.error('Error saving preferences:', error);
+                toast.error('Error saving preferences');
+            }
+        });
+
         // Initialize
         await auth.requireAuth();
         await loadProfile();
+        await loadPreferences();
     })();
 </script>
 

@@ -100,7 +100,14 @@ title: User Management
 
 <div class="container">
     <div class="users-header">
-        <h1>User Management</h1>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <h1>User Management</h1>
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-secondary);">
+                <input type="checkbox" id="select-all-users" onchange="toggleSelectAllUsers()">
+                <span style="font-size: 0.9rem;">Select All</span>
+            </label>
+        </div>
+        <button class="btn" onclick="showCreateGuestEmployeeModal()" style="background: var(--bitcoin-orange);">+ Create Guest Employee</button>
     </div>
 
     <div id="loading" class="loading">
@@ -110,7 +117,53 @@ title: User Management
     <div id="error" class="error" style="display: none;"></div>
 
     <div id="users-content" style="display: none;">
+        <!-- Bulk Actions Toolbar -->
+        <div id="bulk-actions-toolbar" style="display: none; margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <span id="selected-users-count" style="color: var(--text-primary); font-weight: 600;"></span>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="bulkActivateUsers()">Activate Selected</button>
+                <button class="btn btn-small" style="background: #78350f; color: #fbbf24;" onclick="bulkDeactivateUsers()">Deactivate Selected</button>
+                <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="bulkDeleteUsers()">Delete Selected</button>
+                <button class="btn btn-secondary btn-small" onclick="clearUserSelection()">Clear Selection</button>
+            </div>
+        </div>
         <div id="users-list"></div>
+    </div>
+</div>
+
+<!-- Create Guest Employee Modal -->
+<div id="guest-employee-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 1000; align-items: center; justify-content: center;">
+    <div class="modal-content" style="max-width: 500px; background: var(--bg-darker); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>Create Guest Employee</h2>
+            <button onclick="closeGuestEmployeeModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+        </div>
+        <form id="guest-employee-form" onsubmit="createGuestEmployee(event); return false;">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">Name *</label>
+                <input type="text" id="guest-name" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary);">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">Email *</label>
+                <input type="email" id="guest-email" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary);">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">Company</label>
+                <input type="text" id="guest-company" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary);">
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">Bio</label>
+                <textarea id="guest-bio" rows="3" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary);"></textarea>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary);">Website</label>
+                <input type="url" id="guest-website" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary);">
+            </div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn" style="background: var(--bitcoin-orange); flex: 1;">Create</button>
+                <button type="button" onclick="closeGuestEmployeeModal()" class="btn" style="background: var(--bg-card); flex: 1;">Cancel</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -201,8 +254,10 @@ title: User Management
                 return `
                     <div class="user-card">
                         <div class="user-header">
-                            <div class="user-info">
-                                <div class="user-name">${user.name || 'Unnamed User'}</div>
+                            <div style="display: flex; align-items: start; gap: 0.75rem; flex: 1;">
+                                <input type="checkbox" class="user-checkbox" data-user-id="${user.id}" onchange="updateBulkActionsToolbar()" style="margin-top: 0.25rem; cursor: pointer;">
+                                <div class="user-info">
+                                    <div class="user-name">${user.name || 'Unnamed User'}</div>
                                 <div class="user-email">${user.email}</div>
                                 <div style="margin-top: 0.5rem;">
                                     <span class="user-status status ${statusClass}">${statusClass}</span>
@@ -362,6 +417,157 @@ title: User Management
         // Expose to global scope
         window.disableUser = disableUser;
         window.enableUser = enableUser;
+
+        // Guest Employee Modal Functions
+        function showCreateGuestEmployeeModal() {
+            document.getElementById('guest-employee-modal').style.display = 'flex';
+            document.getElementById('guest-employee-form').reset();
+        }
+
+        function closeGuestEmployeeModal() {
+            document.getElementById('guest-employee-modal').style.display = 'none';
+        }
+
+        async function createGuestEmployee(event) {
+            event.preventDefault();
+            try {
+                const data = {
+                    name: document.getElementById('guest-name').value.trim(),
+                    email: document.getElementById('guest-email').value.trim(),
+                    company: document.getElementById('guest-company').value.trim() || undefined,
+                    bio: document.getElementById('guest-bio').value.trim() || undefined,
+                    website: document.getElementById('guest-website').value.trim() || undefined,
+                };
+
+                const response = await api.createGuestEmployee(data);
+                if (response.success) {
+                    toast.success('Guest employee account created successfully');
+                    closeGuestEmployeeModal();
+                    await loadUsers(); // Reload users to show new guest employee
+                } else {
+                    toast.error(response.error || 'Failed to create guest employee');
+                }
+            } catch (error) {
+                console.error('Error creating guest employee:', error);
+                toast.error('Error creating guest employee');
+            }
+        }
+
+        // Bulk operations
+        function getSelectedUserIds() {
+            return Array.from(document.querySelectorAll('.user-checkbox:checked')).map(cb => cb.dataset.userId);
+        }
+
+        function updateBulkActionsToolbar() {
+            const selected = getSelectedUserIds();
+            const toolbar = document.getElementById('bulk-actions-toolbar');
+            const countSpan = document.getElementById('selected-users-count');
+            
+            if (selected.length > 0) {
+                toolbar.style.display = 'flex';
+                countSpan.textContent = `${selected.length} user${selected.length !== 1 ? 's' : ''} selected`;
+            } else {
+                toolbar.style.display = 'none';
+            }
+        }
+
+        function toggleSelectAllUsers() {
+            const selectAll = document.getElementById('select-all-users');
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateBulkActionsToolbar();
+        }
+
+        function clearUserSelection() {
+            document.getElementById('select-all-users').checked = false;
+            document.querySelectorAll('.user-checkbox').forEach(cb => cb.checked = false);
+            updateBulkActionsToolbar();
+        }
+
+        async function bulkActivateUsers() {
+            const selected = getSelectedUserIds();
+            if (selected.length === 0) {
+                toast.error('Please select at least one user');
+                return;
+            }
+
+            if (!confirm(`Activate ${selected.length} user${selected.length !== 1 ? 's' : ''}?`)) {
+                return;
+            }
+
+            try {
+                const response = await api.bulkUsers(selected, 'activate');
+                if (response.success) {
+                    toast.success(response.data.message || `Activated ${selected.length} user${selected.length !== 1 ? 's' : ''}`);
+                    clearUserSelection();
+                    await loadUsers();
+                } else {
+                    toast.error(response.error || 'Failed to activate users');
+                }
+            } catch (error) {
+                console.error('Error activating users:', error);
+                toast.error('Error activating users');
+            }
+        }
+
+        async function bulkDeactivateUsers() {
+            const selected = getSelectedUserIds();
+            if (selected.length === 0) {
+                toast.error('Please select at least one user');
+                return;
+            }
+
+            if (!confirm(`Deactivate ${selected.length} user${selected.length !== 1 ? 's' : ''}?`)) {
+                return;
+            }
+
+            try {
+                const response = await api.bulkUsers(selected, 'deactivate');
+                if (response.success) {
+                    toast.success(response.data.message || `Deactivated ${selected.length} user${selected.length !== 1 ? 's' : ''}`);
+                    clearUserSelection();
+                    await loadUsers();
+                } else {
+                    toast.error(response.error || 'Failed to deactivate users');
+                }
+            } catch (error) {
+                console.error('Error deactivating users:', error);
+                toast.error('Error deactivating users');
+            }
+        }
+
+        async function bulkDeleteUsers() {
+            const selected = getSelectedUserIds();
+            if (selected.length === 0) {
+                toast.error('Please select at least one user');
+                return;
+            }
+
+            if (!confirm(`⚠️ WARNING: This will permanently delete ${selected.length} user${selected.length !== 1 ? 's' : ''}. This action cannot be undone!\n\nAre you sure?`)) {
+                return;
+            }
+
+            try {
+                const response = await api.bulkUsers(selected, 'delete');
+                if (response.success) {
+                    toast.success(response.data.message || `Deleted ${selected.length} user${selected.length !== 1 ? 's' : ''}`);
+                    clearUserSelection();
+                    await loadUsers();
+                } else {
+                    toast.error(response.error || 'Failed to delete users');
+                }
+            } catch (error) {
+                console.error('Error deleting users:', error);
+                toast.error('Error deleting users');
+            }
+        }
+
+        window.updateBulkActionsToolbar = updateBulkActionsToolbar;
+        window.toggleSelectAllUsers = toggleSelectAllUsers;
+        window.clearUserSelection = clearUserSelection;
+        window.bulkActivateUsers = bulkActivateUsers;
+        window.bulkDeactivateUsers = bulkDeactivateUsers;
+        window.bulkDeleteUsers = bulkDeleteUsers;
 
         // Initialize
         await auth.requireAuth();

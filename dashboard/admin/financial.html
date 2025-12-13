@@ -1,0 +1,354 @@
+---
+layout: default
+title: Financial Dashboard
+---
+
+<style>
+    .financial-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+
+    .stat-label {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .stat-value.sats {
+        color: var(--bitcoin-orange);
+    }
+
+    .stat-subtext {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+    }
+
+    .section {
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .section h2 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
+    }
+
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .table th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+    }
+
+    .table td {
+        color: var(--text-primary);
+    }
+
+    .table tr:hover {
+        background: var(--bg-darker);
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .badge.completed {
+        background: rgba(45, 80, 22, 0.2);
+        color: #4ade80;
+    }
+
+    .badge.failed {
+        background: rgba(127, 29, 29, 0.2);
+        color: #f87171;
+    }
+
+    .badge.pending {
+        background: rgba(123, 53, 15, 0.2);
+        color: #fbbf24;
+    }
+
+    .filters {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .filter-group label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .filter-group input,
+    .filter-group select {
+        padding: 0.5rem;
+        background: var(--bg-darker);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+    }
+</style>
+
+<div class="financial-container">
+    <div class="page-header">
+        <h1>Financial Dashboard</h1>
+        <button class="btn" onclick="refreshData()">Refresh</button>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Donations</div>
+            <div class="stat-value sats" id="total-amount">-</div>
+            <div class="stat-subtext" id="total-count">- transactions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Forwarded</div>
+            <div class="stat-value sats" id="total-forwarded">-</div>
+            <div class="stat-subtext">To projects</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Hub Fees Collected</div>
+            <div class="stat-value sats" id="total-hub-fees">-</div>
+            <div class="stat-subtext">0.5% service fee</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">OpenNode Fees</div>
+            <div class="stat-value sats" id="total-opennode-fees">-</div>
+            <div class="stat-subtext">Processing fees</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Average Donation</div>
+            <div class="stat-value sats" id="avg-donation">-</div>
+            <div class="stat-subtext" id="status-breakdown">-</div>
+        </div>
+    </div>
+
+    <!-- Top Projects -->
+    <div class="section">
+        <h2>Top Projects by Donations</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Project</th>
+                    <th>Total Donations</th>
+                    <th>Transaction Count</th>
+                </tr>
+            </thead>
+            <tbody id="top-projects">
+                <tr><td colspan="3">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="section">
+        <h2>Recent Transactions</h2>
+        <div class="filters">
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="status-filter" onchange="loadTransactions()">
+                    <option value="">All</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Limit</label>
+                <select id="limit-filter" onchange="loadTransactions()">
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                </select>
+            </div>
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Project</th>
+                    <th>Donor</th>
+                    <th>Amount</th>
+                    <th>Hub Fee</th>
+                    <th>Forwarded</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="transactions">
+                <tr><td colspan="7">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    (async function() {
+        if (typeof auth === 'undefined' || typeof api === 'undefined' || typeof toast === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+
+        await auth.requireAuth();
+
+        // Check if user has permission
+        const user = auth.getCurrentUser();
+        if (!user || (user.role !== 'admin' && !user.roles?.includes('admin'))) {
+            window.location.href = '/dashboard/';
+            return;
+        }
+
+        async function formatSats(sats) {
+            if (!sats && sats !== 0) return '-';
+            return new Intl.NumberFormat('en-US').format(sats) + ' sats';
+        }
+
+        async function loadFinancialStats() {
+            try {
+                const response = await api.get('/api/admin/financial');
+                if (response.success) {
+                    const stats = response.data;
+                    
+                    document.getElementById('total-amount').textContent = await formatSats(stats.totalAmount);
+                    document.getElementById('total-count').textContent = `${stats.transactionCount} transactions`;
+                    document.getElementById('total-forwarded').textContent = await formatSats(stats.totalForwarded);
+                    document.getElementById('total-hub-fees').textContent = await formatSats(stats.totalHubFees);
+                    document.getElementById('total-opennode-fees').textContent = await formatSats(stats.totalOpenNodeFees);
+                    document.getElementById('avg-donation').textContent = await formatSats(stats.averageDonation);
+                    document.getElementById('status-breakdown').textContent = `${stats.completedCount} completed, ${stats.failedCount} failed, ${stats.pendingCount} pending`;
+
+                    // Top projects
+                    const topProjectsTbody = document.getElementById('top-projects');
+                    if (stats.topProjects && stats.topProjects.length > 0) {
+                        const rows = await Promise.all(stats.topProjects.map(async p => {
+                            const formattedAmount = await formatSats(p.totalAmount);
+                            return `<tr>
+                                <td>${p.projectName}</td>
+                                <td>${formattedAmount}</td>
+                                <td>${p.count}</td>
+                            </tr>`;
+                        }));
+                        topProjectsTbody.innerHTML = rows.join('');
+                    } else {
+                        topProjectsTbody.innerHTML = '<tr><td colspan="3">No donations yet</td></tr>';
+                    }
+                } else {
+                    toast.error('Failed to load financial stats');
+                }
+            } catch (error) {
+                console.error('Error loading financial stats:', error);
+                toast.error('Error loading financial stats');
+            }
+        }
+
+        async function loadTransactions() {
+            try {
+                const status = document.getElementById('status-filter').value;
+                const limit = parseInt(document.getElementById('limit-filter').value);
+                
+                const params = new URLSearchParams();
+                if (status) params.append('status', status);
+                params.append('limit', limit.toString());
+                
+                const response = await api.get(`/api/admin/donations?${params.toString()}`);
+                if (response.success) {
+                    const transactions = response.data.transactions || [];
+                    const tbody = document.getElementById('transactions');
+                    
+                    if (transactions.length > 0) {
+                        const rows = await Promise.all(transactions.map(async t => {
+                            const date = new Date(t.createdAt).toLocaleDateString();
+                            const statusClass = t.status === 'completed' ? 'completed' : t.status === 'failed' ? 'failed' : 'pending';
+                            const amount = await formatSats(t.amount);
+                            const hubFee = await formatSats(t.hubFee);
+                            const forwarded = await formatSats(t.forwardedAmount);
+                            return `<tr>
+                                <td>${date}</td>
+                                <td>${t.projectName}</td>
+                                <td>${t.donorName || 'Anonymous'}</td>
+                                <td>${amount}</td>
+                                <td>${hubFee}</td>
+                                <td>${forwarded}</td>
+                                <td><span class="badge ${statusClass}">${t.status}</span></td>
+                            </tr>`;
+                        }));
+                        tbody.innerHTML = rows.join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="7">No transactions found</td></tr>';
+                    }
+                } else {
+                    toast.error('Failed to load transactions');
+                }
+            } catch (error) {
+                console.error('Error loading transactions:', error);
+                toast.error('Error loading transactions');
+            }
+        }
+
+        window.refreshData = async function() {
+            await Promise.all([loadFinancialStats(), loadTransactions()]);
+            toast.success('Data refreshed');
+        };
+
+        // Initialize
+        await loadFinancialStats();
+        await loadTransactions();
+    })();
+</script>
+
