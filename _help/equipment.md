@@ -50,3 +50,4 @@ When booking studio time, default studio equipment is automatically included. Yo
 
 Return equipment on or before the return date. Contact an admin if you need to extend your checkout period.
 
+

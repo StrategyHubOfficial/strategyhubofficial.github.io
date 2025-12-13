@@ -66,3 +66,4 @@ Contact an admin through the dashboard or email support.
 
 Report issues through the dashboard or contact the development team.
 
+

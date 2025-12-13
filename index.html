@@ -466,6 +466,29 @@
             </div>
         </div>
     </div>
+
+    <!-- Location Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Visit Us</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; margin-top: 3rem; align-items: start;">
+                <div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--bitcoin-orange, #f7931a);">Location</h3>
+                    <p style="font-size: 1.1rem; line-height: 1.8; color: #cccccc;">
+                        StrategyHub<br>
+                        <span id="hub-address">[Address to be configured]</span>
+                    </p>
+                    <p style="margin-top: 1.5rem; color: #999;">
+                        We're located in a dedicated space for Bitcoin development and collaboration. 
+                        Visit us to use our studio, equipment, and collaborative workspace.
+                    </p>
+                </div>
+                <div style="border-radius: 12px; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);">
+                    <div id="map" style="width: 100%; height: 400px; background: #1a1a1a;"></div>
+                </div>
+            </div>
+        </div>
+    </section>
     
     <div class="section">
         <div class="container">
@@ -509,8 +532,34 @@
         </div>
     </div>
     
-    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script>
+        // Initialize map
+        (() => {
+            const map = L.map('map').setView([40.7128, -74.0060], 13); // Default to NYC, will be updated
+            
+            // Use OpenStreetMap tiles (free, no API key needed)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Add marker (will be updated with actual address)
+            const marker = L.marker([40.7128, -74.0060]).addTo(map)
+                .bindPopup('StrategyHub');
+            
+            // Load address and coordinates from config (if available)
+            if (window.HUB_CONFIG && window.HUB_CONFIG.address) {
+                document.getElementById('hub-address').textContent = window.HUB_CONFIG.address;
+            }
+            if (window.HUB_CONFIG && window.HUB_CONFIG.coordinates) {
+                const [lat, lng] = window.HUB_CONFIG.coordinates.split(',').map(Number);
+                map.setView([lat, lng], 15);
+                marker.setLatLng([lat, lng]);
+            }
+        })();
+
         // Load portfolio projects
         (async function() {
             try {

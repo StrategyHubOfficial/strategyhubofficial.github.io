@@ -31,3 +31,4 @@ Your dashboard provides quick access to:
 - [Create a Project](/dashboard/help/projects/)
 - [Browse Equipment](/dashboard/help/equipment/)
 
+
