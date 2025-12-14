@@ -441,7 +441,9 @@ title: Equipment
                 
                 if (response.success) {
                     toast.success('Equipment added successfully!');
-                    closeAddEquipmentModal();
+                    if (typeof window.closeAddEquipmentModal === 'function') {
+                        window.closeAddEquipmentModal();
+                    }
                     await loadEquipment();
                 } else {
                     toast.error('Failed to add equipment: ' + (response.error || 'Unknown error'));

@@ -902,38 +902,38 @@ title: My Profile
         const preferencesForm = document.getElementById('preferences-form');
         if (preferencesForm) {
             preferencesForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            try {
-                const preferences = {
-                    timezone: document.getElementById('timezone').value || 'UTC',
-                    locale: document.getElementById('locale').value,
-                    dateFormat: document.getElementById('date-format').value,
-                    timeFormat: document.getElementById('time-format').value,
-                    theme: document.getElementById('theme').value,
-                    emailNotifications: {
-                        events: document.getElementById('notify-events').checked,
-                        projects: document.getElementById('notify-projects').checked,
-                        announcements: document.getElementById('notify-announcements').checked,
-                        sponsorships: document.getElementById('notify-sponsorships').checked,
-                        mentions: document.getElementById('notify-mentions').checked,
-                    },
-                };
-
-                const response = await api.put('/api/user/preferences', preferences);
+                e.preventDefault();
                 
-                if (response.success) {
-                    toast.success('Preferences saved successfully!');
-                    preferencesData = response.data;
-                    applyTheme(preferences.theme);
-                } else {
-                    toast.error(response.error || 'Failed to save preferences');
+                try {
+                    const preferences = {
+                        timezone: document.getElementById('timezone').value || 'UTC',
+                        locale: document.getElementById('locale').value,
+                        dateFormat: document.getElementById('date-format').value,
+                        timeFormat: document.getElementById('time-format').value,
+                        theme: document.getElementById('theme').value,
+                        emailNotifications: {
+                            events: document.getElementById('notify-events').checked,
+                            projects: document.getElementById('notify-projects').checked,
+                            announcements: document.getElementById('notify-announcements').checked,
+                            sponsorships: document.getElementById('notify-sponsorships').checked,
+                            mentions: document.getElementById('notify-mentions').checked,
+                        },
+                    };
+
+                    const response = await api.put('/api/user/preferences', preferences);
+                    
+                    if (response.success) {
+                        toast.success('Preferences saved successfully!');
+                        preferencesData = response.data;
+                        applyTheme(preferences.theme);
+                    } else {
+                        toast.error(response.error || 'Failed to save preferences');
+                    }
+                } catch (error) {
+                    console.error('Error saving preferences:', error);
+                    toast.error('Error saving preferences');
                 }
-            } catch (error) {
-                console.error('Error saving preferences:', error);
-                toast.error('Error saving preferences');
-            }
-        });
+            });
         }
 
         // Load 2FA status
@@ -1008,6 +1008,7 @@ title: My Profile
         // Initialize
         await auth.requireAuth();
         await loadProfile();
+        // eslint-disable-next-line no-undef
         await loadPreferences();
         await load2FAStatus();
     })();
