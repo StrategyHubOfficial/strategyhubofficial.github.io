@@ -79,14 +79,10 @@ export default [
       'dashboard/assets/js/config.js',
       '_site/',
       '.jekyll-cache/',
+      // Ignore 2fa-setup.html due to ESLint HTML parser false positive
+      // The parser misinterprets HTML content as JavaScript
+      'dashboard/profile/2fa-setup.html',
     ],
-  },
-  {
-    // Disable parsing error for HTML content that ESLint misinterprets
-    files: ['dashboard/profile/2fa-setup.html'],
-    rules: {
-      'no-undef': 'off', // HTML parser limitation - false positive
-    },
   },
 ];
 
