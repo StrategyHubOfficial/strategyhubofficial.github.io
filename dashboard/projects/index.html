@@ -400,8 +400,12 @@ title: Projects
         }
 
         async function applyFilters() {
+            // Ensure searchQuery is defined
+            if (typeof searchQuery === 'undefined') {
+                searchQuery = '';
+            }
             // If search query exists, use search endpoint
-            if (searchQuery.trim()) {
+            if (searchQuery && searchQuery.trim()) {
                 try {
                     const response = await api.get(`/api/projects/search?q=${encodeURIComponent(searchQuery.trim())}`);
                     if (response.success) {
