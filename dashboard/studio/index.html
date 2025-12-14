@@ -59,6 +59,102 @@ title: Studio Booking
                 grid-template-columns: 1fr;
             }
         }
+        .studio-intro-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        @media (max-width: 768px) {
+            .studio-intro-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .studio-rules-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        .studio-rules-card h2 {
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+        .studio-rules-card ul {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+            color: var(--text-secondary);
+        }
+        .studio-rules-card li {
+            margin-bottom: 0.75rem;
+            line-height: 1.6;
+        }
+        .studio-booking-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+        .booking-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .booking-modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        .btn-close:hover {
+            background: var(--bg-darker);
+            color: var(--text-primary);
+        }
         .booking-card {
             background: #1a1a1a;
             border: 1px solid #333;
@@ -95,35 +191,66 @@ title: Studio Booking
 <div class="container">
         <h1>Studio Booking</h1>
         
-        <div class="booking-form">
-            <h2>Book Studio Time</h2>
-            <form id="booking-form">
-                <div class="form-group">
-                    <label>Start Time:</label>
-                    <input type="datetime-local" id="start-time" required>
+        <!-- Two-column intro section -->
+        <div class="studio-intro-grid">
+            <div class="studio-rules-card">
+                <h2>Studio Rules & Guidelines</h2>
+                <ul>
+                    <li>Bookings must be made at least 24 hours in advance</li>
+                    <li>Maximum booking duration is 8 hours per day</li>
+                    <li>Studio equipment is included by default (cameras, lighting, audio)</li>
+                    <li>Additional equipment can be requested during booking</li>
+                    <li>Technical assistance is available at 10,000 sats/hour</li>
+                    <li>Please cancel at least 4 hours before your booking if you cannot make it</li>
+                    <li>Clean up after your session and return all equipment to its place</li>
+                    <li>Respect other members' bookings and time slots</li>
+                </ul>
+            </div>
+            <div class="studio-booking-card">
+                <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Ready to Book?</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Click the button below to schedule your studio time</p>
+                <button class="btn" onclick="showBookingModal()" style="font-size: 1.1rem; padding: 1rem 2rem;">Book Studio Time</button>
+            </div>
+        </div>
+
+        <!-- Booking Modal -->
+        <div id="booking-modal" class="booking-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Book Studio Time</h2>
+                    <button class="btn-close" onclick="closeBookingModal()">&times;</button>
                 </div>
-                <div class="form-group">
-                    <label>End Time:</label>
-                    <input type="datetime-local" id="end-time" required>
-                </div>
-                <div class="form-group">
-                    <label>Equipment Needed (optional):</label>
-                    <select id="equipment" multiple>
-                        <option value="">Select equipment...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-group">
-                        <input type="checkbox" id="technical-assistance">
-                        <span>I need technical assistance (10,000 sats/hour)</span>
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label>Notes (optional):</label>
-                    <textarea id="notes" rows="3" placeholder="Any additional information..."></textarea>
-                </div>
-                <button type="submit" class="btn">Book Studio</button>
-            </form>
+                <form id="booking-form">
+                    <div class="form-group">
+                        <label>Start Time:</label>
+                        <input type="datetime-local" id="start-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End Time:</label>
+                        <input type="datetime-local" id="end-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Equipment Needed (optional):</label>
+                        <select id="equipment" multiple>
+                            <option value="">Select equipment...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-group">
+                            <input type="checkbox" id="technical-assistance">
+                            <span>I need technical assistance (10,000 sats/hour)</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes (optional):</label>
+                        <textarea id="notes" rows="3" placeholder="Any additional information..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                        <button type="submit" class="btn">Book Studio</button>
+                        <button type="button" class="btn-secondary" onclick="closeBookingModal()">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <div class="bookings-list">
