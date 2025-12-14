@@ -83,6 +83,46 @@ class HubAPI {
     return { success: true };
   }
 
+  // 2FA Methods
+  async setup2FA(userId) {
+    return this.request('/api/auth/2fa/setup', {
+      method: 'POST',
+      body: JSON.stringify({ userId })
+    });
+  }
+
+  async verify2FASetup(userId, code) {
+    return this.request('/api/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ userId, code })
+    });
+  }
+
+  async enable2FA(userId) {
+    return this.request('/api/auth/2fa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ userId })
+    });
+  }
+
+  async disable2FA(userId, password) {
+    return this.request('/api/auth/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ userId, password })
+    });
+  }
+
+  async verify2FALogin(userId, code, tempToken) {
+    return this.request('/api/auth/2fa/verify-login', {
+      method: 'POST',
+      body: JSON.stringify({ userId, code, tempToken })
+    });
+  }
+
+  async get2FAStatus() {
+    return this.request('/api/auth/2fa/status');
+  }
+
   // Studio
   async getStudioAvailability(start, end) {
     return this.request(`/api/studio/availability?start=${start}&end=${end}`);

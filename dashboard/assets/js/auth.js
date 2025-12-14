@@ -82,12 +82,22 @@ class AuthManager {
   }
 
   /**
-   * Login
+   * Login (handles 2FA flow)
    */
   async login(email, password) {
     try {
       const response = await this.api.login(email, password);
       if (response.success && response.data) {
+        // Check if 2FA is required
+        if (response.data.requires2FA) {
+          return {
+            success: true,
+            requires2FA: true,
+            tempToken: response.data.tempToken,
+            userId: response.data.userId
+          };
+        }
+        // Normal login (no 2FA)
         this.setToken(response.data.token);
         this.currentUser = response.data.user;
         return { success: true, user: response.data.user };
@@ -95,6 +105,23 @@ class AuthManager {
       return { success: false, error: response.error || 'Login failed' };
     } catch (error) {
       return { success: false, error: error.message || 'Login failed' };
+    }
+  }
+
+  /**
+   * Verify 2FA code during login
+   */
+  async verify2FALogin(userId, code, tempToken) {
+    try {
+      const response = await this.api.verify2FALogin(userId, code, tempToken);
+      if (response.success && response.data) {
+        this.setToken(response.data.token);
+        this.currentUser = response.data.user;
+        return { success: true, user: response.data.user };
+      }
+      return { success: false, error: response.error || 'Invalid verification code' };
+    } catch (error) {
+      return { success: false, error: error.message || 'Verification failed' };
     }
   }
 

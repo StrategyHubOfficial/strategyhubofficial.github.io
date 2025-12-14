@@ -277,6 +277,18 @@ title: My Profile
         </div>
     </form>
 
+    <!-- Two-Factor Authentication Section -->
+    <div class="profile-form" style="margin-top: 2rem;">
+        <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Two-Factor Authentication</h2>
+        <div id="2fa-status" style="margin-bottom: 1.5rem;">
+            <p style="color: var(--text-secondary);">Loading 2FA status...</p>
+        </div>
+        <div id="2fa-actions" style="display: none;">
+            <button id="enable-2fa-btn" class="btn" style="display: none;">Enable 2FA</button>
+            <button id="disable-2fa-btn" class="btn" style="background: var(--error-color, #e74c3c); display: none;">Disable 2FA</button>
+        </div>
+    </div>
+
     <!-- User Preferences Section -->
     <div class="profile-form" style="margin-top: 2rem;">
         <h2 style="margin-bottom: 1.5rem; color: var(--text-primary);">Preferences</h2>
@@ -333,7 +345,7 @@ title: My Profile
                     <option value="light">Light</option>
                     <option value="dark">Dark</option>
                 </select>
-                <div class="help-text">UI theme preference (auto follows your system settings)</div>
+                <div class="help-text">UI theme preference (auto follows your system settings). Changes apply immediately.</div>
             </div>
 
             <!-- Email Notifications -->
@@ -613,55 +625,129 @@ title: My Profile
         }
 
         function populatePreferencesForm(data) {
-            // Timezone - populate with common timezones
+            // Timezone - populate with comprehensive IANA timezones
             const timezoneSelect = document.getElementById('timezone');
-            const commonTimezones = [
-                { value: 'UTC', label: 'UTC (Coordinated Universal Time)' },
-                { value: 'America/New_York', label: 'America/New_York (Eastern Time)' },
-                { value: 'America/Chicago', label: 'America/Chicago (Central Time)' },
-                { value: 'America/Denver', label: 'America/Denver (Mountain Time)' },
-                { value: 'America/Los_Angeles', label: 'America/Los_Angeles (Pacific Time)' },
-                { value: 'America/Phoenix', label: 'America/Phoenix (Mountain Time - No DST)' },
-                { value: 'America/Anchorage', label: 'America/Anchorage (Alaska Time)' },
-                { value: 'Pacific/Honolulu', label: 'Pacific/Honolulu (Hawaii Time)' },
-                { value: 'Europe/London', label: 'Europe/London (GMT/BST)' },
-                { value: 'Europe/Paris', label: 'Europe/Paris (CET/CEST)' },
-                { value: 'Europe/Berlin', label: 'Europe/Berlin (CET/CEST)' },
-                { value: 'Europe/Rome', label: 'Europe/Rome (CET/CEST)' },
-                { value: 'Europe/Madrid', label: 'Europe/Madrid (CET/CEST)' },
-                { value: 'Europe/Amsterdam', label: 'Europe/Amsterdam (CET/CEST)' },
-                { value: 'Europe/Athens', label: 'Europe/Athens (EET/EEST)' },
-                { value: 'Europe/Moscow', label: 'Europe/Moscow (MSK)' },
-                { value: 'Asia/Dubai', label: 'Asia/Dubai (GST)' },
-                { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST)' },
-                { value: 'Asia/Shanghai', label: 'Asia/Shanghai (CST)' },
-                { value: 'Asia/Hong_Kong', label: 'Asia/Hong_Kong (HKT)' },
-                { value: 'Asia/Singapore', label: 'Asia/Singapore (SGT)' },
-                { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST)' },
-                { value: 'Australia/Sydney', label: 'Australia/Sydney (AEDT/AEST)' },
-                { value: 'Australia/Melbourne', label: 'Australia/Melbourne (AEDT/AEST)' },
-                { value: 'Pacific/Auckland', label: 'Pacific/Auckland (NZDT/NZST)' },
+            
+            // Comprehensive IANA timezone list organized by region
+            const timezones = [
+                // UTC
+                { value: 'UTC', label: 'UTC (Coordinated Universal Time)', group: 'UTC' },
+                
+                // Americas
+                { value: 'America/New_York', label: 'America/New_York (Eastern Time)', group: 'Americas' },
+                { value: 'America/Chicago', label: 'America/Chicago (Central Time)', group: 'Americas' },
+                { value: 'America/Denver', label: 'America/Denver (Mountain Time)', group: 'Americas' },
+                { value: 'America/Los_Angeles', label: 'America/Los_Angeles (Pacific Time)', group: 'Americas' },
+                { value: 'America/Phoenix', label: 'America/Phoenix (Mountain Time - No DST)', group: 'Americas' },
+                { value: 'America/Anchorage', label: 'America/Anchorage (Alaska Time)', group: 'Americas' },
+                { value: 'America/Toronto', label: 'America/Toronto (Eastern Time)', group: 'Americas' },
+                { value: 'America/Vancouver', label: 'America/Vancouver (Pacific Time)', group: 'Americas' },
+                { value: 'America/Mexico_City', label: 'America/Mexico_City (Central Time)', group: 'Americas' },
+                { value: 'America/Sao_Paulo', label: 'America/Sao_Paulo (Brasilia Time)', group: 'Americas' },
+                { value: 'America/Buenos_Aires', label: 'America/Buenos_Aires (Argentina Time)', group: 'Americas' },
+                { value: 'America/Lima', label: 'America/Lima (Peru Time)', group: 'Americas' },
+                { value: 'America/Bogota', label: 'America/Bogota (Colombia Time)', group: 'Americas' },
+                { value: 'America/Santiago', label: 'America/Santiago (Chile Time)', group: 'Americas' },
+                { value: 'America/Caracas', label: 'America/Caracas (Venezuela Time)', group: 'Americas' },
+                { value: 'America/Montevideo', label: 'America/Montevideo (Uruguay Time)', group: 'Americas' },
+                
+                // Europe
+                { value: 'Europe/London', label: 'Europe/London (GMT/BST)', group: 'Europe' },
+                { value: 'Europe/Paris', label: 'Europe/Paris (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Berlin', label: 'Europe/Berlin (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Rome', label: 'Europe/Rome (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Madrid', label: 'Europe/Madrid (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Amsterdam', label: 'Europe/Amsterdam (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Brussels', label: 'Europe/Brussels (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Vienna', label: 'Europe/Vienna (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Zurich', label: 'Europe/Zurich (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Stockholm', label: 'Europe/Stockholm (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Oslo', label: 'Europe/Oslo (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Copenhagen', label: 'Europe/Copenhagen (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Helsinki', label: 'Europe/Helsinki (EET/EEST)', group: 'Europe' },
+                { value: 'Europe/Warsaw', label: 'Europe/Warsaw (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Prague', label: 'Europe/Prague (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Budapest', label: 'Europe/Budapest (CET/CEST)', group: 'Europe' },
+                { value: 'Europe/Athens', label: 'Europe/Athens (EET/EEST)', group: 'Europe' },
+                { value: 'Europe/Istanbul', label: 'Europe/Istanbul (TRT)', group: 'Europe' },
+                { value: 'Europe/Moscow', label: 'Europe/Moscow (MSK)', group: 'Europe' },
+                { value: 'Europe/Kiev', label: 'Europe/Kiev (EET/EEST)', group: 'Europe' },
+                { value: 'Europe/Dublin', label: 'Europe/Dublin (GMT/IST)', group: 'Europe' },
+                { value: 'Europe/Lisbon', label: 'Europe/Lisbon (WET/WEST)', group: 'Europe' },
+                
+                // Asia
+                { value: 'Asia/Dubai', label: 'Asia/Dubai (GST)', group: 'Asia' },
+                { value: 'Asia/Tokyo', label: 'Asia/Tokyo (JST)', group: 'Asia' },
+                { value: 'Asia/Shanghai', label: 'Asia/Shanghai (CST)', group: 'Asia' },
+                { value: 'Asia/Hong_Kong', label: 'Asia/Hong_Kong (HKT)', group: 'Asia' },
+                { value: 'Asia/Singapore', label: 'Asia/Singapore (SGT)', group: 'Asia' },
+                { value: 'Asia/Kolkata', label: 'Asia/Kolkata (IST)', group: 'Asia' },
+                { value: 'Asia/Bangkok', label: 'Asia/Bangkok (ICT)', group: 'Asia' },
+                { value: 'Asia/Jakarta', label: 'Asia/Jakarta (WIB)', group: 'Asia' },
+                { value: 'Asia/Manila', label: 'Asia/Manila (PHT)', group: 'Asia' },
+                { value: 'Asia/Seoul', label: 'Asia/Seoul (KST)', group: 'Asia' },
+                { value: 'Asia/Taipei', label: 'Asia/Taipei (CST)', group: 'Asia' },
+                { value: 'Asia/Kuala_Lumpur', label: 'Asia/Kuala_Lumpur (MYT)', group: 'Asia' },
+                { value: 'Asia/Dhaka', label: 'Asia/Dhaka (BST)', group: 'Asia' },
+                { value: 'Asia/Karachi', label: 'Asia/Karachi (PKT)', group: 'Asia' },
+                { value: 'Asia/Tehran', label: 'Asia/Tehran (IRST)', group: 'Asia' },
+                { value: 'Asia/Riyadh', label: 'Asia/Riyadh (AST)', group: 'Asia' },
+                { value: 'Asia/Jerusalem', label: 'Asia/Jerusalem (IST/IDT)', group: 'Asia' },
+                { value: 'Asia/Baghdad', label: 'Asia/Baghdad (AST)', group: 'Asia' },
+                
+                // Australia & Pacific
+                { value: 'Australia/Sydney', label: 'Australia/Sydney (AEDT/AEST)', group: 'Australia & Pacific' },
+                { value: 'Australia/Melbourne', label: 'Australia/Melbourne (AEDT/AEST)', group: 'Australia & Pacific' },
+                { value: 'Australia/Brisbane', label: 'Australia/Brisbane (AEST)', group: 'Australia & Pacific' },
+                { value: 'Australia/Perth', label: 'Australia/Perth (AWST)', group: 'Australia & Pacific' },
+                { value: 'Australia/Adelaide', label: 'Australia/Adelaide (ACDT/ACST)', group: 'Australia & Pacific' },
+                { value: 'Australia/Darwin', label: 'Australia/Darwin (ACST)', group: 'Australia & Pacific' },
+                { value: 'Pacific/Auckland', label: 'Pacific/Auckland (NZDT/NZST)', group: 'Australia & Pacific' },
+                { value: 'Pacific/Honolulu', label: 'Pacific/Honolulu (HST)', group: 'Australia & Pacific' },
+                { value: 'Pacific/Fiji', label: 'Pacific/Fiji (FJT)', group: 'Australia & Pacific' },
             ];
 
             // Try to detect user's timezone
             const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            const detectedOption = commonTimezones.find(tz => tz.value === detectedTimezone);
+            const detectedOption = timezones.find(tz => tz.value === detectedTimezone);
+            
+            // Group timezones
+            const grouped = {};
+            timezones.forEach(tz => {
+                if (!grouped[tz.group]) {
+                    grouped[tz.group] = [];
+                }
+                grouped[tz.group].push(tz);
+            });
             
             timezoneSelect.innerHTML = '';
+            
+            // Add detected timezone first if found
             if (detectedOption) {
                 const option = document.createElement('option');
                 option.value = detectedOption.value;
                 option.textContent = `${detectedOption.label} (Detected)`;
-                option.selected = true;
+                option.selected = !data.timezone || data.timezone === detectedOption.value;
                 timezoneSelect.appendChild(option);
             }
             
-            commonTimezones.forEach(tz => {
-                if (!detectedOption || tz.value !== detectedTimezone) {
-                    const option = document.createElement('option');
-                    option.value = tz.value;
-                    option.textContent = tz.label;
-                    timezoneSelect.appendChild(option);
+            // Add grouped timezones
+            Object.keys(grouped).sort().forEach(group => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = group;
+                grouped[group].forEach(tz => {
+                    if (!detectedOption || tz.value !== detectedTimezone) {
+                        const option = document.createElement('option');
+                        option.value = tz.value;
+                        option.textContent = tz.label;
+                        if (data.timezone && data.timezone === tz.value) {
+                            option.selected = true;
+                        }
+                        optgroup.appendChild(option);
+                    }
+                });
+                if (optgroup.children.length > 0) {
+                    timezoneSelect.appendChild(optgroup);
                 }
             });
 
@@ -673,7 +759,9 @@ title: My Profile
             document.getElementById('locale').value = data.locale || 'en-US';
             document.getElementById('date-format').value = data.dateFormat || 'MM/DD/YYYY';
             document.getElementById('time-format').value = data.timeFormat || '12h';
-            document.getElementById('theme').value = data.theme || 'auto';
+            const themeValue = data.theme || 'auto';
+            document.getElementById('theme').value = themeValue;
+            applyTheme(themeValue);
             
             if (data.emailNotifications) {
                 document.getElementById('notify-events').checked = data.emailNotifications.events !== false;
@@ -683,6 +771,42 @@ title: My Profile
                 document.getElementById('notify-mentions').checked = data.emailNotifications.mentions !== false;
             }
         }
+
+        // Apply theme immediately
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            if (theme === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            } else {
+                root.setAttribute('data-theme', theme);
+            }
+            localStorage.setItem('hub_theme', theme);
+        }
+
+        // Live theme switcher
+        document.getElementById('theme').addEventListener('change', function(e) {
+            const theme = e.target.value;
+            applyTheme(theme);
+            
+            // Save to backend (async, don't wait)
+            if (preferencesData) {
+                const preferences = {
+                    ...preferencesData,
+                    theme: theme
+                };
+                api.put('/api/user/preferences', preferences).catch(err => {
+                    console.error('Error saving theme:', err);
+                });
+            }
+        });
+
+        // Listen for system theme changes when auto is selected
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (document.getElementById('theme').value === 'auto') {
+                applyTheme('auto');
+            }
+        });
 
         // Preferences form submission
         document.getElementById('preferences-form').addEventListener('submit', async (e) => {
@@ -709,6 +833,7 @@ title: My Profile
                 if (response.success) {
                     toast.success('Preferences saved successfully!');
                     preferencesData = response.data;
+                    applyTheme(preferences.theme);
                 } else {
                     toast.error(response.error || 'Failed to save preferences');
                 }
@@ -718,10 +843,80 @@ title: My Profile
             }
         });
 
+        // Load 2FA status
+        async function load2FAStatus() {
+            try {
+                const response = await api.get2FAStatus();
+                if (response.success) {
+                    const statusDiv = document.getElementById('2fa-status');
+                    const actionsDiv = document.getElementById('2fa-actions');
+                    const enableBtn = document.getElementById('enable-2fa-btn');
+                    const disableBtn = document.getElementById('disable-2fa-btn');
+                    
+                    if (response.data.enabled) {
+                        statusDiv.innerHTML = `
+                            <p style="color: var(--success-color, #00b894); display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="font-size: 1.2rem;">✓</span>
+                                <strong>Two-Factor Authentication is enabled</strong>
+                            </p>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
+                                ${response.data.hasBackupCodes ? 'You have backup codes available.' : 'No backup codes available.'}
+                            </p>
+                        `;
+                        enableBtn.style.display = 'none';
+                        disableBtn.style.display = 'inline-block';
+                        actionsDiv.style.display = 'block';
+                    } else {
+                        statusDiv.innerHTML = `
+                            <p style="color: var(--text-secondary);">
+                                Two-Factor Authentication is <strong>disabled</strong>. Enable it for enhanced security.
+                            </p>
+                        `;
+                        enableBtn.style.display = 'inline-block';
+                        disableBtn.style.display = 'none';
+                        actionsDiv.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading 2FA status:', error);
+            }
+        }
+
+        // Enable 2FA button
+        document.getElementById('enable-2fa-btn')?.addEventListener('click', () => {
+            window.location.href = '/dashboard/profile/2fa-setup.html';
+        });
+
+        // Disable 2FA button
+        document.getElementById('disable-2fa-btn')?.addEventListener('click', async () => {
+            const password = prompt('Enter your password to disable 2FA:');
+            if (!password) return;
+
+            try {
+                const user = auth.getCurrentUser();
+                if (!user) {
+                    toast.error('User not found');
+                    return;
+                }
+
+                const response = await api.disable2FA(user.id, password);
+                if (response.success) {
+                    toast.success('2FA disabled successfully');
+                    await load2FAStatus();
+                } else {
+                    toast.error(response.error || 'Failed to disable 2FA');
+                }
+            } catch (error) {
+                console.error('Error disabling 2FA:', error);
+                toast.error('Error disabling 2FA');
+            }
+        });
+
         // Initialize
         await auth.requireAuth();
         await loadProfile();
         await loadPreferences();
+        await load2FAStatus();
     })();
 </script>
 

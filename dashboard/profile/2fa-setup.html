@@ -1,0 +1,418 @@
+---
+layout: default
+title: Setup Two-Factor Authentication
+---
+
+<style>
+.profile-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.profile-form {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.875rem;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+    text-align: center;
+    letter-spacing: 0.5rem;
+    font-size: 1.5rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--bitcoin-orange);
+    box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+}
+
+.qr-code-container {
+    text-align: center;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--bg-darker);
+    border-radius: 8px;
+}
+
+.qr-code-container img {
+    max-width: 256px;
+    height: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    background: white;
+}
+
+.backup-codes {
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.backup-codes h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+}
+
+.backup-codes-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.backup-code {
+    font-family: monospace;
+    padding: 0.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.help-text {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.step {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.step:last-child {
+    border-bottom: none;
+}
+
+.step-number {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    line-height: 2rem;
+    text-align: center;
+    background: var(--bitcoin-orange);
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    margin-right: 0.5rem;
+}
+
+.btn {
+    padding: 0.875rem 1.5rem;
+    background: var(--bitcoin-orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: var(--bg-darker);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+</style>
+
+<div class="profile-container">
+    <div style="margin-bottom: 2rem;">
+        <a href="/dashboard/profile/" style="color: var(--bitcoin-orange); text-decoration: none;">← Back to Profile</a>
+    </div>
+
+    <div class="profile-form">
+        <h1 style="margin-bottom: 0.5rem; color: var(--text-primary);">Setup Two-Factor Authentication</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Add an extra layer of security to your account</p>
+
+        <!-- Step 1: Generate Secret and Show QR Code -->
+        <div class="step" id="step1">
+            <h2 style="color: var(--text-primary); margin-bottom: 1rem;">
+                <span class="step-number">1</span>
+                Scan QR Code
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Scan this QR code with your authenticator app (Google Authenticator, Authy, 1Password, etc.)
+            </p>
+            <div id="qr-loading" style="text-align: center; padding: 2rem;">
+                <p style="color: var(--text-secondary);">Loading QR code...</p>
+            </div>
+            <div id="qr-code-container" class="qr-code-container" style="display: none;">
+                <img id="qr-code-image" src="" alt="QR Code">
+                <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.9rem;">
+                    Can't scan? Enter this code manually: <strong id="manual-secret" style="font-family: monospace; color: var(--text-primary);"></strong>
+                </p>
+            </div>
+        </div>
+
+        <!-- Step 2: Verify Code -->
+        <div class="step" id="step2" style="display: none;">
+            <h2 style="color: var(--text-primary); margin-bottom: 1rem;">
+                <span class="step-number">2</span>
+                Verify Code
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Enter the 6-digit code from your authenticator app to verify setup
+            </p>
+            <div class="form-group">
+                <label for="verify-code">Verification Code</label>
+                <input 
+                    type="text" 
+                    id="verify-code" 
+                    name="verify-code" 
+                    placeholder="000000" 
+                    maxlength="6"
+                    pattern="[0-9]{6}"
+                    autocomplete="one-time-code"
+                >
+                <div class="help-text">Enter the 6-digit code from your authenticator app</div>
+            </div>
+            <button id="verify-btn" class="btn">Verify Code</button>
+        </div>
+
+        <!-- Step 3: Backup Codes -->
+        <div class="step" id="step3" style="display: none;">
+            <h2 style="color: var(--text-primary); margin-bottom: 1rem;">
+                <span class="step-number">3</span>
+                Save Backup Codes
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                Save these backup codes in a safe place. You can use them to access your account if you lose your authenticator device.
+            </p>
+            <div class="backup-codes">
+                <h3 style="color: var(--text-primary);">Your Backup Codes</h3>
+                <div id="backup-codes-list" class="backup-codes-list"></div>
+                <button id="download-codes-btn" class="btn btn-secondary" style="margin-top: 1rem;">Download Codes</button>
+                <button id="copy-codes-btn" class="btn btn-secondary" style="margin-top: 0.5rem;">Copy Codes</button>
+            </div>
+            <div style="margin-top: 1.5rem;">
+                <button id="enable-btn" class="btn">Enable 2FA</button>
+                <button id="cancel-btn" class="btn btn-secondary" style="margin-left: 0.5rem;">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="success-message" style="display: none; padding: 1.5rem; background: rgba(0, 184, 148, 0.1); border: 1px solid rgba(0, 184, 148, 0.3); border-radius: 8px; margin-top: 2rem;">
+            <p style="color: #00b894; margin: 0;">
+                <strong>✓ Two-Factor Authentication enabled successfully!</strong>
+            </p>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 0;">
+                Redirecting to your profile...
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    (async function() {
+        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
+            setTimeout(arguments.callee, 50);
+            return;
+        }
+
+        await auth.requireAuth();
+        const user = auth.getCurrentUser();
+        if (!user) {
+            window.location.href = '/dashboard/profile/';
+            return;
+        }
+
+        let secret = null;
+        let backupCodes = null;
+
+        // Load QR code library (using a CDN)
+        function loadQRCodeLibrary() {
+            return new Promise((resolve, reject) => {
+                if (window.QRCode) {
+                    resolve();
+                    return;
+                }
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        // Step 1: Setup 2FA and show QR code
+        async function setup2FA() {
+            try {
+                const response = await api.setup2FA(user.id);
+                if (response.success) {
+                    secret = response.data.secret;
+                    const qrCodeUri = response.data.qrCodeUri;
+                    
+                    // Show manual secret
+                    document.getElementById('manual-secret').textContent = secret;
+                    
+                    // Generate QR code image
+                    await loadQRCodeLibrary();
+                    const qrCodeImage = document.getElementById('qr-code-image');
+                    QRCode.toDataURL(qrCodeUri, { width: 256, margin: 2 }, (err, url) => {
+                        if (err) {
+                            console.error('QR code generation error:', err);
+                            toast.error('Failed to generate QR code');
+                            return;
+                        }
+                        qrCodeImage.src = url;
+                        document.getElementById('qr-loading').style.display = 'none';
+                        document.getElementById('qr-code-container').style.display = 'block';
+                        document.getElementById('step2').style.display = 'block';
+                    });
+                } else {
+                    toast.error(response.error || 'Failed to setup 2FA');
+                }
+            } catch (error) {
+                console.error('Error setting up 2FA:', error);
+                toast.error('Error setting up 2FA');
+            }
+        }
+
+        // Step 2: Verify code
+        document.getElementById('verify-btn').addEventListener('click', async () => {
+            const code = document.getElementById('verify-code').value.replace(/\s/g, '');
+            if (!code || code.length !== 6) {
+                toast.error('Please enter a valid 6-digit code');
+                return;
+            }
+
+            const verifyBtn = document.getElementById('verify-btn');
+            verifyBtn.disabled = true;
+            verifyBtn.textContent = 'Verifying...';
+
+            try {
+                const response = await api.verify2FASetup(user.id, code);
+                if (response.success) {
+                    backupCodes = response.data.backupCodes;
+                    
+                    // Show backup codes
+                    const codesList = document.getElementById('backup-codes-list');
+                    codesList.innerHTML = '';
+                    backupCodes.forEach(code => {
+                        const codeDiv = document.createElement('div');
+                        codeDiv.className = 'backup-code';
+                        codeDiv.textContent = code;
+                        codesList.appendChild(codeDiv);
+                    });
+                    
+                    document.getElementById('step2').style.display = 'none';
+                    document.getElementById('step3').style.display = 'block';
+                } else {
+                    toast.error(response.error || 'Invalid verification code');
+                    document.getElementById('verify-code').value = '';
+                    document.getElementById('verify-code').focus();
+                }
+            } catch (error) {
+                console.error('Error verifying code:', error);
+                toast.error('Error verifying code');
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify Code';
+            }
+        });
+
+        // Auto-format verification code input
+        document.getElementById('verify-code').addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+        });
+
+        // Download backup codes
+        document.getElementById('download-codes-btn').addEventListener('click', () => {
+            const codesText = backupCodes.join('\n');
+            const blob = new Blob([`StrategyHub Backup Codes\nGenerated: ${new Date().toLocaleString()}\n\n${codesText}\n\nKeep these codes in a safe place.`], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'strategyhub-backup-codes.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Copy backup codes
+        document.getElementById('copy-codes-btn').addEventListener('click', async () => {
+            const codesText = backupCodes.join('\n');
+            try {
+                await navigator.clipboard.writeText(codesText);
+                toast.success('Backup codes copied to clipboard');
+            } catch (error) {
+                toast.error('Failed to copy codes');
+            }
+        });
+
+        // Enable 2FA
+        document.getElementById('enable-btn').addEventListener('click', async () => {
+            const enableBtn = document.getElementById('enable-btn');
+            enableBtn.disabled = true;
+            enableBtn.textContent = 'Enabling...';
+
+            try {
+                const response = await api.enable2FA(user.id);
+                if (response.success) {
+                    document.getElementById('success-message').style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = '/dashboard/profile/';
+                    }, 2000);
+                } else {
+                    toast.error(response.error || 'Failed to enable 2FA');
+                    enableBtn.disabled = false;
+                    enableBtn.textContent = 'Enable 2FA';
+                }
+            } catch (error) {
+                console.error('Error enabling 2FA:', error);
+                toast.error('Error enabling 2FA');
+                enableBtn.disabled = false;
+                enableBtn.textContent = 'Enable 2FA';
+            }
+        });
+
+        // Cancel button
+        document.getElementById('cancel-btn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to cancel? Your 2FA setup will be lost.')) {
+                window.location.href = '/dashboard/profile/';
+            }
+        });
+
+        // Initialize
+        await setup2FA();
+    })();
+</script>
+

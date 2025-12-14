@@ -161,6 +161,24 @@
                         autocomplete="current-password"
                     >
                 </div>
+
+                <!-- 2FA Code Input (hidden by default) -->
+                <div class="form-group" id="2fa-group" style="display: none;">
+                    <label for="2fa-code">Two-Factor Authentication Code</label>
+                    <input 
+                        type="text" 
+                        id="2fa-code" 
+                        name="2fa-code" 
+                        placeholder="000000" 
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        autocomplete="one-time-code"
+                        style="text-align: center; font-size: 1.5rem; letter-spacing: 0.5rem;"
+                    >
+                    <div class="help-text" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                        Enter the 6-digit code from your authenticator app
+                    </div>
+                </div>
                 
                 <button type="submit" class="btn-login" id="login-btn">
                     Sign In
@@ -217,6 +235,10 @@
         })();
 
         // Handle login form
+        let tempToken = null;
+        let userId = null;
+        let requires2FA = false;
+
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -224,6 +246,10 @@
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('login-btn');
             const errorDiv = document.getElementById('error-message');
+            const twoFAGroup = document.getElementById('2fa-group');
+            const twoFACodeInput = document.getElementById('2fa-code');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
             
             // Clear previous errors
             errorDiv.classList.remove('show');
@@ -231,22 +257,71 @@
             
             // Disable button
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Signing in...';
             
             try {
+                // If 2FA is required, verify the code
+                if (requires2FA) {
+                    const code = twoFACodeInput.value.replace(/\s/g, '');
+                    if (!code || code.length !== 6) {
+                        errorDiv.textContent = 'Please enter a valid 6-digit code';
+                        errorDiv.classList.add('show');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Verify Code';
+                        return;
+                    }
+
+                    loginBtn.textContent = 'Verifying...';
+                    const result = await auth.verify2FALogin(userId, code, tempToken);
+                    
+                    if (result.success) {
+                        setTimeout(() => {
+                            window.location.href = '/dashboard/';
+                        }, 100);
+                    } else {
+                        const errorMsg = result.error || 'Invalid verification code';
+                        errorDiv.textContent = errorMsg;
+                        errorDiv.classList.add('show');
+                        twoFACodeInput.value = '';
+                        twoFACodeInput.focus();
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Verify Code';
+                    }
+                    return;
+                }
+
+                // Initial login (password verification)
+                loginBtn.textContent = 'Signing in...';
                 const result = await auth.login(email, password);
                 
                 if (result.success) {
-                    // Don't show toast here - just redirect (toast might be shown elsewhere)
-                    setTimeout(() => {
-                        window.location.href = '/dashboard/';
-                    }, 100);
+                    // Check if 2FA is required
+                    if (result.requires2FA) {
+                        requires2FA = true;
+                        tempToken = result.tempToken;
+                        userId = result.userId;
+                        
+                        // Hide email/password, show 2FA input
+                        emailInput.disabled = true;
+                        passwordInput.disabled = true;
+                        twoFAGroup.style.display = 'block';
+                        twoFACodeInput.focus();
+                        loginBtn.textContent = 'Verify Code';
+                        loginBtn.disabled = false;
+                        
+                        // Update form title
+                        document.querySelector('h1').textContent = 'Two-Factor Authentication';
+                        document.querySelector('.subtitle').textContent = 'Enter the code from your authenticator app';
+                    } else {
+                        // Normal login (no 2FA)
+                        setTimeout(() => {
+                            window.location.href = '/dashboard/';
+                        }, 100);
+                    }
                 } else {
                     // Show error
                     const errorMsg = result.error || 'Login failed. Please check your credentials.';
                     errorDiv.textContent = errorMsg;
                     errorDiv.classList.add('show');
-                    // Only show toast if it's not already shown in the error div
                     if (typeof toast !== 'undefined') {
                         toast.error(errorMsg);
                     }
@@ -284,6 +359,14 @@
                 errorDiv.classList.add('show');
             }
         });
+
+        // Auto-format 2FA code input (6 digits only)
+        const twoFACodeInput = document.getElementById('2fa-code');
+        if (twoFACodeInput) {
+            twoFACodeInput.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+            });
+        }
     </script>
 </body>
 </html>
