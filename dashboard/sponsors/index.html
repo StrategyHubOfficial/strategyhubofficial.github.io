@@ -166,7 +166,12 @@ title: Supporters
 
         async function loadSupporters() {
             try {
-                const response = await api.get('/api/supporters').catch(() => ({ success: false, error: 'Not authenticated or endpoint not available' }));
+                // Try authenticated endpoint first, fallback to public if not authenticated
+                let response = await api.get('/api/supporters').catch(() => null);
+                if (!response || !response.success) {
+                    // Fallback to public endpoint
+                    response = await api.get('/api/supporters/public').catch(() => ({ success: false, error: 'Failed to load supporters' }));
+                }
                 if (!response.success) {
                     throw new Error(response.error || 'Failed to load supporters');
                 }
