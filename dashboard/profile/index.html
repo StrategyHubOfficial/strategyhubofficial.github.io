@@ -434,7 +434,7 @@ title: My Profile
                 // Try to load from auth.getCurrentUser() as fallback
                 const currentUser = auth.getCurrentUser();
                 if (currentUser) {
-                    console.log('Using fallback user data:', currentUser);
+                    // Using fallback user data
                     populateForm({
                         name: currentUser.name || '',
                         email: currentUser.email || '',
@@ -890,7 +890,7 @@ title: My Profile
         }
 
         // Listen for system theme changes when auto is selected
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (_e) => {
             const themeSelect = document.getElementById('theme');
             if (themeSelect && themeSelect.value === 'auto') {
                 applyTheme('auto');

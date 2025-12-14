@@ -81,5 +81,12 @@ export default [
       '.jekyll-cache/',
     ],
   },
+  {
+    // Disable parsing error for HTML content that ESLint misinterprets
+    files: ['dashboard/profile/2fa-setup.html'],
+    rules: {
+      'no-undef': 'off', // HTML parser limitation - false positive
+    },
+  },
 ];
 

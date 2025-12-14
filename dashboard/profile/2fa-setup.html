@@ -352,7 +352,7 @@ title: Setup Two-Factor Authentication
         });
 
         // Auto-format verification code input
-        document.getElementById('verify-code').addEventListener('input', function(e) {
+        document.getElementById('verify-code').addEventListener('input', function(_e) {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
         });
 
