@@ -871,7 +871,9 @@ title: Events
         window.bulkRejectEvents = bulkRejectEvents;
 
         // Create event form handler
-        document.getElementById('create-event-form').addEventListener('submit', async (e) => {
+        const createEventForm = document.getElementById('create-event-form');
+        if (createEventForm) {
+            createEventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const title = document.getElementById('event-title').value;
             const description = document.getElementById('event-description').value;
@@ -886,10 +888,13 @@ title: Events
             }
 
             closeCreateEventModal();
-            await createEvent({ title, description, location, startTime, endTime, type });
+            await createEvent({ title, description, location, startTime, endTime, type             });
         });
+        }
 
-        document.getElementById('edit-event-form').addEventListener('submit', async (e) => {
+        const editEventForm = document.getElementById('edit-event-form');
+        if (editEventForm) {
+            editEventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentEditEventId) return;
             try {
@@ -915,8 +920,11 @@ title: Events
                 toast.error('Error updating event');
             }
         });
+        }
 
-        document.getElementById('add-guest-form').addEventListener('submit', async (e) => {
+        const addGuestForm = document.getElementById('add-guest-form');
+        if (addGuestForm) {
+            addGuestForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentManageGuestsEventId) return;
             try {
@@ -941,6 +949,7 @@ title: Events
                 toast.error('Error adding guest');
             }
         });
+        }
 
         // Initialize
         (async () => {
