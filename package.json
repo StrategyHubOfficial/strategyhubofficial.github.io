@@ -1,0 +1,19 @@
+{
+  "name": "strategyhubofficial.github.io",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint dashboard/**/*.html dashboard/**/*.js --ext .js,.html",
+    "lint:fix": "eslint dashboard/**/*.html dashboard/**/*.js --ext .js,.html --fix",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-html": "^8.1.3"
+  }
+}
