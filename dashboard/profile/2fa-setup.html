@@ -375,7 +375,7 @@ title: Setup Two-Factor Authentication
                 // eslint-disable-next-line no-undef
                 await navigator.clipboard.writeText(codesText);
                 toast.success('Backup codes copied to clipboard');
-            } catch (_error) {
+            } catch {
                 toast.error('Failed to copy codes');
             }
         });

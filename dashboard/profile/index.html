@@ -924,7 +924,9 @@ title: My Profile
                     
                     if (response.success) {
                         toast.success('Preferences saved successfully!');
+                        // eslint-disable-next-line no-undef
                         preferencesData = response.data;
+                        // eslint-disable-next-line no-undef
                         applyTheme(preferences.theme);
                     } else {
                         toast.error(response.error || 'Failed to save preferences');

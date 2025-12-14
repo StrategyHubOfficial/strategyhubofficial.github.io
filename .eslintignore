@@ -1,9 +1,0 @@
-node_modules/
-dist/
-build/
-*.min.js
-dashboard/assets/js/config.js
-# Ignore Jekyll generated files
-_site/
-.jekyll-cache/
-
