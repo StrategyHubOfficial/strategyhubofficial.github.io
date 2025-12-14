@@ -932,10 +932,14 @@ title: My Profile
         });
 
         // Initialize
-        await auth.requireAuth();
-        await loadProfile();
-        await loadPreferences();
-        await load2FAStatus();
+        (async () => {
+            await auth.requireAuth();
+            await loadProfile();
+            if (typeof loadPreferences === 'function') {
+                await loadPreferences();
+            }
+            await load2FAStatus();
+        })();
     })();
 </script>
 
