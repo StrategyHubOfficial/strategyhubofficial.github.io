@@ -458,6 +458,27 @@ title: Studio Booking
             }
         }
 
+        // Make functions global so onclick handlers can access them
+        window.showBookingModal = function() {
+            document.getElementById('booking-modal').classList.add('active');
+        };
+
+        window.closeBookingModal = function() {
+            document.getElementById('booking-modal').classList.remove('active');
+            const form = document.getElementById('booking-form');
+            if (form) form.reset();
+        };
+
+        // Close modal when clicking outside
+        const bookingModal = document.getElementById('booking-modal');
+        if (bookingModal) {
+            bookingModal.addEventListener('click', (e) => {
+                if (e.target.id === 'booking-modal') {
+                    window.closeBookingModal();
+                }
+            });
+        }
+
         document.getElementById('booking-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -478,7 +499,7 @@ title: Studio Booking
 
                 if (response.success) {
                     toast.success('Studio booked successfully!');
-                    document.getElementById('booking-form').reset();
+                    window.closeBookingModal();
                     await loadBookings();
                 } else {
                     // Check for conflict error
