@@ -832,3 +832,31 @@ body {
 .fade-in {
   animation: fadeIn 0.4s ease;
 }
+
+/* Search Bar Styling */
+.search-bar {
+  position: relative;
+  width: 100%;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg-darker);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: var(--bitcoin-orange);
+  box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
+}
+
+.search-bar input::placeholder {
+  color: var(--text-secondary);
+}

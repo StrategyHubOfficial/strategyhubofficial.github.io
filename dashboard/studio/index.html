@@ -49,6 +49,16 @@ title: Studio Booking
         .bookings-list {
             margin-top: 2rem;
         }
+        .bookings-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+        @media (max-width: 768px) {
+            .bookings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
         .booking-card {
             background: #1a1a1a;
             border: 1px solid #333;
@@ -123,7 +133,16 @@ title: Studio Booking
             <p>Loading bookings...</p>
         </div>
         <div id="error" class="error" style="display: none;"></div>
-            <div id="bookings-container"></div>
+            <div class="bookings-grid">
+                <div>
+                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Studio Bookings</h3>
+                    <div id="bookings-container"></div>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Event RSVPs</h3>
+                    <div id="events-container"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -206,7 +225,7 @@ title: Studio Booking
         function renderBookings(bookings) {
             const container = document.getElementById('bookings-container');
             if (bookings.length === 0) {
-                container.innerHTML = '<p>No bookings found.</p>';
+                container.innerHTML = '<p style="color: var(--text-secondary);">No studio bookings found.</p>';
                 return;
             }
 
@@ -234,6 +253,56 @@ title: Studio Booking
                         ${booking.notes ? `<p>${booking.notes}</p>` : ''}
                         <div style="margin-top: 1rem;">
                             <button class="btn-secondary btn-small" onclick="cancelBooking('${booking.id}')">Cancel</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadEvents() {
+            try {
+                const response = await api.get('/api/events');
+                if (response.success && response.data) {
+                    const currentUser = auth.getCurrentUser();
+                    if (!currentUser) return;
+                    
+                    // Filter to only events the user has RSVP'd to
+                    const rsvpEvents = (response.data || []).filter(event => 
+                        event.rsvps && event.rsvps.includes(currentUser.id) && 
+                        new Date(event.startTime) > new Date()
+                    );
+                    
+                    renderEvents(rsvpEvents);
+                }
+            } catch (error) {
+                console.error('Error loading events:', error);
+            }
+        }
+
+        function renderEvents(events) {
+            const container = document.getElementById('events-container');
+            if (events.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-secondary);">No upcoming event RSVPs.</p>';
+                return;
+            }
+
+            container.innerHTML = events.map(event => {
+                const eventDate = new Date(event.startTime);
+                const endDate = event.endTime ? new Date(event.endTime) : null;
+
+                return `
+                    <div class="booking-card">
+                        <div class="booking-header">
+                            <div>
+                                <h3>${event.title}</h3>
+                            </div>
+                            <span class="booking-status status confirmed">RSVP'd</span>
+                        </div>
+                        <p><strong>Date:</strong> ${eventDate.toLocaleString()}${endDate ? ` - ${endDate.toLocaleString()}` : ''}</p>
+                        ${event.location ? `<p><strong>Location:</strong> ${event.location}</p>` : ''}
+                        ${event.description ? `<p style="color: var(--text-secondary); margin-top: 0.5rem;">${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}</p>` : ''}
+                        <div style="margin-top: 1rem;">
+                            <a href="/dashboard/events#${event.id}" class="btn-secondary btn-small" style="text-decoration: none; display: inline-block;">View Event</a>
                         </div>
                     </div>
                 `;
@@ -301,6 +370,7 @@ title: Studio Booking
             await auth.requireAuth();
             document.getElementById('loading').style.display = 'none';
             await loadBookings();
+            await loadEvents();
             await loadEquipment();
         })();
     })();
