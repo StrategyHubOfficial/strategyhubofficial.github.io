@@ -796,25 +796,29 @@ title: My Profile
         }
 
         // Live theme switcher
-        document.getElementById('theme').addEventListener('change', function(e) {
-            const theme = e.target.value;
-            applyTheme(theme);
-            
-            // Save to backend (async, don't wait)
-            if (preferencesData) {
-                const preferences = {
-                    ...preferencesData,
-                    theme: theme
-                };
-                api.put('/api/user/preferences', preferences).catch(err => {
-                    console.error('Error saving theme:', err);
-                });
-            }
-        });
+        const themeSelect = document.getElementById('theme');
+        if (themeSelect) {
+            themeSelect.addEventListener('change', function(e) {
+                const theme = e.target.value;
+                applyTheme(theme);
+                
+                // Save to backend (async, don't wait)
+                if (preferencesData) {
+                    const preferences = {
+                        ...preferencesData,
+                        theme: theme
+                    };
+                    api.put('/api/user/preferences', preferences).catch(err => {
+                        console.error('Error saving theme:', err);
+                    });
+                }
+            });
+        }
 
         // Listen for system theme changes when auto is selected
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (document.getElementById('theme').value === 'auto') {
+            const themeSelect = document.getElementById('theme');
+            if (themeSelect && themeSelect.value === 'auto') {
                 applyTheme('auto');
             }
         });
@@ -856,6 +860,7 @@ title: My Profile
                 toast.error('Error saving preferences');
             }
         });
+        }
 
         // Load 2FA status
         async function load2FAStatus() {
