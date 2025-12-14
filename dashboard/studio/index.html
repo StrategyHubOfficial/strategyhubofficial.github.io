@@ -266,10 +266,13 @@ title: Studio Booking
                     const currentUser = auth.getCurrentUser();
                     if (!currentUser) return;
                     
+                    // Ensure response.data is an array
+                    const eventsData = Array.isArray(response.data) ? response.data : [];
+                    
                     // Filter to only events the user has RSVP'd to
-                    const rsvpEvents = (response.data || []).filter(event => 
-                        event.rsvps && event.rsvps.includes(currentUser.id) && 
-                        new Date(event.startTime) > new Date()
+                    const rsvpEvents = eventsData.filter(event => 
+                        event && event.rsvps && event.rsvps.includes(currentUser.id) && 
+                        event.startTime && new Date(event.startTime) > new Date()
                     );
                     
                     renderEvents(rsvpEvents);
