@@ -251,8 +251,8 @@ title: StrategyHub Dashboard
                         document.getElementById('stat-equipment').textContent = equipment;
                         document.getElementById('stats-grid').style.display = 'grid';
 
-                        // Load enhanced admin stats if available
-                        if (adminStatsRes.status === 'fulfilled' && adminStatsRes.value.success && adminStatsRes.value.data) {
+                        // Load enhanced admin stats if available (optional, fail silently)
+                        if (adminStatsRes && adminStatsRes.status === 'fulfilled' && adminStatsRes.value.success && adminStatsRes.value.data) {
                             const stats = adminStatsRes.value.data;
                             
                             // Add admin stats section if user is admin
