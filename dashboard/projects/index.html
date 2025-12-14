@@ -529,6 +529,9 @@ title: Projects
             document.getElementById('create-project-modal').classList.remove('active');
             document.getElementById('create-project-form').reset();
         }
+        
+        // Expose to global scope for onclick handlers
+        window.closeCreateProject = closeCreateProject;
 
         let currentRejectProjectId = null;
         let currentBulkAction = null;

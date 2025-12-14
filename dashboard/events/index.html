@@ -315,9 +315,10 @@ title: Events
                 const url = isAdmin ? '/api/events?includePending=true' : '/api/events';
                 const response = await api.get(url);
                 if (response.success) {
-                    events = response.data || [];
+                    // Ensure response.data is an array
+                    events = Array.isArray(response.data) ? response.data : [];
                     filteredEvents = events;
-                    applyFilters();
+                    renderEvents();
                 } else {
                     toast.error('Failed to load events');
                     document.getElementById('error').textContent = 'Failed to load events';
