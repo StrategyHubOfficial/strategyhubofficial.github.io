@@ -259,32 +259,32 @@ title: StrategyHub Dashboard
                             const isAdmin = auth.isAdmin();
                             if (isAdmin) {
                                 const adminStatsHtml = `
-                                    <div class="card">
-                                        <h3 style="margin-bottom: 1rem;">Admin Statistics</h3>
-                                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                                            <div>
-                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.projects.pending || 0}</div>
-                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Pending Projects</div>
+                                    <div style="margin-top: 2rem;">
+                                        <h2 style="margin-bottom: 1.5rem; font-size: 1.75rem; color: var(--text-primary);">Admin Statistics</h2>
+                                        <div class="stats-grid">
+                                            <div class="stat-card">
+                                                <div class="stat-value">${stats.projects.pending || 0}</div>
+                                                <div class="stat-label">Pending Projects</div>
                                             </div>
-                                            <div>
-                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.events.pending || 0}</div>
-                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Pending Events</div>
+                                            <div class="stat-card">
+                                                <div class="stat-value">${stats.events.pending || 0}</div>
+                                                <div class="stat-label">Pending Events</div>
                                             </div>
-                                            <div>
-                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.members.newThisMonth || 0}</div>
-                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">New Members (Month)</div>
+                                            <div class="stat-card">
+                                                <div class="stat-value">${stats.members.newThisMonth || 0}</div>
+                                                <div class="stat-label">New Members (Month)</div>
                                             </div>
-                                            <div>
-                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.sponsorships.active || 0}</div>
-                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Active Sponsorships</div>
+                                            <div class="stat-card">
+                                                <div class="stat-value">${stats.sponsorships.active || 0}</div>
+                                                <div class="stat-label">Active Sponsorships</div>
                                             </div>
-                                            <div>
-                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.donations.donorCount || 0}</div>
-                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Donors</div>
+                                            <div class="stat-card">
+                                                <div class="stat-value">${stats.donations.donorCount || 0}</div>
+                                                <div class="stat-label">Donors</div>
                                             </div>
-                                            <div>
-                                                <div style="font-size: 2rem; font-weight: 700; color: var(--bitcoin-orange);">${stats.activity.last24Hours || 0}</div>
-                                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Activity (24h)</div>
+                                            <div class="stat-card">
+                                                <div class="stat-value">${stats.activity.last24Hours || 0}</div>
+                                                <div class="stat-label">Activity (24h)</div>
                                             </div>
                                         </div>
                                     </div>
