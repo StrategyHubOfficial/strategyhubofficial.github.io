@@ -384,7 +384,9 @@ title: Projects
                 const url = isAdmin ? '/api/projects?includePending=true' : '/api/projects';
                 const response = await api.get(url);
                 if (response.success) {
-                    allProjects = response.data || [];
+                    // Ensure response.data is an array
+                    allProjects = Array.isArray(response.data) ? response.data : [];
+                    filteredProjects = allProjects;
                     applyFilters();
                 } else {
                     toast.error('Failed to load projects');
