@@ -374,6 +374,8 @@ title: Projects
         let allProjects = [];
         let filteredProjects = [];
         let currentFilter = 'all';
+        let searchQuery = '';
+        let searchTimeout = null;
 
         async function loadProjects() {
             try {
