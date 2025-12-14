@@ -397,7 +397,7 @@ title: My Profile
         async function loadProfile() {
             try {
                 const response = await api.get('/api/members/me');
-                console.log('Profile response:', response); // Debug log
+                // Debug log removed for production
                 if (response.success && response.data) {
                     profileData = response.data;
                     populateForm(response.data);
@@ -407,7 +407,7 @@ title: My Profile
                     // Try to load from auth.getCurrentUser() as fallback
                     const currentUser = auth.getCurrentUser();
                     if (currentUser) {
-                        console.log('Using fallback user data:', currentUser);
+                        // Using fallback user data
                         populateForm({
                             name: currentUser.name || '',
                             email: currentUser.email || '',
