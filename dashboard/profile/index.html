@@ -397,50 +397,124 @@ title: My Profile
         async function loadProfile() {
             try {
                 const response = await api.get('/api/members/me');
-                if (response.success) {
+                console.log('Profile response:', response); // Debug log
+                if (response.success && response.data) {
                     profileData = response.data;
                     populateForm(response.data);
                 } else {
-                    toast.error('Failed to load profile');
+                    console.error('Failed to load profile:', response);
+                    toast.error('Failed to load profile: ' + (response.error || 'Unknown error'));
+                    // Try to load from auth.getCurrentUser() as fallback
+                    const currentUser = auth.getCurrentUser();
+                    if (currentUser) {
+                        console.log('Using fallback user data:', currentUser);
+                        populateForm({
+                            name: currentUser.name || '',
+                            email: currentUser.email || '',
+                            bio: '',
+                            website: '',
+                            company: '',
+                            lightningAddress: '',
+                            skills: [],
+                            socials: {},
+                            visibility: {
+                                email: 'members',
+                                bio: 'members',
+                                skills: 'members',
+                                website: 'members',
+                                company: 'members',
+                                socials: 'members'
+                            }
+                        });
+                    }
                 }
             } catch (error) {
                 console.error('Error loading profile:', error);
-                toast.error('Error loading profile');
+                toast.error('Error loading profile: ' + (error.message || 'Unknown error'));
+                // Try to load from auth.getCurrentUser() as fallback
+                const currentUser = auth.getCurrentUser();
+                if (currentUser) {
+                    console.log('Using fallback user data:', currentUser);
+                    populateForm({
+                        name: currentUser.name || '',
+                        email: currentUser.email || '',
+                        bio: '',
+                        website: '',
+                        company: '',
+                        lightningAddress: '',
+                        skills: [],
+                        socials: {},
+                        visibility: {
+                            email: 'members',
+                            bio: 'members',
+                            skills: 'members',
+                            website: 'members',
+                            company: 'members',
+                            socials: 'members'
+                        }
+                    });
+                }
             }
         }
 
         function populateForm(data) {
-            document.getElementById('name').value = data.name || '';
-            document.getElementById('email').value = data.email || '';
-            document.getElementById('bio').value = data.bio || '';
-            document.getElementById('website').value = data.website || '';
-            document.getElementById('company').value = data.company || '';
-            document.getElementById('lightning-address').value = data.lightningAddress || '';
+            if (!data) {
+                console.error('No data provided to populateForm');
+                return;
+            }
+            
+            const nameEl = document.getElementById('name');
+            const emailEl = document.getElementById('email');
+            const bioEl = document.getElementById('bio');
+            const websiteEl = document.getElementById('website');
+            const companyEl = document.getElementById('company');
+            const lightningEl = document.getElementById('lightning-address');
+            
+            if (nameEl) nameEl.value = data.name || '';
+            if (emailEl) emailEl.value = data.email || '';
+            if (bioEl) bioEl.value = data.bio || '';
+            if (websiteEl) websiteEl.value = data.website || '';
+            if (companyEl) companyEl.value = data.company || '';
+            if (lightningEl) lightningEl.value = data.lightningAddress || '';
             
             // Load avatar if exists
             if (data.avatar) {
                 const avatarPreview = document.getElementById('avatar-preview');
-                avatarPreview.src = data.avatar.startsWith('http') ? data.avatar : `https://dashboard.securesovereigns.workers.dev${data.avatar}`;
-                avatarPreview.style.display = 'block';
+                if (avatarPreview) {
+                    avatarPreview.src = data.avatar.startsWith('http') ? data.avatar : `https://dashboard.securesovereigns.workers.dev${data.avatar}`;
+                    avatarPreview.style.display = 'block';
+                }
             }
             
             if (data.socials) {
-                document.getElementById('twitter').value = data.socials.twitter || '';
-                document.getElementById('github').value = data.socials.github || '';
-                document.getElementById('linkedin').value = data.socials.linkedin || '';
-                document.getElementById('nostr').value = data.socials.nostr || '';
+                const twitterEl = document.getElementById('twitter');
+                const githubEl = document.getElementById('github');
+                const linkedinEl = document.getElementById('linkedin');
+                const nostrEl = document.getElementById('nostr');
+                
+                if (twitterEl) twitterEl.value = data.socials.twitter || '';
+                if (githubEl) githubEl.value = data.socials.github || '';
+                if (linkedinEl) linkedinEl.value = data.socials.linkedin || '';
+                if (nostrEl) nostrEl.value = data.socials.nostr || '';
             }
 
             currentSkills = data.skills || [];
             renderSkills();
 
             if (data.visibility) {
-                document.getElementById('visibility-email').value = data.visibility.email || 'members';
-                document.getElementById('visibility-bio').value = data.visibility.bio || 'members';
-                document.getElementById('visibility-skills').value = data.visibility.skills || 'members';
-                document.getElementById('visibility-website').value = data.visibility.website || 'members';
-                document.getElementById('visibility-company').value = data.visibility.company || 'members';
-                document.getElementById('visibility-socials').value = data.visibility.socials || 'members';
+                const emailVisEl = document.getElementById('visibility-email');
+                const bioVisEl = document.getElementById('visibility-bio');
+                const skillsVisEl = document.getElementById('visibility-skills');
+                const websiteVisEl = document.getElementById('visibility-website');
+                const companyVisEl = document.getElementById('visibility-company');
+                const socialsVisEl = document.getElementById('visibility-socials');
+                
+                if (emailVisEl) emailVisEl.value = data.visibility.email || 'members';
+                if (bioVisEl) bioVisEl.value = data.visibility.bio || 'members';
+                if (skillsVisEl) skillsVisEl.value = data.visibility.skills || 'members';
+                if (websiteVisEl) websiteVisEl.value = data.visibility.website || 'members';
+                if (companyVisEl) companyVisEl.value = data.visibility.company || 'members';
+                if (socialsVisEl) socialsVisEl.value = data.visibility.socials || 'members';
             }
         }
 
@@ -932,14 +1006,10 @@ title: My Profile
         });
 
         // Initialize
-        (async () => {
-            await auth.requireAuth();
-            await loadProfile();
-            if (typeof loadPreferences === 'function') {
-                await loadPreferences();
-            }
-            await load2FAStatus();
-        })();
+        await auth.requireAuth();
+        await loadProfile();
+        await loadPreferences();
+        await load2FAStatus();
     })();
 </script>
 
