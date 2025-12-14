@@ -460,7 +460,9 @@ title: My Profile
         };
 
         // Add skill on Enter
-        document.getElementById('skill-input').addEventListener('keypress', (e) => {
+        const skillInput = document.getElementById('skill-input');
+        if (skillInput) {
+            skillInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const skill = e.target.value.trim();
@@ -471,9 +473,12 @@ title: My Profile
                 }
             }
         });
+        }
 
         // Avatar preview
-        document.getElementById('avatar-input').addEventListener('change', (e) => {
+        const avatarInput = document.getElementById('avatar-input');
+        if (avatarInput) {
+            avatarInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -485,9 +490,12 @@ title: My Profile
                 reader.readAsDataURL(file);
             }
         });
+        }
 
         // Form submission
-        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+        const profileForm = document.getElementById('profile-form');
+        if (profileForm) {
+            profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             // Upload avatar first if selected
@@ -569,9 +577,12 @@ title: My Profile
                 toast.error('Error updating profile');
             }
         });
+        }
 
         // Change password form handler
-        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+        const changePasswordForm = document.getElementById('change-password-form');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const currentPassword = document.getElementById('current-password').value;
@@ -807,9 +818,12 @@ title: My Profile
                 applyTheme('auto');
             }
         });
+        }
 
         // Preferences form submission
-        document.getElementById('preferences-form').addEventListener('submit', async (e) => {
+        const preferencesForm = document.getElementById('preferences-form');
+        if (preferencesForm) {
+            preferencesForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             try {
