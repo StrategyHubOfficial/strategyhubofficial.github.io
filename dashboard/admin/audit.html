@@ -90,7 +90,7 @@ title: Audit Logs
 <script>
 const api = new HubAPI();
 let currentPage = 0;
-let pageSize = 50;
+const pageSize = 50;
 let totalLogs = 0;
 let currentFilters = {};
 
@@ -162,7 +162,7 @@ function updatePagination(pagination) {
 
 function loadPage(direction) {
     currentPage += direction;
-    if (currentPage < 0) currentPage = 0;
+    if (currentPage < 0) {currentPage = 0;}
     loadLogs();
 }
 
@@ -175,11 +175,11 @@ function applyFilters() {
     const startDate = document.getElementById('filter-start-date').value;
     const endDate = document.getElementById('filter-end-date').value;
 
-    if (action) currentFilters.action = action;
-    if (resource) currentFilters.resourceType = resource;
-    if (user) currentFilters.userId = user;
-    if (startDate) currentFilters.startDate = startDate;
-    if (endDate) currentFilters.endDate = endDate;
+    if (action) {currentFilters.action = action;}
+    if (resource) {currentFilters.resourceType = resource;}
+    if (user) {currentFilters.userId = user;}
+    if (startDate) {currentFilters.startDate = startDate;}
+    if (endDate) {currentFilters.endDate = endDate;}
 
     currentPage = 0;
     loadLogs();

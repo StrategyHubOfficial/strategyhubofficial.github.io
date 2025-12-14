@@ -196,7 +196,7 @@ title: Supporters
 
         function renderTier(containerId, supporters) {
             const container = document.getElementById(containerId);
-            if (!container) return;
+            if (!container) {return;}
 
             if (supporters.length === 0) {
                 container.innerHTML = '<p style="color: var(--text-secondary); padding: 2rem; text-align: center;">No supporters yet. Be the first!</p>';

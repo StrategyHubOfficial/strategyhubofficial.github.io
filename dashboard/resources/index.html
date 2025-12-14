@@ -302,7 +302,7 @@ title: Equipment
 
         function selectItem(id) {
             const item = allEquipment.find(e => e.id === id);
-            if (!item) return;
+            if (!item) {return;}
             
             if (!selectedItems.find(i => i.id === id)) {
                 selectedItems.push(item);
@@ -432,8 +432,8 @@ title: Equipment
             if (type === 'server' || type === 'infrastructure') {
                 const ip = document.getElementById('equipment-ip').value;
                 const endpoint = document.getElementById('equipment-endpoint').value;
-                if (ip) equipmentData.ipAddress = ip;
-                if (endpoint) equipmentData.endpoint = endpoint;
+                if (ip) {equipmentData.ipAddress = ip;}
+                if (endpoint) {equipmentData.endpoint = endpoint;}
             }
 
             try {

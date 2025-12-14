@@ -258,10 +258,10 @@ title: Members
 
                 const socials = member.socials || {};
                 const socialLinks = [];
-                if (socials.twitter) socialLinks.push(`<a href="https://twitter.com/${socials.twitter.replace('@', '')}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">🐦 Twitter</a>`);
-                if (socials.github) socialLinks.push(`<a href="https://github.com/${socials.github}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">💻 GitHub</a>`);
-                if (socials.linkedin) socialLinks.push(`<a href="https://linkedin.com/in/${socials.linkedin}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">💼 LinkedIn</a>`);
-                if (socials.nostr) socialLinks.push(`<a href="https://nostr.com/${socials.nostr}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">⚡ Nostr</a>`);
+                if (socials.twitter) {socialLinks.push(`<a href="https://twitter.com/${socials.twitter.replace('@', '')}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">🐦 Twitter</a>`);}
+                if (socials.github) {socialLinks.push(`<a href="https://github.com/${socials.github}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">💻 GitHub</a>`);}
+                if (socials.linkedin) {socialLinks.push(`<a href="https://linkedin.com/in/${socials.linkedin}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">💼 LinkedIn</a>`);}
+                if (socials.nostr) {socialLinks.push(`<a href="https://nostr.com/${socials.nostr}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">⚡ Nostr</a>`);}
 
                 const avatarUrl = member.avatar 
                     ? (member.avatar.startsWith('http') ? member.avatar : `https://dashboard.securesovereigns.workers.dev${member.avatar}`)

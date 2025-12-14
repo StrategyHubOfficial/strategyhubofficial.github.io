@@ -255,7 +255,7 @@ title: Financial Dashboard
         }
 
         async function formatSats(sats) {
-            if (!sats && sats !== 0) return '-';
+            if (!sats && sats !== 0) {return '-';}
             return new Intl.NumberFormat('en-US').format(sats) + ' sats';
         }
 
@@ -303,7 +303,7 @@ title: Financial Dashboard
                 const limit = parseInt(document.getElementById('limit-filter').value);
                 
                 const params = new URLSearchParams();
-                if (status) params.append('status', status);
+                if (status) {params.append('status', status);}
                 params.append('limit', limit.toString());
                 
                 const response = await api.get(`/api/admin/donations?${params.toString()}`);

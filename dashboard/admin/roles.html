@@ -184,7 +184,7 @@ title: Role Management
 
         window.editRole = function(roleId) {
             const role = allRoles.find(r => r.id === roleId);
-            if (!role) return;
+            if (!role) {return;}
 
             editingRoleId = roleId;
             document.getElementById('role-modal-title').textContent = 'Edit Role';

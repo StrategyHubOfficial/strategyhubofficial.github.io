@@ -305,8 +305,8 @@ title: Events
         let filteredEvents = [];
         let currentView = 'list';
         let subscriptions = null;
-        let searchQuery = '';
-        let searchTimeout = null;
+        const searchQuery = '';
+        const searchTimeout = null;
 
         async function loadEvents() {
             try {
@@ -345,7 +345,7 @@ title: Events
         }
 
         function updateSubscriptionUI() {
-            if (!subscriptions) return;
+            if (!subscriptions) {return;}
             
             const meetupCheckbox = document.getElementById('notify-meetup');
             const workshopCheckbox = document.getElementById('notify-workshop');
@@ -354,20 +354,20 @@ title: Events
             const newCheckbox = document.getElementById('notify-new');
             const reminderCheckbox = document.getElementById('notify-reminder');
             
-            if (meetupCheckbox) meetupCheckbox.checked = subscriptions.eventTypes.includes('meetup');
-            if (workshopCheckbox) workshopCheckbox.checked = subscriptions.eventTypes.includes('workshop');
-            if (talkCheckbox) talkCheckbox.checked = subscriptions.eventTypes.includes('talk');
-            if (networkingCheckbox) networkingCheckbox.checked = subscriptions.eventTypes.includes('networking');
-            if (newCheckbox) newCheckbox.checked = subscriptions.notifyOnNewEvent;
-            if (reminderCheckbox) reminderCheckbox.checked = subscriptions.notifyBeforeEvent;
+            if (meetupCheckbox) {meetupCheckbox.checked = subscriptions.eventTypes.includes('meetup');}
+            if (workshopCheckbox) {workshopCheckbox.checked = subscriptions.eventTypes.includes('workshop');}
+            if (talkCheckbox) {talkCheckbox.checked = subscriptions.eventTypes.includes('talk');}
+            if (networkingCheckbox) {networkingCheckbox.checked = subscriptions.eventTypes.includes('networking');}
+            if (newCheckbox) {newCheckbox.checked = subscriptions.notifyOnNewEvent;}
+            if (reminderCheckbox) {reminderCheckbox.checked = subscriptions.notifyBeforeEvent;}
         }
 
         async function saveSubscriptions() {
             const eventTypes = [];
-            if (document.getElementById('notify-meetup').checked) eventTypes.push('meetup');
-            if (document.getElementById('notify-workshop').checked) eventTypes.push('workshop');
-            if (document.getElementById('notify-talk').checked) eventTypes.push('talk');
-            if (document.getElementById('notify-networking').checked) eventTypes.push('networking');
+            if (document.getElementById('notify-meetup').checked) {eventTypes.push('meetup');}
+            if (document.getElementById('notify-workshop').checked) {eventTypes.push('workshop');}
+            if (document.getElementById('notify-talk').checked) {eventTypes.push('talk');}
+            if (document.getElementById('notify-networking').checked) {eventTypes.push('networking');}
 
             try {
                 const response = await api.put('/api/subscriptions/events', {
@@ -595,7 +595,7 @@ title: Events
 
         async function showEditEventModal(eventId) {
             const event = events.find(e => e.id === eventId);
-            if (!event) return;
+            if (!event) {return;}
             
             currentEditEventId = eventId;
             document.getElementById('edit-event-title').value = event.title;
@@ -621,7 +621,7 @@ title: Events
 
         async function showManageGuestsModal(eventId) {
             const event = events.find(e => e.id === eventId);
-            if (!event) return;
+            if (!event) {return;}
             
             currentManageGuestsEventId = eventId;
             renderGuestsList(event.guests || []);
@@ -658,7 +658,7 @@ title: Events
         }
 
         async function removeGuest(guestEmail) {
-            if (!currentManageGuestsEventId) return;
+            if (!currentManageGuestsEventId) {return;}
             try {
                 const response = await api.removeEventGuest(currentManageGuestsEventId, guestEmail);
                 if (response.success) {
@@ -751,7 +751,7 @@ title: Events
         }
 
         async function confirmRejectEvent() {
-            if (!currentRejectEventId) return;
+            if (!currentRejectEventId) {return;}
             const id = currentRejectEventId;
             closeConfirmRejectEventModal();
             try {
@@ -846,7 +846,7 @@ title: Events
         }
 
         async function executeBulkEventAction() {
-            if (!currentBulkEventAction || !currentBulkEventActionType) return;
+            if (!currentBulkEventAction || !currentBulkEventActionType) {return;}
             const selected = currentBulkEventAction;
             const action = currentBulkEventActionType;
             closeConfirmBulkEventModal();
@@ -897,7 +897,7 @@ title: Events
         if (editEventForm) {
             editEventForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentEditEventId) return;
+            if (!currentEditEventId) {return;}
             try {
                 const data = {
                     title: document.getElementById('edit-event-title').value,
@@ -927,7 +927,7 @@ title: Events
         if (addGuestForm) {
             addGuestForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentManageGuestsEventId) return;
+            if (!currentManageGuestsEventId) {return;}
             try {
                 const guest = {
                     name: document.getElementById('guest-name').value,

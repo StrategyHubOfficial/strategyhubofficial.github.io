@@ -290,9 +290,9 @@ title: Invite Users
             const prefillCompany = document.getElementById('prefill-company').value.trim();
 
             const prefillData = {};
-            if (prefillName) prefillData.name = prefillName;
-            if (prefillWebsite) prefillData.website = prefillWebsite;
-            if (prefillCompany) prefillData.company = prefillCompany;
+            if (prefillName) {prefillData.name = prefillName;}
+            if (prefillWebsite) {prefillData.website = prefillWebsite;}
+            if (prefillCompany) {prefillData.company = prefillCompany;}
 
             try {
                 const response = await api.post('/api/invites', {

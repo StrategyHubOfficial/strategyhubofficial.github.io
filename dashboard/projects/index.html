@@ -624,7 +624,7 @@ title: Projects
         }
 
         async function confirmRejectProject() {
-            if (!currentRejectProjectId) return;
+            if (!currentRejectProjectId) {return;}
             const id = currentRejectProjectId;
             closeConfirmRejectModal();
             try {
@@ -726,7 +726,7 @@ title: Projects
         }
 
         async function executeBulkAction() {
-            if (!currentBulkAction || !currentBulkActionType) return;
+            if (!currentBulkAction || !currentBulkActionType) {return;}
             const selected = currentBulkAction;
             const action = currentBulkActionType;
             closeConfirmBulkModal();

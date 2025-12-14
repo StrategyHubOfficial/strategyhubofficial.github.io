@@ -242,9 +242,9 @@ title: Setup Two-Factor Authentication
 </div>
 
 <script>
-    (async function() {
+    (async function checkAuth() {
         if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
-            setTimeout(arguments.callee, 50);
+            setTimeout(checkAuth, 50);
             return;
         }
 
@@ -287,7 +287,7 @@ title: Setup Two-Factor Authentication
                     // Generate QR code image
                     await loadQRCodeLibrary();
                     const qrCodeImage = document.getElementById('qr-code-image');
-                    // eslint-disable-next-line no-undef
+                     
                     QRCode.toDataURL(qrCodeUri, { width: 256, margin: 2 }, (err, url) => {
                         if (err) {
                             console.error('QR code generation error:', err);
@@ -372,7 +372,7 @@ title: Setup Two-Factor Authentication
         document.getElementById('copy-codes-btn').addEventListener('click', async () => {
             const codesText = backupCodes.join('\n');
             try {
-                // eslint-disable-next-line no-undef
+                 
                 await navigator.clipboard.writeText(codesText);
                 toast.success('Backup codes copied to clipboard');
             } catch {

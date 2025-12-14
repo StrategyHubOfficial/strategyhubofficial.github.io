@@ -391,7 +391,7 @@ title: Studio Booking
                 const response = await api.get('/api/events');
                 if (response.success && response.data) {
                     const currentUser = auth.getCurrentUser();
-                    if (!currentUser) return;
+                    if (!currentUser) {return;}
                     
                     // Ensure response.data is an array
                     const eventsData = Array.isArray(response.data) ? response.data : [];
@@ -466,7 +466,7 @@ title: Studio Booking
         window.closeBookingModal = function() {
             document.getElementById('booking-modal').classList.remove('active');
             const form = document.getElementById('booking-form');
-            if (form) form.reset();
+            if (form) {form.reset();}
         };
 
         // Close modal when clicking outside

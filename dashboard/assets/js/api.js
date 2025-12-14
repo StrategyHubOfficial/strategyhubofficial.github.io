@@ -190,8 +190,8 @@ class HubAPI {
 
   async searchMembers(query, skills) {
     const params = new URLSearchParams();
-    if (query) params.append('q', query);
-    if (skills) params.append('skills', skills);
+    if (query) {params.append('q', query);}
+    if (skills) {params.append('skills', skills);}
     return this.request(`/api/members/search?${params.toString()}`);
   }
 
