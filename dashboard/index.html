@@ -207,17 +207,23 @@ title: StrategyHub Dashboard
                         console.error('Error loading announcements:', error);
                     }
                     
-                    // Load stats (with small delay for bookings to avoid R2 rate limiting)
+                    // Load stats (fully sequential to avoid R2 rate limiting)
                     try {
-                        // Sequential requests to avoid R2 rate limiting
+                        // Make requests sequentially with delays to avoid R2 rate limiting
                         const bookingsRes = await Promise.allSettled([api.get('/api/studio/bookings').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
-                        await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
-                        const [eventsRes, projectsRes, equipmentRes, adminStatsRes] = await Promise.allSettled([
-                            api.get('/api/events'),
-                            api.get('/api/projects'),
-                            api.get('/api/equipment'),
-                            api.get('/api/admin/stats').catch(() => ({ status: 'rejected' })) // Optional admin stats
-                        ]);
+                        await new Promise(resolve => setTimeout(resolve, 200)); // Delay between requests
+                        
+                        const eventsRes = await Promise.allSettled([api.get('/api/events').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        
+                        const projectsRes = await Promise.allSettled([api.get('/api/projects').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        
+                        const equipmentRes = await Promise.allSettled([api.get('/api/equipment').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
+                        await new Promise(resolve => setTimeout(resolve, 200));
+                        
+                        // Optional admin stats (fail silently)
+                        const adminStatsRes = await Promise.allSettled([api.get('/api/admin/stats').catch(() => ({ success: false }))]).then(r => r[0]);
 
                         const bookings = bookingsRes.status === 'fulfilled' && bookingsRes.value.success 
                             ? (Array.isArray(bookingsRes.value.data) ? bookingsRes.value.data : []).filter(b => b && b.startTime && new Date(b.startTime) > new Date()).length 
@@ -235,7 +241,9 @@ title: StrategyHub Dashboard
                         const projects = projectsRes.status === 'fulfilled' && projectsRes.value.success
                             ? (Array.isArray(projectsRes.value.data) ? projectsRes.value.data : []).filter(p => p && p.status === 'active').length 
                             : 0;
-                        const equipment = equipmentRes.status === 'fulfilled' ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length : 0;
+                        const equipment = equipmentRes.status === 'fulfilled' && equipmentRes.value.success
+                            ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length 
+                            : 0;
 
                         document.getElementById('stat-bookings').textContent = bookings;
                         document.getElementById('stat-events').textContent = events;
