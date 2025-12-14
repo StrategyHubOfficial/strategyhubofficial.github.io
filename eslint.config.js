@@ -5,6 +5,7 @@ export default [
   js.configs.recommended,
   {
     files: ['dashboard/**/*.js', 'dashboard/**/*.html'],
+    ignores: ['dashboard/profile/2fa-setup.html'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
