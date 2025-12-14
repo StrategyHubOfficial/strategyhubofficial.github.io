@@ -2,10 +2,23 @@ import js from '@eslint/js';
 import html from 'eslint-plugin-html';
 
 export default [
+  {
+    ignores: [
+      'node_modules/',
+      'dist/',
+      'build/',
+      '*.min.js',
+      'dashboard/assets/js/config.js',
+      '_site/',
+      '.jekyll-cache/',
+      // Ignore 2fa-setup.html due to ESLint HTML parser false positive
+      // The parser misinterprets HTML content as JavaScript
+      'dashboard/profile/2fa-setup.html',
+    ],
+  },
   js.configs.recommended,
   {
     files: ['dashboard/**/*.js', 'dashboard/**/*.html'],
-    ignores: ['dashboard/profile/2fa-setup.html'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -70,20 +83,6 @@ export default [
       'eqeqeq': ['error', 'always'],
       'curly': ['warn', 'all'], // Warning instead of error for now
     },
-  },
-  {
-    ignores: [
-      'node_modules/',
-      'dist/',
-      'build/',
-      '*.min.js',
-      'dashboard/assets/js/config.js',
-      '_site/',
-      '.jekyll-cache/',
-      // Ignore 2fa-setup.html due to ESLint HTML parser false positive
-      // The parser misinterprets HTML content as JavaScript
-      'dashboard/profile/2fa-setup.html',
-    ],
   },
 ];
 
