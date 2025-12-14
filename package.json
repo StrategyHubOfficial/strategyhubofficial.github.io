@@ -1,10 +1,11 @@
 {
   "name": "strategyhubofficial.github.io",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint dashboard/**/*.html dashboard/**/*.js --ext .js,.html",
-    "lint:fix": "eslint dashboard/**/*.html dashboard/**/*.js --ext .js,.html --fix",
+    "lint": "eslint dashboard/",
+    "lint:fix": "eslint dashboard/ --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
