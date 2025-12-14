@@ -106,9 +106,9 @@ title: StrategyHub Dashboard
                         }
                     }
                     
-                    // Load recent activity
+                    // Load recent activity (optional, admin only)
                     try {
-                        const activityResponse = await api.get('/api/admin/audit-logs?limit=10&offset=0');
+                        const activityResponse = await api.get('/api/audit?limit=10&offset=0').catch(() => ({ success: false }));
                         if (activityResponse.success && activityResponse.data && activityResponse.data.logs) {
                             const activities = activityResponse.data.logs;
                             const activitySection = document.getElementById('activity-section');
