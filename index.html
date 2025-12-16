@@ -550,19 +550,41 @@
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script>
-        // Load Leaflet asynchronously with error handling
+        // Load Leaflet asynchronously with error handling and multiple fallbacks
         (function() {
-            const leafletScript = document.createElement('script');
-            leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-            leafletScript.crossOrigin = 'anonymous';
-            leafletScript.onerror = function() {
-                console.error('Failed to load Leaflet from unpkg.com, trying jsDelivr...');
-                const fallbackScript = document.createElement('script');
-                fallbackScript.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
-                fallbackScript.crossOrigin = 'anonymous';
-                document.head.appendChild(fallbackScript);
-            };
-            document.head.appendChild(leafletScript);
+            const cdnSources = [
+                'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+                'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'
+            ];
+            
+            let currentIndex = 0;
+            
+            function tryLoadLeaflet() {
+                if (currentIndex >= cdnSources.length) {
+                    console.error('All CDN sources failed to load Leaflet');
+                    return;
+                }
+                
+                const leafletScript = document.createElement('script');
+                leafletScript.src = cdnSources[currentIndex];
+                leafletScript.crossOrigin = 'anonymous';
+                leafletScript.async = true;
+                
+                leafletScript.onload = function() {
+                    console.log('Leaflet loaded successfully from', cdnSources[currentIndex]);
+                };
+                
+                leafletScript.onerror = function() {
+                    console.warn('Failed to load Leaflet from', cdnSources[currentIndex], ', trying next...');
+                    currentIndex++;
+                    tryLoadLeaflet();
+                };
+                
+                document.head.appendChild(leafletScript);
+            }
+            
+            tryLoadLeaflet();
         })();
     </script>
     <script>
