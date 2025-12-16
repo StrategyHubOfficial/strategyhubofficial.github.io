@@ -588,32 +588,48 @@
 
         // Initialize map
         (() => {
-            // Default coordinates (Tysons, VA)
-            const defaultCoords = [38.91581192758401, -77.22079580284824];
-            const map = L.map('map').setView(defaultCoords, 15);
-            
-            // Use OpenStreetMap tiles (free, no API key needed)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
-            
-            // Add marker
-            const marker = L.marker(defaultCoords).addTo(map)
-                .bindPopup('StrategyHub<br>1850 Towers Cres Plaza<br>Tysons, VA 22182');
-            
-            // Load address and coordinates from config (if available)
-            if (window.HUB_CONFIG && window.HUB_CONFIG.address) {
-                const addressEl = document.getElementById('hub-address');
-                if (addressEl) {
-                    addressEl.textContent = window.HUB_CONFIG.address;
-                }
+            // Wait for Leaflet to load
+            if (typeof L === 'undefined') {
+                console.error('Leaflet library not loaded');
+                return;
             }
-            if (window.HUB_CONFIG && window.HUB_CONFIG.coordinates) {
-                const [lat, lng] = window.HUB_CONFIG.coordinates.split(',').map(Number);
-                map.setView([lat, lng], 15);
-                marker.setLatLng([lat, lng]);
-                marker.setPopupContent(`StrategyHub<br>${window.HUB_CONFIG.address || ''}`);
+            
+            const mapElement = document.getElementById('map');
+            if (!mapElement) {
+                console.error('Map element not found');
+                return;
+            }
+            
+            try {
+                // Default coordinates (Tysons, VA)
+                const defaultCoords = [38.91581192758401, -77.22079580284824];
+                const map = L.map('map').setView(defaultCoords, 15);
+                
+                // Use OpenStreetMap tiles (free, no API key needed)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                
+                // Add marker
+                const marker = L.marker(defaultCoords).addTo(map)
+                    .bindPopup('StrategyHub<br>1850 Towers Cres Plaza<br>Tysons, VA 22182');
+                
+                // Load address and coordinates from config (if available)
+                if (window.HUB_CONFIG && window.HUB_CONFIG.address) {
+                    const addressEl = document.getElementById('hub-address');
+                    if (addressEl) {
+                        addressEl.textContent = window.HUB_CONFIG.address;
+                    }
+                }
+                if (window.HUB_CONFIG && window.HUB_CONFIG.coordinates) {
+                    const [lat, lng] = window.HUB_CONFIG.coordinates.split(',').map(Number);
+                    map.setView([lat, lng], 15);
+                    marker.setLatLng([lat, lng]);
+                    marker.setPopupContent(`StrategyHub<br>${window.HUB_CONFIG.address || ''}`);
+                }
+            } catch (error) {
+                console.error('Error initializing map:', error);
             }
         })();
 
