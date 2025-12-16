@@ -580,7 +580,9 @@
 
         // Initialize map
         (() => {
-            const map = L.map('map').setView([40.7128, -74.0060], 13); // Default to NYC, will be updated
+            // Default coordinates (Tysons, VA)
+            const defaultCoords = [38.91581192758401, -77.22079580284824];
+            const map = L.map('map').setView(defaultCoords, 15);
             
             // Use OpenStreetMap tiles (free, no API key needed)
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -588,18 +590,22 @@
                 maxZoom: 19
             }).addTo(map);
             
-            // Add marker (will be updated with actual address)
-            const marker = L.marker([40.7128, -74.0060]).addTo(map)
-                .bindPopup('StrategyHub');
+            // Add marker
+            const marker = L.marker(defaultCoords).addTo(map)
+                .bindPopup('StrategyHub<br>1850 Towers Cres Plaza<br>Tysons, VA 22182');
             
             // Load address and coordinates from config (if available)
             if (window.HUB_CONFIG && window.HUB_CONFIG.address) {
-                document.getElementById('hub-address').textContent = window.HUB_CONFIG.address;
+                const addressEl = document.getElementById('hub-address');
+                if (addressEl) {
+                    addressEl.textContent = window.HUB_CONFIG.address;
+                }
             }
             if (window.HUB_CONFIG && window.HUB_CONFIG.coordinates) {
                 const [lat, lng] = window.HUB_CONFIG.coordinates.split(',').map(Number);
                 map.setView([lat, lng], 15);
                 marker.setLatLng([lat, lng]);
+                marker.setPopupContent(`StrategyHub<br>${window.HUB_CONFIG.address || ''}`);
             }
         })();
 

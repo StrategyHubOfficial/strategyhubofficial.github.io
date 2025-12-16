@@ -1,0 +1,37 @@
+# Asset Caching Strategy
+# GitHub Pages doesn't support .htaccess, but this serves as documentation
+# For GitHub Pages, caching is handled via HTTP headers in _config.yml or service worker
+
+# Cache static assets for 1 year (immutable)
+<IfModule mod_headers.c>
+  # CSS files
+  <FilesMatch "\.(css)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  
+  # JavaScript files
+  <FilesMatch "\.(js)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  
+  # Images
+  <FilesMatch "\.(jpg|jpeg|png|gif|svg|webp|ico)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  
+  # Fonts
+  <FilesMatch "\.(woff|woff2|ttf|otf|eot)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  
+  # HTML files - shorter cache (1 hour) since they may change
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "public, max-age=3600, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Enable compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+</IfModule>
+

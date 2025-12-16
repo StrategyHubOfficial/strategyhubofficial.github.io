@@ -216,6 +216,7 @@ title: Events
                 </div>
             </div>
             <div id="events-list"></div>
+            <div id="pagination-container"></div>
             <div id="calendar-view" class="calendar-view" style="display: none;"></div>
         </div>
     </div>
@@ -305,19 +306,51 @@ title: Events
         let filteredEvents = [];
         let currentView = 'list';
         let subscriptions = null;
-        const searchQuery = '';
-        const searchTimeout = null;
+        let searchQuery = '';
+        let searchTimeout = null;
 
-        async function loadEvents() {
+        let pagination = null;
+        let currentPage = 1;
+        const pageSize = 20;
+
+        async function loadEvents(page = 1) {
             try {
+                currentPage = page;
+                const offset = (page - 1) * pageSize;
                 // Admins can see pending events, regular users only see approved
                 const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
-                const url = isAdmin ? '/api/events?includePending=true' : '/api/events';
+                const url = isAdmin 
+                    ? `/api/events?includePending=true&limit=${pageSize}&offset=${offset}`
+                    : `/api/events?limit=${pageSize}&offset=${offset}`;
                 const response = await api.get(url);
                 if (response.success) {
-                    // Ensure response.data is an array
-                    events = Array.isArray(response.data) ? response.data : [];
-                    filteredEvents = events;
+                    // Handle paginated response
+                    if (response.data?.data && response.data?.pagination) {
+                        events = Array.isArray(response.data.data) ? response.data.data : [];
+                        filteredEvents = events;
+                        // Initialize or update pagination
+                        if (!pagination) {
+                            pagination = new Pagination({
+                                currentPage: page,
+                                pageSize: pageSize,
+                                totalItems: response.data.pagination.total,
+                                onPageChange: (newPage) => {
+                                    loadEvents(newPage);
+                                }
+                            });
+                        } else {
+                            pagination.update(response.data.pagination.total, page);
+                        }
+                        pagination.render('pagination-container');
+                    } else {
+                        // Fallback for non-paginated response
+                        events = Array.isArray(response.data) ? response.data : [];
+                        filteredEvents = events;
+                        if (pagination) {
+                            pagination.update(events.length, page);
+                            pagination.render('pagination-container');
+                        }
+                    }
                     renderEvents();
                 } else {
                     toast.error('Failed to load events');
@@ -425,12 +458,14 @@ title: Events
         function renderEvents() {
             const eventsToRender = filteredEvents;
             const container = document.getElementById('events-list');
-            if (events.length === 0) {
+            if (!container) return;
+            
+            if (eventsToRender.length === 0) {
                 container.innerHTML = '<p>No events scheduled.</p>';
                 return;
             }
 
-            container.innerHTML = events.map(event => {
+            container.innerHTML = eventsToRender.map(event => {
                 const eventDate = new Date(event.startTime);
                 const currentUser = auth.getCurrentUser();
                 const isRSVPd = currentUser && event.rsvps && event.rsvps.includes(currentUser.id);
@@ -952,12 +987,26 @@ title: Events
         });
         }
 
+        // Search input listener
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                searchTimeout = setTimeout(() => {
+                    applyFilters(1); // Reset to page 1 on new search
+                }, 300);
+            });
+        }
+
         // Initialize
         (async () => {
             await auth.requireAuth();
             document.getElementById('loading').style.display = 'none';
             document.getElementById('events-content').style.display = 'block';
-            await loadEvents();
+            await loadEvents(1);
             await loadSubscriptions();
         })();
     })();</script>

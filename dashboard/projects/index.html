@@ -201,6 +201,7 @@ title: Projects
                 </div>
             </div>
             <div id="projects-list"></div>
+            <div id="pagination-container"></div>
             <div id="no-results" style="display: none; text-align: center; padding: 3rem; color: var(--text-secondary);">
                 <p>No projects found.</p>
             </div>
@@ -376,18 +377,50 @@ title: Projects
         let currentFilter = 'all';
         let searchQuery = '';
         let searchTimeout = null;
+        let pagination = null;
+        let currentPage = 1;
+        const pageSize = 20;
 
-        async function loadProjects() {
+        async function loadProjects(page = 1) {
             try {
+                currentPage = page;
+                const offset = (page - 1) * pageSize;
                 // Admins can see pending projects, regular users only see approved
                 const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
-                const url = isAdmin ? '/api/projects?includePending=true' : '/api/projects';
+                const url = isAdmin 
+                    ? `/api/projects?includePending=true&limit=${pageSize}&offset=${offset}`
+                    : `/api/projects?limit=${pageSize}&offset=${offset}`;
                 const response = await api.get(url);
                 if (response.success) {
-                    // Ensure response.data is an array
-                    allProjects = Array.isArray(response.data) ? response.data : [];
-                    filteredProjects = allProjects;
-                    applyFilters();
+                    // Handle paginated response
+                    if (response.data?.data && response.data?.pagination) {
+                        allProjects = Array.isArray(response.data.data) ? response.data.data : [];
+                        filteredProjects = allProjects;
+                        // Initialize or update pagination
+                        if (!pagination) {
+                            pagination = new Pagination({
+                                currentPage: page,
+                                pageSize: pageSize,
+                                totalItems: response.data.pagination.total,
+                                onPageChange: (newPage) => {
+                                    loadProjects(newPage);
+                                }
+                            });
+                        } else {
+                            pagination.update(response.data.pagination.total, page);
+                        }
+                        pagination.render('pagination-container');
+                        applyFilters();
+                    } else {
+                        // Fallback for non-paginated response
+                        allProjects = Array.isArray(response.data) ? response.data : [];
+                        filteredProjects = allProjects;
+                        if (pagination) {
+                            pagination.update(allProjects.length, page);
+                            pagination.render('pagination-container');
+                        }
+                        applyFilters();
+                    }
                 } else {
                     toast.error('Failed to load projects');
                     document.getElementById('error').textContent = 'Failed to load projects';
@@ -401,37 +434,74 @@ title: Projects
             }
         }
 
-        async function applyFilters() {
+        async function applyFilters(page = 1) {
             // Ensure searchQuery is defined
             if (typeof searchQuery === 'undefined') {
                 searchQuery = '';
             }
-            // If search query exists, use search endpoint
+            // If search query exists, use search endpoint with pagination
             if (searchQuery && searchQuery.trim()) {
                 try {
-                    const response = await api.get(`/api/projects/search?q=${encodeURIComponent(searchQuery.trim())}`);
+                    currentPage = page;
+                    const offset = (page - 1) * pageSize;
+                    const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+                    const includePending = isAdmin ? '&includePending=true' : '';
+                    const response = await api.get(`/api/projects/search?q=${encodeURIComponent(searchQuery.trim())}&limit=${pageSize}&offset=${offset}${includePending}`);
                     if (response.success) {
-                        filteredProjects = (response.data?.data || []).filter(project => {
-                            if (currentFilter !== 'all' && project.status !== currentFilter) {
-                                return false;
+                        // Handle paginated search response
+                        if (response.data?.data && response.data?.pagination) {
+                            filteredProjects = response.data.data.filter(project => {
+                                if (currentFilter !== 'all' && project.status !== currentFilter) {
+                                    return false;
+                                }
+                                return true;
+                            });
+                            // Update pagination for search results
+                            if (!pagination) {
+                                pagination = new Pagination({
+                                    currentPage: page,
+                                    pageSize: pageSize,
+                                    totalItems: response.data.pagination.total,
+                                    onPageChange: (newPage) => {
+                                        applyFilters(newPage);
+                                    }
+                                });
+                            } else {
+                                pagination.update(response.data.pagination.total, page);
                             }
-                            return true;
-                        });
+                            pagination.render('pagination-container');
+                        } else {
+                            // Fallback for non-paginated search
+                            filteredProjects = (response.data?.data || []).filter(project => {
+                                if (currentFilter !== 'all' && project.status !== currentFilter) {
+                                    return false;
+                                }
+                                return true;
+                            });
+                            if (pagination) {
+                                pagination.update(filteredProjects.length, page);
+                                pagination.render('pagination-container');
+                            }
+                        }
                     } else {
                         filteredProjects = [];
+                        if (pagination) {
+                            pagination.update(0, 1);
+                            pagination.render('pagination-container');
+                        }
                     }
                 } catch (error) {
                     console.error('Search error:', error);
                     filteredProjects = [];
+                    if (pagination) {
+                        pagination.update(0, 1);
+                        pagination.render('pagination-container');
+                    }
                 }
             } else {
-                // Use local filtering
-                filteredProjects = allProjects.filter(project => {
-                    if (currentFilter !== 'all' && project.status !== currentFilter) {
-                        return false;
-                    }
-                    return true;
-                });
+                // No search query - reload projects with pagination
+                await loadProjects(page);
+                return; // loadProjects will call applyFilters
             }
 
             renderProjects();
@@ -789,19 +859,21 @@ title: Projects
             }
         });
 
-        // Search functionality with debouncing
+        // Search functionality with debouncing (using utility function)
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
+            // Import debounce utility (if available) or use inline
+            const debouncedSearch = (() => {
+                let timeout;
+                return (func, wait = 300) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(func, wait);
+                };
+            })();
+            
             searchInput.addEventListener('input', (e) => {
                 searchQuery = e.target.value;
-                
-                // Clear existing timeout
-                if (searchTimeout) {
-                    clearTimeout(searchTimeout);
-                }
-                
-                // Debounce search (wait 300ms after user stops typing)
-                searchTimeout = setTimeout(() => {
+                debouncedSearch(() => {
                     applyFilters();
                 }, 300);
             });

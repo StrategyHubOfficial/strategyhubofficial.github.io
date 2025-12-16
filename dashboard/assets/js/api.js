@@ -5,55 +5,206 @@
 class HubAPI {
   constructor(baseURL) {
     this.baseURL = baseURL || (window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev');
+    this.abortControllers = new Map(); // Track active requests for cancellation
   }
 
   async request(endpoint, options = {}) {
-    // Ensure endpoint starts with /api
-    const normalizedEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-    const url = `${this.baseURL}${normalizedEndpoint}`;
-    
-    // Get auth token from localStorage if available
-    const token = localStorage.getItem('hub_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
-    
-    const config = {
-      ...options,
-      mode: 'cors',
-      credentials: 'omit',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-        ...options.headers
-      }
-    };
+    // Cancel previous request for same endpoint if it exists
+    const existingController = this.abortControllers.get(endpoint);
+    if (existingController) {
+      existingController.abort();
+    }
 
-    try {
-      const response = await fetch(url, config);
-      
-      // Handle blocked requests (browser extensions, CORS, etc.)
-      if (!response.ok && response.status === 0) {
-        const error = new Error('Request blocked by browser. This may be caused by an ad blocker or privacy extension. Please disable extensions for this site or check network settings.');
-        error.name = 'BlockedRequestError';
-        throw error;
-      }
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        // If unauthorized, clear token and redirect to login
-        if (response.status === 401) {
-          localStorage.removeItem('hub_token');
-          if (window.location.pathname !== '/dashboard/login.html') {
-            window.location.href = '/dashboard/login.html';
+    // Create new AbortController for this request
+    const controller = new AbortController();
+    this.abortControllers.set(endpoint, controller);
+    
+    // Retry logic with exponential backoff
+    const maxRetries = options.retries !== undefined ? options.retries : 3;
+    const retryDelay = options.retryDelay !== undefined ? options.retryDelay : 1000;
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        // Ensure endpoint starts with /api
+        const normalizedEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+        const url = `${this.baseURL}${normalizedEndpoint}`;
+        
+        // Get auth token from localStorage if available
+        const token = localStorage.getItem('hub_token');
+        const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+        
+        const config = {
+          ...options,
+          mode: 'cors',
+          credentials: 'omit',
+          signal: controller.signal, // Add abort signal for request cancellation
+          headers: {
+            'Content-Type': 'application/json',
+            ...authHeaders,
+            ...options.headers
           }
+        };
+
+        const response = await fetch(url, config);
+        
+        // Remove controller on success
+        this.abortControllers.delete(endpoint);
+        
+        // Handle blocked requests (browser extensions, CORS, etc.)
+        if (!response.ok && response.status === 0) {
+          const error = new Error('Request blocked by browser. This may be caused by an ad blocker or privacy extension. Please disable extensions for this site or check network settings.');
+          error.name = 'BlockedRequestError';
+          throw error;
         }
-        throw new Error(data.error || `HTTP ${response.status}`);
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+          // If unauthorized, try token refresh first (except for auth endpoints)
+          if (response.status === 401 && !endpoint.includes('/auth/')) {
+            const refreshed = await this.refreshToken();
+            if (refreshed && attempt < maxRetries) {
+              // Retry with new token
+              await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
+              continue;
+            }
+            // Token refresh failed or max retries reached
+            localStorage.removeItem('hub_token');
+            if (window.location.pathname !== '/dashboard/login.html') {
+              window.location.href = '/dashboard/login.html';
+            }
+          }
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+        
+        return data;
+      } catch (error) {
+        // Remove controller on error (unless it was aborted)
+        if (error.name !== 'AbortError') {
+          this.abortControllers.delete(endpoint);
+        }
+        
+        // Don't throw for aborted requests (they're intentional)
+        if (error.name === 'AbortError') {
+          return null;
+        }
+        
+        // Retry on network errors (not 4xx/5xx)
+        const isNetworkError = error.name === 'TypeError' || error.message.includes('fetch');
+        const isRetryable = isNetworkError && attempt < maxRetries;
+        
+        if (isRetryable) {
+          // Exponential backoff
+          const delay = retryDelay * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // Last attempt or non-retryable error
+        if (attempt === maxRetries || !isRetryable) {
+          console.error('API Error:', error);
+          throw error;
+        }
+      }
+    }
+  }
+
+  // Token refresh mechanism
+  async refreshToken() {
+    const token = localStorage.getItem('hub_token');
+    if (!token) return false;
+    
+    try {
+      // Decode token to check expiration
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        // Invalid token format
+        return false;
       }
       
-      return data;
+      let payload;
+      try {
+        payload = JSON.parse(atob(parts[1]));
+      } catch (e) {
+        // Invalid token payload
+        return false;
+      }
+      
+      const expiresAt = payload.exp * 1000;
+      const now = Date.now();
+      
+      // Check if token is already expired (with 5 minute buffer)
+      if (expiresAt - now < -300000) {
+        // Token expired more than 5 minutes ago, can't refresh
+        return false;
+      }
+      
+      // Only refresh if expires in less than 1 hour
+      if (expiresAt - now > 3600000) {
+        return true; // Token still valid
+      }
+      
+      // Call refresh endpoint
+      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ token })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.token) {
+          localStorage.setItem('hub_token', data.data.token);
+          // Update auth manager if available
+          if (window.auth && window.auth.setToken) {
+            window.auth.setToken(data.data.token);
+            if (data.data.user) {
+              window.auth.currentUser = data.data.user;
+            }
+          }
+          return true;
+        }
+      } else if (response.status === 401) {
+        // Refresh failed, token is invalid - clear it
+        localStorage.removeItem('hub_token');
+        if (window.auth && window.auth.clearToken) {
+          window.auth.clearToken();
+        }
+        return false;
+      }
+      
+      return false;
     } catch (error) {
-      console.error('API Error:', error);
-      throw error;
+      console.error('Token refresh failed:', error);
+      // On network error, don't clear token (might be temporary)
+      // Only clear on parsing/format errors
+      if (error.name !== 'TypeError' && !error.message.includes('fetch')) {
+        localStorage.removeItem('hub_token');
+        if (window.auth && window.auth.clearToken) {
+          window.auth.clearToken();
+        }
+      }
+      return false;
+    }
+  }
+
+  // Cancel all pending requests
+  cancelAll() {
+    this.abortControllers.forEach((controller) => {
+      controller.abort();
+    });
+    this.abortControllers.clear();
+  }
+
+  // Cancel specific request
+  cancel(endpoint) {
+    const controller = this.abortControllers.get(endpoint);
+    if (controller) {
+      controller.abort();
+      this.abortControllers.delete(endpoint);
     }
   }
 

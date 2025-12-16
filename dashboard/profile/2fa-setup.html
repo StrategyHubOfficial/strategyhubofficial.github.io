@@ -296,6 +296,7 @@ title: Setup Two-Factor Authentication
                             return;
                         }
                         qrCodeImage.src = url;
+                        qrCodeImage.loading = 'lazy';
                         document.getElementById('qr-loading').style.display = 'none';
                         document.getElementById('qr-code-container').style.display = 'block';
                         document.getElementById('step2').style.display = 'block';

@@ -5,7 +5,8 @@
 window.HUB_CONFIG = {
   name: 'StrategyHub',
   apiBaseUrl: 'https://dashboard.securesovereigns.workers.dev',
-  address: '123 Bitcoin Street, Bitcoin City, BC 12345', // Update with actual address
-  coordinates: '40.7128,-74.0060' // Update with actual lat,lng
+  address: '1850 Towers Cres Plaza, Tysons, VA 22182',
+  coordinates: '38.91581192758401,-77.22079580284824',
+  sentryDsn: '', // Optional - Sentry DSN for error monitoring (set via environment/config)
 };
 

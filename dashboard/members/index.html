@@ -173,6 +173,7 @@ title: Members
         
         <div id="members-content" style="display: none;">
             <div id="members-grid" class="grid"></div>
+            <div id="pagination-container"></div>
             <div id="no-results" style="display: none; text-align: center; padding: 3rem; color: var(--text-secondary);">
                 <p>No members found matching your search.</p>
             </div>
@@ -190,16 +191,45 @@ title: Members
         let currentFilter = 'all';
         let searchQuery = '';
 
-        async function loadMembers() {
+        let pagination = null;
+        let currentPage = 1;
+        const pageSize = 20;
+
+        async function loadMembers(page = 1) {
             try {
-                const response = await api.get('/api/members');
+                currentPage = page;
+                const offset = (page - 1) * pageSize;
+                const response = await api.get(`/api/members?limit=${pageSize}&offset=${offset}`);
                 if (response.success) {
-                    // Handle both array and object responses
-                    allMembers = Array.isArray(response.data) 
-                        ? response.data 
-                        : (response.data?.members || response.data?.data || []);
-                    if (!Array.isArray(allMembers)) {
-                        allMembers = [];
+                    // Handle paginated response
+                    if (response.data?.data && response.data?.pagination) {
+                        allMembers = Array.isArray(response.data.data) ? response.data.data : [];
+                        // Initialize or update pagination
+                        if (!pagination) {
+                            pagination = new Pagination({
+                                currentPage: page,
+                                pageSize: pageSize,
+                                totalItems: response.data.pagination.total,
+                                onPageChange: (newPage) => {
+                                    loadMembers(newPage);
+                                }
+                            });
+                        } else {
+                            pagination.update(response.data.pagination.total, page);
+                        }
+                        pagination.render('pagination-container');
+                    } else {
+                        // Fallback for non-paginated response
+                        allMembers = Array.isArray(response.data) 
+                            ? response.data 
+                            : (response.data?.members || response.data?.data || []);
+                        if (!Array.isArray(allMembers)) {
+                            allMembers = [];
+                        }
+                        if (pagination) {
+                            pagination.update(allMembers.length, page);
+                            pagination.render('pagination-container');
+                        }
                     }
                     applyFilters();
                 } else {
@@ -215,8 +245,58 @@ title: Members
             }
         }
 
-        function applyFilters() {
-            filteredMembers = allMembers.filter(member => {
+        async function applyFilters(page = 1) {
+            // If search query exists, use search endpoint with pagination
+            if (searchQuery && searchQuery.trim()) {
+                try {
+                    currentPage = page;
+                    const offset = (page - 1) * pageSize;
+                    const response = await api.get(`/api/members/search?q=${encodeURIComponent(searchQuery.trim())}&limit=${pageSize}&offset=${offset}`);
+                    if (response.success) {
+                        // Handle paginated search response
+                        if (response.data?.data && response.data?.pagination) {
+                            filteredMembers = response.data.data;
+                            // Update pagination for search results
+                            if (!pagination) {
+                                pagination = new Pagination({
+                                    currentPage: page,
+                                    pageSize: pageSize,
+                                    totalItems: response.data.pagination.total,
+                                    onPageChange: (newPage) => {
+                                        applyFilters(newPage);
+                                    }
+                                });
+                            } else {
+                                pagination.update(response.data.pagination.total, page);
+                            }
+                            pagination.render('pagination-container');
+                        } else {
+                            // Fallback for non-paginated search
+                            filteredMembers = Array.isArray(response.data) ? response.data : [];
+                            if (pagination) {
+                                pagination.update(filteredMembers.length, page);
+                                pagination.render('pagination-container');
+                            }
+                        }
+                    } else {
+                        filteredMembers = [];
+                        if (pagination) {
+                            pagination.update(0, 1);
+                            pagination.render('pagination-container');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Search error:', error);
+                    filteredMembers = [];
+                    if (pagination) {
+                        pagination.update(0, 1);
+                        pagination.render('pagination-container');
+                    }
+                }
+                renderMembers();
+            } else {
+                // No search query - use local filtering with current page data
+                filteredMembers = allMembers.filter(member => {
                 // Status filter
                 if (currentFilter !== 'all' && member.status !== currentFilter) {
                     return false;
@@ -267,7 +347,7 @@ title: Members
                     ? (member.avatar.startsWith('http') ? member.avatar : `https://dashboard.securesovereigns.workers.dev${member.avatar}`)
                     : null;
                 const avatarDisplay = avatarUrl 
-                    ? `<img src="${avatarUrl}" alt="${member.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+                    ? `<img src="${avatarUrl}" alt="${member.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
                     : initials;
 
                 return `
@@ -306,11 +386,24 @@ title: Members
             }).join('');
         }
 
-        // Search functionality
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            searchQuery = e.target.value;
-            applyFilters();
-        });
+        // Search functionality with debouncing
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            let searchTimeout = null;
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                
+                // Clear existing timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                // Debounce search (wait 300ms after user stops typing)
+                searchTimeout = setTimeout(() => {
+                    applyFilters(1); // Reset to page 1 on new search
+                }, 300);
+            });
+        }
 
         // Filter buttons
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -327,6 +420,6 @@ title: Members
             await auth.requireAuth();
             document.getElementById('loading').style.display = 'none';
             document.getElementById('members-content').style.display = 'block';
-            await loadMembers();
+            await loadMembers(1);
         })();
     })();</script>

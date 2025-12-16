@@ -482,6 +482,7 @@ title: My Profile
                 const avatarPreview = document.getElementById('avatar-preview');
                 if (avatarPreview) {
                     avatarPreview.src = data.avatar.startsWith('http') ? data.avatar : `https://dashboard.securesovereigns.workers.dev${data.avatar}`;
+                    avatarPreview.loading = 'lazy';
                     avatarPreview.style.display = 'block';
                 }
             }

@@ -4,6 +4,9 @@ description: Bitcoin Infrastructure Hub
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "https://strategyhubofficial.github.io" # the base hostname & protocol for your site
 
+# Asset versioning for cache busting (update on each deploy)
+asset_version: "1.0.0"
+
 # Build settings
 markdown: kramdown
 theme: minima
