@@ -114,9 +114,12 @@ title: Equipment
 <div class="container">
         <h1>Equipment & Infrastructure</h1>
         
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading equipment...</p>
+        <div id="loading" class="skeleton-container">
+            <div class="skeleton-grid">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
         </div>
         <div id="error" class="error" style="display: none;"></div>
         
@@ -458,7 +461,7 @@ title: Equipment
         (async () => {
             await auth.requireAuth();
             checkAdminStatus();
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById('loading').classList.add('hidden');
             document.getElementById('equipment-content').style.display = 'block';
             await loadEquipment();
         })();

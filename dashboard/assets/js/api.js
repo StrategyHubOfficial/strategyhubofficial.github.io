@@ -103,6 +103,13 @@ class HubAPI {
         // Last attempt or non-retryable error
         if (attempt === maxRetries || !isRetryable) {
           console.error('API Error:', error);
+          
+          // Enhance error with user-friendly message if errorHandler is available
+          if (window.errorHandler) {
+            error.userMessage = window.errorHandler.getErrorMessage(error);
+            error.isRetryable = window.errorHandler.isRetryable(error);
+          }
+          
           throw error;
         }
       }

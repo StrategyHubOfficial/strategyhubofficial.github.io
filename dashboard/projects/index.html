@@ -184,9 +184,13 @@ title: Projects
             <button class="btn btn-secondary filter-btn" data-filter="archived">Archived</button>
         </div>
 
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading projects...</p>
+        <div id="loading" class="skeleton-container">
+            <div class="skeleton-grid">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
         </div>
         <div id="error" class="error" style="display: none;"></div>
         
@@ -428,9 +432,23 @@ title: Projects
                 }
             } catch (error) {
                 console.error('Error loading projects:', error);
-                toast.error('Error loading projects');
-                document.getElementById('error').textContent = 'Error loading projects';
-                document.getElementById('error').style.display = 'block';
+                
+                // Use error handler for better UX
+                if (window.errorHandler) {
+                    const retryCallback = () => loadProjects();
+                    window.errorHandler.showErrorState(
+                        '#projects-content',
+                        window.errorHandler.getErrorMessage(error),
+                        error,
+                        retryCallback,
+                        { title: 'Failed to Load Projects', icon: '📁' }
+                    );
+                } else {
+                    // Fallback to simple error display
+                    toast.error('Error loading projects');
+                    document.getElementById('error').textContent = 'Error loading projects';
+                    document.getElementById('error').style.display = 'block';
+                }
             }
         }
 
@@ -960,7 +978,7 @@ title: Projects
         // Initialize
         (async () => {
             await auth.requireAuth();
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById('loading').classList.add('hidden');
             document.getElementById('projects-content').style.display = 'block';
             await loadProjects();
         })();

@@ -144,7 +144,7 @@ title: My Profile
         <h1>My Profile</h1>
     </div>
 
-    <form id="profile-form" class="profile-form">
+    <form id="profile-form" class="profile-form" data-validate>
         <div class="form-group">
             <label for="name">Name *</label>
             <input type="text" id="name" name="name" required>
@@ -570,8 +570,35 @@ title: My Profile
         // Form submission
         const profileForm = document.getElementById('profile-form');
         if (profileForm) {
+            // Initialize form validation
+            const profileValidator = new FormValidator(profileForm);
+            const websiteField = document.getElementById('website');
+            const lightningAddressField = document.getElementById('lightning-address');
+            
+            if (websiteField) {
+                profileValidator.registerValidator('website', (value) => {
+                    if (!value || value.trim() === '') return true; // Optional
+                    return FormValidator.validators.url(value);
+                });
+            }
+            
+            if (lightningAddressField) {
+                profileValidator.registerValidator('lightning-address', (value) => {
+                    if (!value || value.trim() === '') return true; // Optional
+                    return FormValidator.validators.lightningAddress(value);
+                });
+            }
+            
+            profileValidator.registerValidator('name', FormValidator.validators.required);
+            
             profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Validate form
+            if (!profileValidator.validateForm()) {
+                toast.error('Please fix the errors in the form');
+                return;
+            }
 
             // Upload avatar first if selected
             const avatarFile = document.getElementById('avatar-input').files[0];

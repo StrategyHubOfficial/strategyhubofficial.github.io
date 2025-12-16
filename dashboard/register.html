@@ -133,7 +133,7 @@
             <div id="error-message" class="error-message" style="display: none;"></div>
             <div id="success-message" class="success-message" style="display: none;"></div>
 
-            <form id="register-form">
+            <form id="register-form" data-validate>
                 <input type="hidden" id="invite-token" name="token">
                 
                 <div class="form-group">
@@ -211,6 +211,7 @@
     <script src="/dashboard/assets/js/config.js"></script>
     <script src="/dashboard/assets/js/api.js"></script>
     <script src="/dashboard/assets/js/toast.js"></script>
+    <script src="/dashboard/assets/js/form-validation.js"></script>
     <script>
         const api = new HubAPI();
         let currentSkills = [];
@@ -299,20 +300,59 @@
             }
         });
 
+        // Initialize form validation (after form-validation.js loads)
+        let formValidator;
+        // Wait for FormValidator to be available
+        (function waitForFormValidator() {
+            if (typeof FormValidator === 'undefined') {
+                setTimeout(waitForFormValidator, 50);
+                return;
+            }
+            
+            const form = document.getElementById('register-form');
+            if (form) {
+                formValidator = new FormValidator(form);
+                
+                // Register custom validators
+                const passwordField = document.getElementById('password');
+                const passwordConfirmField = document.getElementById('password-confirm');
+                
+                if (passwordField) {
+                    formValidator.registerValidator('password', FormValidator.validators.password);
+                }
+                
+                if (passwordConfirmField && passwordField) {
+                    formValidator.registerValidator('password-confirm', FormValidator.validators.passwordMatch(passwordField));
+                }
+                
+                formValidator.registerValidator('name', FormValidator.validators.required);
+                
+                const websiteField = document.getElementById('website');
+                if (websiteField) {
+                    formValidator.registerValidator('website', (value) => {
+                        if (!value || value.trim() === '') return true; // Optional
+                        return FormValidator.validators.url(value);
+                    });
+                }
+            }
+        })();
+
         // Form submission
         document.getElementById('register-form').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const password = document.getElementById('password').value;
-            const passwordConfirm = document.getElementById('password-confirm').value;
-
-            if (password !== passwordConfirm) {
-                showError('Passwords do not match');
+            // Validate form
+            if (formValidator && !formValidator.validateForm()) {
+                showError('Please fix the errors in the form');
                 return;
             }
 
-            if (password.length < 8) {
-                showError('Password must be at least 8 characters');
+            const password = document.getElementById('password').value;
+            const passwordConfirm = document.getElementById('password-confirm').value;
+
+            // Double-check password match (belt and suspenders)
+            if (password !== passwordConfirm) {
+                showError('Passwords do not match');
                 return;
             }
 

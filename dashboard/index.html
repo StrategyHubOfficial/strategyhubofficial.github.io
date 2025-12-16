@@ -5,9 +5,30 @@ title: StrategyHub Dashboard
 <!-- Version: 2025-01-13-fix -->
 
 <div class="container">
-    <div id="loading" class="loading">
-        <div class="loading-spinner"></div>
-        <p>Loading dashboard...</p>
+    <div id="loading" class="skeleton-container">
+        <!-- Header skeleton -->
+        <div style="margin-bottom: 2rem;">
+            <div class="skeleton skeleton-title"></div>
+            <div class="skeleton skeleton-subtitle" style="margin-top: 1rem;"></div>
+        </div>
+        
+        <!-- Stats grid skeleton -->
+        <div class="skeleton-stats-grid">
+            <div class="skeleton skeleton-stat-card"></div>
+            <div class="skeleton skeleton-stat-card"></div>
+            <div class="skeleton skeleton-stat-card"></div>
+            <div class="skeleton skeleton-stat-card"></div>
+        </div>
+        
+        <!-- Cards skeleton -->
+        <div style="margin: 3rem 0;">
+            <div class="skeleton skeleton-title" style="width: 40%; margin-bottom: 1.5rem;"></div>
+            <div class="skeleton-grid">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
+        </div>
     </div>
     <div id="content" style="display: none;">
         <div style="margin-bottom: 2rem;">
@@ -245,11 +266,18 @@ title: StrategyHub Dashboard
                             ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length 
                             : 0;
 
+                        // Progressive loading: reveal stats as they load
                         document.getElementById('stat-bookings').textContent = bookings;
                         document.getElementById('stat-events').textContent = events;
                         document.getElementById('stat-projects').textContent = projects;
                         document.getElementById('stat-equipment').textContent = equipment;
                         document.getElementById('stats-grid').style.display = 'grid';
+                        
+                        // Hide stats skeleton once stats are loaded
+                        const statsSkeleton = document.querySelector('.skeleton-stats-grid');
+                        if (statsSkeleton) {
+                            statsSkeleton.style.display = 'none';
+                        }
 
                         // Load enhanced admin stats if available (optional, fail silently)
                         if (adminStatsRes && adminStatsRes.status === 'fulfilled' && adminStatsRes.value.success && adminStatsRes.value.data) {
@@ -303,7 +331,8 @@ title: StrategyHub Dashboard
                         console.error('Error loading stats:', err);
                     }
                     
-                    document.getElementById('loading').style.display = 'none';
+                    // Progressive loading: hide skeleton, show content
+                    document.getElementById('loading').classList.add('hidden');
                     document.getElementById('content').style.display = 'block';
                 } else {
                     // Redirect handled by requireAuth
@@ -311,7 +340,7 @@ title: StrategyHub Dashboard
                 }
             } catch (error) {
                 console.error('Dashboard init error:', error);
-                document.getElementById('loading').style.display = 'none';
+                document.getElementById('loading').classList.add('hidden');
                 const errorDiv = document.getElementById('error');
                 errorDiv.className = 'error';
                 errorDiv.textContent = 'Failed to load dashboard. Please try again.';

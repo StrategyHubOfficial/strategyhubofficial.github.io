@@ -194,9 +194,12 @@ title: Events
             </div>
         </div>
 
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading events...</p>
+        <div id="loading" class="skeleton-container">
+            <div class="skeleton-grid">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
         </div>
         <div id="error" class="error" style="display: none;"></div>
         
@@ -1004,7 +1007,7 @@ title: Events
         // Initialize
         (async () => {
             await auth.requireAuth();
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById('loading').classList.add('hidden');
             document.getElementById('events-content').style.display = 'block';
             await loadEvents(1);
             await loadSubscriptions();

@@ -23,6 +23,11 @@
     {% endif %}
     <link rel="stylesheet" href="{{ asset_path }}assets/css/main.css?v={{ site.asset_version | default: '1.0.0' }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    <link rel="manifest" href="{{ asset_path }}manifest.json">
+    <meta name="theme-color" content="#f7931a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="StrategyHub">
     {% if page.styles %}{{ page.styles }}{% endif %}
 </head>
 <body>
@@ -41,6 +46,9 @@
 <script src="{{ asset_path }}assets/js/auth.js?v={{ site.asset_version | default: '1.0.0' }}"></script>
     {% unless page.url == '/dashboard/login.html' %}<script src="{{ asset_path }}assets/js/protected-route.js?v={{ site.asset_version | default: '1.0.0' }}"></script>{% endunless %}
     <script src="{{ asset_path }}assets/js/toast.js?v={{ site.asset_version | default: '1.0.0' }}"></script>
+    <script src="{{ asset_path }}assets/js/shortcuts.js?v={{ site.asset_version | default: '1.0.0' }}"></script>
+    <script src="{{ asset_path }}assets/js/form-validation.js?v={{ site.asset_version | default: '1.0.0' }}"></script>
+    <script src="{{ asset_path }}assets/js/error-handler.js?v={{ site.asset_version | default: '1.0.0' }}"></script>
     
     <!-- Register Service Worker for asset caching -->
     <script>

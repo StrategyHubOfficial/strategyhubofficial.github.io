@@ -255,9 +255,11 @@ title: Studio Booking
 
         <div class="bookings-list">
             <h2>My Bookings</h2>
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading bookings...</p>
+        <div id="loading" class="skeleton-container">
+            <div class="skeleton-grid">
+                <div class="skeleton skeleton-card"></div>
+                <div class="skeleton skeleton-card"></div>
+            </div>
         </div>
         <div id="error" class="error" style="display: none;"></div>
             <div class="bookings-grid">
@@ -519,7 +521,7 @@ title: Studio Booking
         // Initialize
         (async () => {
             await auth.requireAuth();
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById('loading').classList.add('hidden');
             await loadBookings();
             await loadEvents();
             await loadEquipment();

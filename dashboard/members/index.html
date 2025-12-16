@@ -165,9 +165,30 @@ title: Members
             <button class="filter-btn" data-filter="pending">Pending</button>
         </div>
 
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading members...</p>
+        <div id="loading" class="skeleton-container">
+            <div class="skeleton-grid">
+                <div class="skeleton skeleton-list-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                        <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton skeleton-list-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                        <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton skeleton-list-item">
+                    <div class="skeleton skeleton-avatar"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton skeleton-text" style="width: 60%;"></div>
+                        <div class="skeleton skeleton-text" style="width: 40%;"></div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div id="error" class="error" style="display: none;"></div>
         
@@ -418,7 +439,7 @@ title: Members
         // Initialize
         (async () => {
             await auth.requireAuth();
-            document.getElementById('loading').style.display = 'none';
+            document.getElementById('loading').classList.add('hidden');
             document.getElementById('members-content').style.display = 'block';
             await loadMembers(1);
         })();
