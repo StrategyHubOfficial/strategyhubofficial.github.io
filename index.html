@@ -87,7 +87,7 @@
         }
         
         .hero .tagline .location-link {
-            color: #e8e8e8; /* Almost white, bright silver - fallback */
+            color: #e8e8e8; /* Almost white, bright silver - fallback for browsers that don't support gradient text */
             text-decoration: none;
             transition: all 0.3s ease;
             display: inline-flex;
@@ -96,18 +96,29 @@
             margin-left: 0.5rem;
             /* Drop shadow using filter */
             filter: drop-shadow(2px 4px 6px black);
-            /* Silver gradient text effect */
+            /* Silver gradient text effect - ensure it works on mobile */
             background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 50%, #e8e8e8 100%);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             background-clip: text;
+            -webkit-text-fill-color: transparent;
+            /* Fallback for mobile browsers that don't support background-clip: text */
+            color: #e8e8e8;
+        }
+        
+        /* Ensure gradient works on all browsers including mobile */
+        @supports (-webkit-background-clip: text) or (background-clip: text) {
+            .hero .tagline .location-link {
+                -webkit-text-fill-color: transparent;
+                color: transparent;
+            }
         }
         
         .hero .tagline .location-link:hover {
             background: linear-gradient(135deg, #ffffff 0%, #e0e0e0 50%, #f5f5f5 100%);
             -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
             background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
             transform: translateY(-1px);
             filter: drop-shadow(3px 5px 8px black);
         }
