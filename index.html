@@ -728,14 +728,19 @@
                         return R * c;
                     }
                     
-                    // Waypoints through Tysons Corner Center mall
-                    // These are approximate points to force the route through the mall
+                    // Waypoints from OpenStreetMap - official walking path through Tysons Corner Center
+                    // Coordinates extracted from OpenStreetMap URLs showing the actual path
                     const waypoints = [
-                        metroCoords, // Start: Metro station
-                        [38.9185, -77.2220], // Waypoint 1: Near mall entrance from metro
-                        [38.9175, -77.2215], // Waypoint 2: Inside mall
-                        [38.9165, -77.2210], // Waypoint 3: Through mall
-                        hubCoords // End: StrategyHub
+                        metroCoords, // Start: Metro station (38.9205, -77.2233)
+                        [38.920530, -77.222557], // Waypoint 1: From OpenStreetMap
+                        [38.919966, -77.222064], // Waypoint 2: From OpenStreetMap
+                        [38.919760, -77.222101], // Waypoint 3: From OpenStreetMap
+                        [38.919499, -77.220376], // Waypoint 4: From OpenStreetMap
+                        [38.918426, -77.220433], // Waypoint 5: From OpenStreetMap
+                        [38.917312, -77.219617], // Waypoint 6: From OpenStreetMap
+                        [38.916306, -77.219751], // Waypoint 7: From OpenStreetMap
+                        [38.915830, -77.220229], // Waypoint 8: From OpenStreetMap
+                        hubCoords // End: StrategyHub (38.91581192758401, -77.22079580284824)
                     ];
                     
                     try {
