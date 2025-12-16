@@ -662,30 +662,52 @@
                     maxZoom: 19
                 }).addTo(map);
                 
+                // Create custom icon with label for hub
+                const hubIcon = L.divIcon({
+                    className: 'custom-marker-label',
+                    html: `
+                        <div style="position: relative; text-align: center;">
+                            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" 
+                                 style="width: 25px; height: 41px; display: block; margin: 0 auto;">
+                            <div style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); 
+                                        background: rgba(0, 0, 0, 0.8); color: white; padding: 4px 8px; 
+                                        border-radius: 4px; font-size: 12px; font-weight: bold; white-space: nowrap;
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 1000;">
+                                Strategy
+                            </div>
+                        </div>
+                    `,
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34]
+                });
+                
+                // Create custom icon with label for metro
+                const metroIcon = L.divIcon({
+                    className: 'custom-marker-label',
+                    html: `
+                        <div style="position: relative; text-align: center;">
+                            <img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" 
+                                 style="width: 25px; height: 41px; display: block; margin: 0 auto;">
+                            <div style="position: absolute; top: -25px; left: 50%; transform: translateX(-50%); 
+                                        background: rgba(0, 0, 0, 0.8); color: white; padding: 4px 8px; 
+                                        border-radius: 4px; font-size: 12px; font-weight: bold; white-space: nowrap;
+                                        box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 1000;">
+                                Metro : Tysons Corner
+                            </div>
+                        </div>
+                    `,
+                    iconSize: [25, 41],
+                    iconAnchor: [12, 41],
+                    popupAnchor: [1, -34]
+                });
+                
                 // Add hub marker
-                const hubMarker = L.marker(hubCoords, {
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(map)
+                const hubMarker = L.marker(hubCoords, { icon: hubIcon }).addTo(map)
                     .bindPopup('StrategyHub<br>1850 Towers Cres Plaza<br>Tysons, VA 22182');
                 
                 // Add metro station marker
-                const metroMarker = L.marker(metroCoords, {
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
-                    })
-                }).addTo(map)
+                const metroMarker = L.marker(metroCoords, { icon: metroIcon }).addTo(map)
                     .bindPopup('Tysons Corner Metro Station<br>Silver Line');
                 
                 // Load walking route from OSRM (free routing service)
