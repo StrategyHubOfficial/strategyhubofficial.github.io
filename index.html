@@ -489,7 +489,7 @@
                 <div>
                     <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: var(--bitcoin-orange, #f7931a);">Location</h3>
                     <p style="font-size: 1.1rem; line-height: 1.8; color: #cccccc;">
-                        Strategy + StrategyHub<br>
+                        Strategy₿ + StrategyHub<br>
                         <span id="hub-address">[Address to be configured]</span>
                     </p>
                     <p style="margin-top: 1.5rem; color: #999;">
@@ -543,7 +543,7 @@
                 </div>
                 <div>
                     <h4>Location</h4>
-                    <p style="color: #666; margin-top: 1rem; line-height: 1.6;">Strategy + StrategyHub<br>1850 Towers Cres Plaza<br>Tysons, VA 22182<br>United States</p>
+                    <p style="color: #666; margin-top: 1rem; line-height: 1.6;">Strategy₿ + StrategyHub<br>1850 Towers Cres Plaza<br>Tysons, VA 22182<br>United States</p>
                 </div>
             </div>
             <p style="border-top: 1px solid rgba(247, 147, 26, 0.1); padding-top: 2rem; margin-top: 2rem; color: #444; font-size: 0.9rem;">
@@ -677,7 +677,7 @@
                                         background: rgba(0, 0, 0, 0.8); color: white; padding: 4px 8px; 
                                         border-radius: 4px; font-size: 12px; font-weight: bold; white-space: nowrap;
                                         box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 1000;">
-                                Strategy
+                                Strategy₿
                             </div>
                         </div>
                     `,
@@ -714,65 +714,51 @@
                 const metroMarker = L.marker(metroCoords, { icon: metroIcon }).addTo(map)
                     .bindPopup('Tysons Corner Metro Station<br>Silver Line');
                 
-                // Load walking route from OSRM (free routing service)
-                async function loadWalkingRoute() {
-                    try {
-                        // OSRM routing API (free, no API key needed)
-                        const osrmUrl = `https://router.project-osrm.org/route/v1/foot/${metroCoords[1]},${metroCoords[0]};${hubCoords[1]},${hubCoords[0]}?overview=full&geometries=geojson`;
-                        const response = await fetch(osrmUrl);
-                        const data = await response.json();
-                        
-                        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-                            const route = data.routes[0];
-                            const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]); // OSRM returns [lng, lat], Leaflet needs [lat, lng]
-                            
-                            // Draw walking path
-                            const walkingPath = L.polyline(coordinates, {
-                                color: '#f7931a', // Bitcoin orange
-                                weight: 6,
-                                opacity: 0.8,
-                                dashArray: '10, 10' // Dashed line for walking path
-                            }).addTo(map);
-                            
-                            // Add distance and duration info
-                            const distanceKm = (route.distance / 1000).toFixed(2);
-                            const durationMin = Math.round(route.duration / 60);
-                            
-                            walkingPath.bindPopup(`
-                                <strong>Walking Route</strong><br>
-                                From: Tysons Corner Metro<br>
-                                To: StrategyHub<br>
-                                Distance: ${distanceKm} km<br>
-                                Duration: ~${durationMin} minutes
-                            `);
-                            
-                            // Fit map to show the entire route
-                            map.fitBounds(walkingPath.getBounds(), { padding: [50, 50] });
-                        } else {
-                            // Fallback: draw a simple straight line if routing fails
-                            const fallbackPath = L.polyline([metroCoords, hubCoords], {
-                                color: '#f7931a',
-                                weight: 4,
-                                opacity: 0.6,
-                                dashArray: '10, 10'
-                            }).addTo(map);
-                            fallbackPath.bindPopup('Walking Route (approximate)');
-                        }
-                    } catch (error) {
-                        console.warn('Could not load walking route:', error);
-                        // Fallback: draw a simple straight line
-                        const fallbackPath = L.polyline([metroCoords, hubCoords], {
-                            color: '#f7931a',
-                            weight: 4,
-                            opacity: 0.6,
-                            dashArray: '10, 10'
-                        }).addTo(map);
-                        fallbackPath.bindPopup('Walking Route (approximate)');
+                // Draw direct walking path (as the crow flies, through the mall)
+                function drawDirectWalkingPath() {
+                    // Calculate distance using Haversine formula
+                    function calculateDistance(lat1, lon1, lat2, lon2) {
+                        const R = 6371; // Earth's radius in km
+                        const dLat = (lat2 - lat1) * Math.PI / 180;
+                        const dLon = (lon2 - lon1) * Math.PI / 180;
+                        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                                  Math.sin(dLon/2) * Math.sin(dLon/2);
+                        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                        return R * c;
                     }
+                    
+                    const distanceKm = calculateDistance(metroCoords[0], metroCoords[1], hubCoords[0], hubCoords[1]);
+                    const distanceMiles = (distanceKm * 0.621371).toFixed(2);
+                    const distanceMeters = (distanceKm * 1000).toFixed(0);
+                    
+                    // Estimate walking time (average walking speed: 5 km/h = 1.39 m/s)
+                    const walkingSpeedKmh = 5;
+                    const durationMin = Math.round((distanceKm / walkingSpeedKmh) * 60);
+                    
+                    // Draw direct straight line path (through the mall)
+                    const walkingPath = L.polyline([metroCoords, hubCoords], {
+                        color: '#f7931a', // Bitcoin orange
+                        weight: 6,
+                        opacity: 0.8,
+                        dashArray: '10, 10' // Dashed line for walking path
+                    }).addTo(map);
+                    
+                    walkingPath.bindPopup(`
+                        <strong>Walking Route (Direct)</strong><br>
+                        From: Tysons Corner Metro<br>
+                        To: StrategyHub<br>
+                        Distance: ${distanceMeters} m (${distanceMiles} mi)<br>
+                        Duration: ~${durationMin} minutes<br>
+                        <em>Direct path through Tysons Corner Center</em>
+                    `);
+                    
+                    // Fit map to show the entire route
+                    map.fitBounds(walkingPath.getBounds(), { padding: [50, 50] });
                 }
                 
-                // Load the walking route
-                loadWalkingRoute();
+                // Draw the direct walking path
+                drawDirectWalkingPath();
                 
                 // Load address from config (if available)
                 if (window.HUB_CONFIG && window.HUB_CONFIG.address) {
