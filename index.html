@@ -94,14 +94,9 @@
             align-items: center;
             gap: 0;
             margin-left: 0.5rem;
-            /* Thick black border effect using multiple text-shadows */
-            text-shadow: 
-                0 0 0 #000, 0 0 0 #000, 0 0 0 #000, 0 0 0 #000,
-                1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000,
-                1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
-                2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
-                2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
-            /* Gradient text effect */
+            /* Simple text shadow for subtle outline */
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.6);
+            /* Silver gradient text effect */
             background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 50%, #e8e8e8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -114,6 +109,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             transform: translateY(-1px);
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.7);
         }
         
         .hero .mission {
