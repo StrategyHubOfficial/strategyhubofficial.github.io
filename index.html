@@ -94,8 +94,8 @@
             align-items: center;
             gap: 0;
             margin-left: 0.5rem;
-            /* Simple text shadow for subtle outline */
-            text-shadow: 0 0 2px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.6);
+            /* Drop shadow using filter */
+            filter: drop-shadow(2px 4px 6px black);
             /* Silver gradient text effect */
             background: linear-gradient(135deg, #f0f0f0 0%, #d0d0d0 50%, #e8e8e8 100%);
             -webkit-background-clip: text;
@@ -109,7 +109,7 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             transform: translateY(-1px);
-            text-shadow: 0 0 3px rgba(0, 0, 0, 0.9), 0 0 6px rgba(0, 0, 0, 0.7);
+            filter: drop-shadow(3px 5px 8px black);
         }
         
         .hero .mission {
@@ -703,12 +703,12 @@
                 const bounds = L.latLngBounds([hubCoords, metroCoords]);
                 const map = L.map('map').fitBounds(bounds, { padding: [50, 50] });
             
-                // Use OpenStreetMap tiles (free, no API key needed)
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    maxZoom: 19
-                }).addTo(map);
-                
+            // Use OpenStreetMap tiles (free, no API key needed)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
                 // Remove or customize the attribution control
                 map.attributionControl.setPrefix(''); // Remove any prefix
                 // Optionally hide the attribution entirely
