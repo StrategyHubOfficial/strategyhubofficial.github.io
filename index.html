@@ -398,7 +398,21 @@
             }
         }
         
+        /* Mobile-friendly location grid */
+        .location-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 3rem;
+            align-items: start;
+        }
+        
         @media (max-width: 768px) {
+            .location-grid {
+                grid-template-columns: 1fr !important;
+                gap: 2rem !important;
+            }
+            
             .hero {
                 padding: 6rem 0 4rem;
             }
