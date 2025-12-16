@@ -18,13 +18,11 @@ jobs:
       with:
         node-version: '18'
         cache: 'npm'
-        cache-dependency-path: 'strategyhubofficial.github.io/package-lock.json'
+        cache-dependency-path: 'package-lock.json'
     
     - name: Install dependencies
-      working-directory: strategyhubofficial.github.io
       run: npm ci
     
     - name: Run ESLint
-      working-directory: strategyhubofficial.github.io
       run: npm run lint
 
