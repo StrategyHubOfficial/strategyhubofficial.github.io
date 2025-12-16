@@ -1,0 +1,366 @@
+---
+layout: default
+title: Equipment QR Code Labels
+---
+
+<style>
+.labels-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.labels-controls {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.label-size-selector {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.label-size-selector label {
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.label-size-selector select {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.labels-grid {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* 1x1 inch labels (96 DPI = 96x96px, but we'll use 100x100px for better visibility) */
+.labels-grid.size-1x1 {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+}
+
+/* 2x2 inch labels (192x192px, but we'll use 200x200px) */
+.labels-grid.size-2x2 {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.label-item {
+    background: white;
+    border: 1px solid #ccc;
+    padding: 0.5rem;
+    text-align: center;
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.label-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.label-item .equipment-name {
+    font-size: 0.7rem;
+    color: #000;
+    margin-top: 0.25rem;
+    word-break: break-word;
+    font-weight: 600;
+}
+
+.label-item .equipment-id {
+    font-size: 0.6rem;
+    color: #666;
+    margin-top: 0.1rem;
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: white;
+        color: black;
+    }
+
+    .labels-controls {
+        display: none;
+    }
+
+    .labels-grid {
+        gap: 0.25rem;
+    }
+
+    .label-item {
+        border: 1px solid #000;
+        padding: 0.25rem;
+    }
+
+    /* Ensure labels fit on page */
+    @page {
+        margin: 0.5in;
+        size: letter;
+    }
+}
+
+/* PDF export styles */
+.pdf-export {
+    background: white;
+    padding: 0.5in;
+}
+
+.pdf-export .labels-grid {
+    gap: 0.1in;
+}
+
+.pdf-export .label-item {
+    border: 1px solid #000;
+    padding: 0.1in;
+    background: white;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-controls select {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+</style>
+
+<div class="container">
+    <div class="labels-container">
+        <h1>Equipment QR Code Labels</h1>
+
+        <div id="loading" class="skeleton-container">
+            <div class="skeleton skeleton-card" style="height: 400px;"></div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="labels-content" style="display: none;">
+            <div class="labels-controls">
+                <div class="filter-controls">
+                    <label for="type-filter">Filter by Type:</label>
+                    <select id="type-filter">
+                        <option value="all">All Equipment</option>
+                        <option value="borrowable">Borrowable Only</option>
+                        <option value="server">Servers</option>
+                        <option value="infrastructure">Infrastructure</option>
+                    </select>
+                </div>
+                <div class="label-size-selector">
+                    <label for="label-size">Label Size:</label>
+                    <select id="label-size">
+                        <option value="1x1">1" x 1"</option>
+                        <option value="2x2" selected>2" x 2"</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="exportToPDF()">📄 Export to PDF</button>
+                <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Labels</button>
+            </div>
+
+            <div id="labels-grid" class="labels-grid size-2x2"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Load html2pdf library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+let allQRCodes = [];
+let filteredQRCodes = [];
+
+async function exportToPDF() {
+    const grid = document.getElementById('labels-grid');
+    if (!grid || filteredQRCodes.length === 0) {
+        if (typeof toast !== 'undefined') {
+            toast.error('No labels to export');
+        }
+        return;
+    }
+
+    try {
+        // Show loading
+        if (typeof toast !== 'undefined') {
+            toast.info('Generating PDF...');
+        }
+
+        // Create a temporary container for PDF export
+        const exportContainer = document.createElement('div');
+        exportContainer.className = 'pdf-export';
+        exportContainer.style.position = 'absolute';
+        exportContainer.style.left = '-9999px';
+        exportContainer.style.width = '8.5in'; // Letter size width
+        exportContainer.style.background = 'white';
+        
+        // Clone the grid
+        const gridClone = grid.cloneNode(true);
+        gridClone.style.display = 'grid';
+        gridClone.style.background = 'white';
+        
+        // Update all images to be fully loaded
+        const images = gridClone.querySelectorAll('img');
+        const imagePromises = Array.from(images).map(img => {
+            return new Promise((resolve) => {
+                if (img.complete) {
+                    resolve();
+                } else {
+                    img.onload = resolve;
+                    img.onerror = resolve; // Continue even if image fails
+                }
+            });
+        });
+
+        await Promise.all(imagePromises);
+        
+        exportContainer.appendChild(gridClone);
+        document.body.appendChild(exportContainer);
+
+        // Configure PDF options
+        const size = document.getElementById('label-size').value;
+        const is1x1 = size === '1x1';
+        
+        const opt = {
+            margin: [0.25, 0.25, 0.25, 0.25], // Top, right, bottom, left in inches
+            filename: `equipment-labels-${size}-${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2, // Higher quality
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            },
+            jsPDF: { 
+                unit: 'in', 
+                format: 'letter', 
+                orientation: 'portrait' 
+            },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        // Generate PDF
+        await html2pdf().set(opt).from(exportContainer).save();
+        
+        // Cleanup
+        document.body.removeChild(exportContainer);
+
+        if (typeof toast !== 'undefined') {
+            toast.success('PDF exported successfully!');
+        }
+    } catch (error) {
+        console.error('Error exporting PDF:', error);
+        if (typeof toast !== 'undefined') {
+            toast.error('Failed to export PDF: ' + error.message);
+        }
+    }
+}
+
+(async () => {
+    // Wait for auth
+    if (typeof auth === 'undefined' || typeof api === 'undefined') {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Require admin access
+    try {
+        await auth.requireAuth();
+        if (!window.isAdmin) {
+            window.location.href = '/dashboard/';
+            return;
+        }
+    } catch (error) {
+        console.error('Auth error:', error);
+        return;
+    }
+
+    async function loadQRCodes() {
+        try {
+            const response = await api.get('/api/equipment/qr-codes/bulk');
+            
+            if (!response.success) {
+                throw new Error(response.error || 'Failed to load QR codes');
+            }
+
+            allQRCodes = response.data.qrCodes || [];
+            filteredQRCodes = [...allQRCodes];
+            displayLabels();
+        } catch (error) {
+            console.error('Error loading QR codes:', error);
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = error.message || 'Failed to load QR codes';
+            document.getElementById('loading').classList.add('hidden');
+        }
+    }
+
+    function displayLabels() {
+        const grid = document.getElementById('labels-grid');
+        const size = document.getElementById('label-size').value;
+        
+        // Update grid class for size
+        grid.className = `labels-grid size-${size}`;
+        
+        // Determine QR code size based on label size
+        const qrSize = size === '1x1' ? '100x100' : '200x200';
+        
+        grid.innerHTML = filteredQRCodes.map(item => {
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=${qrSize}&data=${encodeURIComponent(item.url)}`;
+            return `
+                <div class="label-item">
+                    <img src="${qrCodeUrl}" alt="QR Code for ${item.equipmentName}" />
+                    <div class="equipment-name">${item.equipmentName}</div>
+                    <div class="equipment-id">${item.equipmentId.substring(0, 8)}...</div>
+                </div>
+            `;
+        }).join('');
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('labels-content').style.display = 'block';
+    }
+
+    // Filter by type
+    document.getElementById('type-filter').addEventListener('change', (e) => {
+        const filterType = e.target.value;
+        if (filterType === 'all') {
+            filteredQRCodes = [...allQRCodes];
+        } else {
+            filteredQRCodes = allQRCodes.filter(item => item.type === filterType);
+        }
+        displayLabels();
+    });
+
+    // Change label size
+    document.getElementById('label-size').addEventListener('change', () => {
+        displayLabels();
+    });
+
+    // Initialize
+    await loadQRCodes();
+})();
+
+// Make exportToPDF available globally
+window.exportToPDF = exportToPDF;
+</script>
+

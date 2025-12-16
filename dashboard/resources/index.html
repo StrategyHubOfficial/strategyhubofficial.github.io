@@ -124,14 +124,18 @@ title: Equipment
         <div id="error" class="error" style="display: none;"></div>
         
         <div id="equipment-content" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                 <div class="tabs" style="margin: 0;">
                     <button class="tab-btn active" data-tab="all">All Equipment</button>
                     <button class="tab-btn" data-tab="borrowable">Borrowable</button>
                     <button class="tab-btn" data-tab="servers">Servers</button>
                     <button class="tab-btn" data-tab="infrastructure">Infrastructure</button>
                 </div>
-                <button id="add-equipment-btn" class="btn" style="display: none;" onclick="showAddEquipmentModal()">+ Add Equipment</button>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button id="qr-labels-btn" class="btn btn-secondary" style="display: none;" onclick="window.location.href='/dashboard/admin/equipment/labels.html'">📋 Print QR Labels</button>
+                    <button id="checkin-btn" class="btn btn-secondary" style="display: none;" onclick="window.location.href='/dashboard/admin/equipment/check-in.html'">📷 Check-in Equipment</button>
+                    <button id="add-equipment-btn" class="btn" style="display: none;" onclick="showAddEquipmentModal()">+ Add Equipment</button>
+                </div>
             </div>
 
             <div id="equipment-grid" class="equipment-grid"></div>
@@ -291,13 +295,13 @@ title: Equipment
                 }
 
                 return `
-                    <div class="equipment-card">
+                    <div class="equipment-card" style="cursor: pointer;" onclick="window.location.href='/dashboard/equipment?id=${item.id}'">
                         <h3>${item.name}</h3>
                         <div class="category">${item.category}</div>
                         <span class="status ${statusClass}">${item.status}</span>
                         ${item.description ? `<p style="color: #aaa; margin: 0.5rem 0;">${item.description}</p>` : ''}
                         ${info}
-                        <div class="equipment-actions">${actions}</div>
+                        <div class="equipment-actions" onclick="event.stopPropagation();">${actions}</div>
                     </div>
                 `;
             }).join('');
@@ -380,6 +384,8 @@ title: Equipment
         function checkAdminStatus() {
             if (window.isAdmin) {
                 document.getElementById('add-equipment-btn').style.display = 'block';
+                document.getElementById('qr-labels-btn').style.display = 'block';
+                document.getElementById('checkin-btn').style.display = 'block';
             }
         }
 

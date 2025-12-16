@@ -1,0 +1,280 @@
+---
+layout: default
+title: Equipment Details
+---
+
+<style>
+.equipment-detail-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.equipment-header {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.equipment-header h1 {
+    margin: 0 0 1rem 0;
+    color: #fff;
+}
+
+.equipment-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.meta-item strong {
+    color: #f7931a;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0.5rem 0;
+}
+
+.status-badge.available { background: #2d5016; color: #4ade80; }
+.status-badge.checked-out { background: #7c2d12; color: #fb923c; }
+.status-badge.maintenance { background: #78350f; color: #fbbf24; }
+
+.equipment-description {
+    color: #ccc;
+    line-height: 1.6;
+    margin: 1.5rem 0;
+}
+
+.equipment-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.qr-code-display {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    text-align: center;
+}
+
+.qr-code-display img {
+    max-width: 200px;
+    height: auto;
+}
+
+.checkout-info {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.checkout-info h3 {
+    margin: 0 0 0.5rem 0;
+    color: #f7931a;
+    font-size: 1rem;
+}
+
+.checkout-info p {
+    margin: 0.25rem 0;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.error-message {
+    background: #7f1d1d;
+    border: 1px solid #f87171;
+    color: #f87171;
+    padding: 1rem;
+    border-radius: 8px;
+    margin: 2rem 0;
+}
+</style>
+
+<div class="container">
+    <div class="equipment-detail-container">
+        <div id="loading" class="skeleton-container">
+            <div class="skeleton skeleton-card" style="height: 400px;"></div>
+        </div>
+
+        <div id="error" class="error-message" style="display: none;"></div>
+
+        <div id="equipment-content" style="display: none;">
+            <div class="equipment-header">
+                <h1 id="equipment-name"></h1>
+                <div id="equipment-status"></div>
+                <div class="equipment-meta" id="equipment-meta"></div>
+                <div class="equipment-description" id="equipment-description"></div>
+                <div class="equipment-actions" id="equipment-actions"></div>
+            </div>
+
+            <div id="checkout-info" class="checkout-info" style="display: none;">
+                <h3>Checkout Information</h3>
+                <p id="checkout-user"></p>
+                <p id="checkout-dates"></p>
+            </div>
+
+            <div class="qr-code-display" id="qr-code-display" style="display: none;">
+                <h3 style="color: #fff; margin-bottom: 0.5rem;">QR Code</h3>
+                <img id="qr-code-image" alt="Equipment QR Code" />
+                <p style="color: #888; font-size: 0.85rem; margin-top: 0.5rem;">
+                    Scan this code to access this equipment page
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(async () => {
+    // Extract equipment ID from URL
+    // Support /dashboard/equipment?id=:id or /dashboard/equipment#:id
+    // For GitHub Pages, we use query parameter or hash
+    const urlParams = new URLSearchParams(window.location.search);
+    const hashId = window.location.hash.substring(1);
+    const equipmentId = urlParams.get('id') || hashId;
+
+    if (!equipmentId) {
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'Equipment ID not found in URL';
+        document.getElementById('loading').classList.add('hidden');
+        return;
+    }
+
+    // Wait for auth and API to be available
+    if (typeof auth === 'undefined' || typeof api === 'undefined') {
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    // Require authentication
+    try {
+        await auth.requireAuth();
+    } catch (error) {
+        console.error('Auth error:', error);
+        return;
+    }
+
+    // Load equipment details
+    async function loadEquipment() {
+        try {
+            const response = await api.get(`/api/equipment/${equipmentId}`);
+            
+            if (!response.success) {
+                throw new Error(response.error || 'Failed to load equipment');
+            }
+
+            const equipment = response.data;
+            displayEquipment(equipment);
+        } catch (error) {
+            console.error('Error loading equipment:', error);
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = error.message || 'Failed to load equipment';
+            document.getElementById('loading').classList.add('hidden');
+        }
+    }
+
+    function displayEquipment(equipment) {
+        document.getElementById('equipment-name').textContent = equipment.name;
+        
+        // Status badge
+        const statusDiv = document.getElementById('equipment-status');
+        statusDiv.innerHTML = `<span class="status-badge ${equipment.status}">${equipment.status}</span>`;
+
+        // Meta information
+        const metaDiv = document.getElementById('equipment-meta');
+        metaDiv.innerHTML = `
+            <div class="meta-item">
+                <strong>Category:</strong> <span>${equipment.category}</span>
+            </div>
+            <div class="meta-item">
+                <strong>Type:</strong> <span>${equipment.type}</span>
+            </div>
+        `;
+
+        // Description
+        const descDiv = document.getElementById('equipment-description');
+        descDiv.textContent = equipment.description || 'No description available';
+
+        // Actions
+        const actionsDiv = document.getElementById('equipment-actions');
+        if (equipment.type === 'borrowable' && equipment.status === 'available') {
+            actionsDiv.innerHTML = `
+                <button class="btn" onclick="requestBorrow('${equipment.id}')">Request to Borrow</button>
+                <a href="/dashboard/resources/" class="btn btn-secondary">Back to Equipment</a>
+            `;
+        } else if (equipment.status === 'checked-out') {
+            actionsDiv.innerHTML = `
+                <a href="/dashboard/resources/" class="btn btn-secondary">Back to Equipment</a>
+            `;
+            // Show checkout info
+            if (equipment.checkoutSession) {
+                document.getElementById('checkout-info').style.display = 'block';
+                document.getElementById('checkout-user').textContent = `Checked out by: ${equipment.checkoutSession.userEmail}`;
+                const checkoutDate = new Date(equipment.checkoutSession.checkoutDate).toLocaleDateString();
+                const returnDate = new Date(equipment.checkoutSession.returnDate).toLocaleDateString();
+                document.getElementById('checkout-dates').textContent = `Checkout: ${checkoutDate} - Return: ${returnDate}`;
+            }
+        } else {
+            actionsDiv.innerHTML = `
+                <a href="/dashboard/resources/" class="btn btn-secondary">Back to Equipment</a>
+            `;
+        }
+
+        // Show QR code (if admin or if available)
+        if (window.isAdmin || equipment.status === 'available') {
+            loadQRCode(equipment.id);
+        }
+
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('equipment-content').style.display = 'block';
+    }
+
+    async function loadQRCode(equipmentId) {
+        try {
+            // For now, we'll generate QR code on frontend or fetch from backend
+            // This will be implemented in Phase 2
+            const qrCodeDiv = document.getElementById('qr-code-display');
+            qrCodeDiv.style.display = 'block';
+            
+            // Generate QR code URL (using query parameter for GitHub Pages compatibility)
+            const equipmentUrl = `${window.location.origin}/dashboard/equipment?id=${equipmentId}`;
+            
+            // Use a QR code service or library
+            // For now, we'll use a simple API (will be replaced with backend generation in Phase 2)
+            const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(equipmentUrl)}`;
+            document.getElementById('qr-code-image').src = qrCodeUrl;
+        } catch (error) {
+            console.error('Error loading QR code:', error);
+        }
+    }
+
+    window.requestBorrow = function(equipmentId) {
+        window.location.href = `/dashboard/resources/?checkout=${equipmentId}`;
+    };
+
+    // Initialize
+    await loadEquipment();
+})();
+</script>
+
