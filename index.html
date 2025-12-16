@@ -603,19 +603,27 @@
 
         // Initialize map
         (() => {
-            // Wait for Leaflet to load
-            if (typeof L === 'undefined') {
-                console.error('Leaflet library not loaded');
-                return;
-            }
+            let retryCount = 0;
+            const maxRetries = 50; // 5 seconds max wait
             
-            const mapElement = document.getElementById('map');
-            if (!mapElement) {
-                console.error('Map element not found');
-                return;
-            }
-            
-            try {
+            function initMap() {
+                if (typeof L === 'undefined') {
+                    retryCount++;
+                    if (retryCount < maxRetries) {
+                        setTimeout(initMap, 100);
+                        return;
+                    }
+                    console.error('Leaflet library not loaded after retries');
+                    return;
+                }
+                
+                const mapElement = document.getElementById('map');
+                if (!mapElement) {
+                    console.error('Map element not found');
+                    return;
+                }
+                
+                try {
                 // Default coordinates (Tysons, VA)
                 const defaultCoords = [38.91581192758401, -77.22079580284824];
                 const map = L.map('map').setView(defaultCoords, 15);
