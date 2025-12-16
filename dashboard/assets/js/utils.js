@@ -9,7 +9,7 @@
  * @param {boolean} immediate - Execute immediately on first call
  * @returns {Function} Debounced function
  */
-export function debounce(func, wait = 300, immediate = false) {
+function debounce(func, wait = 300, immediate = false) {
   let timeout;
   return function executedFunction(...args) {
     const later = () => {
@@ -29,7 +29,7 @@ export function debounce(func, wait = 300, immediate = false) {
  * @param {number} wait - Wait time in milliseconds
  * @returns {Function} Throttled function
  */
-export function throttle(func, wait = 300) {
+function throttle(func, wait = 300) {
   let inThrottle;
   return function executedFunction(...args) {
     if (!inThrottle) {
@@ -48,7 +48,12 @@ export function throttle(func, wait = 300) {
  * @param {number} delay - Delay in milliseconds (default: 300ms)
  * @returns {Function} Debounced search handler
  */
-export function createDebouncedSearch(searchFunction, delay = 300) {
+function createDebouncedSearch(searchFunction, delay = 300) {
   return debounce(searchFunction, delay);
 }
+
+// Export to global scope
+window.debounce = debounce;
+window.throttle = throttle;
+window.createDebouncedSearch = createDebouncedSearch;
 

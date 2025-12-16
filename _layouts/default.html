@@ -46,7 +46,8 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const swPath = '{{ asset_path }}sw.js';
+                // Service worker should always be at /dashboard/sw.js
+                const swPath = '/dashboard/sw.js';
                 navigator.serviceWorker.register(swPath)
                     .then((registration) => {
                         console.log('Service Worker registered:', registration.scope);

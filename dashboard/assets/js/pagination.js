@@ -2,7 +2,7 @@
  * Pagination Component - Consistent pagination across the system
  */
 
-export class Pagination {
+class Pagination {
   constructor(options = {}) {
     this.currentPage = options.currentPage || 1;
     this.pageSize = options.pageSize || 20;
