@@ -207,39 +207,41 @@
     </div>
 
     <script>
-        // Check for token in URL (from OAuth callback) - do this first
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token) {
-            localStorage.setItem('hub_token', token);
-            window.location.href = '/dashboard';
-            return;
-        }
-
-        // Check for registration success
-        if (urlParams.get('registered') === 'true') {
-            const successDiv = document.getElementById('success-message');
-            successDiv.textContent = 'Registration successful! Please log in with your new account.';
-            successDiv.style.display = 'block';
-        }
-
-        // Check if already logged in
-        (async () => {
-            if (auth.isAuthenticated()) {
-                const isValid = await auth.checkAuth();
-                if (isValid) {
-                    window.location.href = '/dashboard/';
-                    return;
-                }
+        // Wrap in IIFE to allow return statements
+        (function() {
+            // Check for token in URL (from OAuth callback) - do this first
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            if (token) {
+                localStorage.setItem('hub_token', token);
+                window.location.href = '/dashboard';
+                return;
             }
-        })();
 
-        // Handle login form
-        let tempToken = null;
-        let userId = null;
-        let requires2FA = false;
+            // Check for registration success
+            if (urlParams.get('registered') === 'true') {
+                const successDiv = document.getElementById('success-message');
+                successDiv.textContent = 'Registration successful! Please log in with your new account.';
+                successDiv.style.display = 'block';
+            }
 
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            // Check if already logged in
+            (async () => {
+                if (auth.isAuthenticated()) {
+                    const isValid = await auth.checkAuth();
+                    if (isValid) {
+                        window.location.href = '/dashboard/';
+                        return;
+                    }
+                }
+            })();
+
+            // Handle login form
+            let tempToken = null;
+            let userId = null;
+            let requires2FA = false;
+
+            document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
@@ -339,10 +341,10 @@
                 loginBtn.disabled = false;
                 loginBtn.textContent = 'Sign In';
             }
-        });
+            });
 
-        // GitHub OAuth login
-        document.getElementById('github-login-btn').addEventListener('click', async () => {
+            // GitHub OAuth login
+            document.getElementById('github-login-btn').addEventListener('click', async () => {
             try {
                 const response = await api.get('/api/auth/github');
                 if (response.success) {
@@ -358,15 +360,16 @@
                 errorDiv.textContent = 'Error initiating GitHub login. Please try again.';
                 errorDiv.classList.add('show');
             }
-        });
-
-        // Auto-format 2FA code input (6 digits only)
-        const twoFACodeInput = document.getElementById('2fa-code');
-        if (twoFACodeInput) {
-            twoFACodeInput.addEventListener('input', function(e) {
-                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
             });
-        }
+
+            // Auto-format 2FA code input (6 digits only)
+            const twoFACodeInput = document.getElementById('2fa-code');
+            if (twoFACodeInput) {
+                twoFACodeInput.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+                });
+            }
+        })();
     </script>
 </body>
 </html>
