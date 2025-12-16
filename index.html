@@ -646,9 +646,15 @@
                 }
                 
                 try {
-                // Default coordinates (Tysons, VA)
-                const defaultCoords = [38.91581192758401, -77.22079580284824];
-                const map = L.map('map').setView(defaultCoords, 15);
+                // Coordinates
+                const hubCoords = window.HUB_CONFIG && window.HUB_CONFIG.coordinates 
+                    ? window.HUB_CONFIG.coordinates.split(',').map(Number)
+                    : [38.91581192758401, -77.22079580284824];
+                const metroCoords = [38.9205, -77.2233]; // Tysons Corner Metro Station (Silver Line)
+                
+                // Center map to show both locations
+                const bounds = L.latLngBounds([hubCoords, metroCoords]);
+                const map = L.map('map').fitBounds(bounds, { padding: [50, 50] });
                 
                 // Use OpenStreetMap tiles (free, no API key needed)
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -656,22 +662,99 @@
                     maxZoom: 19
                 }).addTo(map);
                 
-                // Add marker
-                const marker = L.marker(defaultCoords).addTo(map)
+                // Add hub marker
+                const hubMarker = L.marker(hubCoords, {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map)
                     .bindPopup('StrategyHub<br>1850 Towers Cres Plaza<br>Tysons, VA 22182');
                 
-                // Load address and coordinates from config (if available)
+                // Add metro station marker
+                const metroMarker = L.marker(metroCoords, {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map)
+                    .bindPopup('Tysons Corner Metro Station<br>Silver Line');
+                
+                // Load walking route from OSRM (free routing service)
+                async function loadWalkingRoute() {
+                    try {
+                        // OSRM routing API (free, no API key needed)
+                        const osrmUrl = `https://router.project-osrm.org/route/v1/foot/${metroCoords[1]},${metroCoords[0]};${hubCoords[1]},${hubCoords[0]}?overview=full&geometries=geojson`;
+                        const response = await fetch(osrmUrl);
+                        const data = await response.json();
+                        
+                        if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                            const route = data.routes[0];
+                            const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]); // OSRM returns [lng, lat], Leaflet needs [lat, lng]
+                            
+                            // Draw walking path
+                            const walkingPath = L.polyline(coordinates, {
+                                color: '#f7931a', // Bitcoin orange
+                                weight: 6,
+                                opacity: 0.8,
+                                dashArray: '10, 10' // Dashed line for walking path
+                            }).addTo(map);
+                            
+                            // Add distance and duration info
+                            const distanceKm = (route.distance / 1000).toFixed(2);
+                            const durationMin = Math.round(route.duration / 60);
+                            
+                            walkingPath.bindPopup(`
+                                <strong>Walking Route</strong><br>
+                                From: Tysons Corner Metro<br>
+                                To: StrategyHub<br>
+                                Distance: ${distanceKm} km<br>
+                                Duration: ~${durationMin} minutes
+                            `);
+                            
+                            // Fit map to show the entire route
+                            map.fitBounds(walkingPath.getBounds(), { padding: [50, 50] });
+                        } else {
+                            // Fallback: draw a simple straight line if routing fails
+                            const fallbackPath = L.polyline([metroCoords, hubCoords], {
+                                color: '#f7931a',
+                                weight: 4,
+                                opacity: 0.6,
+                                dashArray: '10, 10'
+                            }).addTo(map);
+                            fallbackPath.bindPopup('Walking Route (approximate)');
+                        }
+                    } catch (error) {
+                        console.warn('Could not load walking route:', error);
+                        // Fallback: draw a simple straight line
+                        const fallbackPath = L.polyline([metroCoords, hubCoords], {
+                            color: '#f7931a',
+                            weight: 4,
+                            opacity: 0.6,
+                            dashArray: '10, 10'
+                        }).addTo(map);
+                        fallbackPath.bindPopup('Walking Route (approximate)');
+                    }
+                }
+                
+                // Load the walking route
+                loadWalkingRoute();
+                
+                // Load address from config (if available)
                 if (window.HUB_CONFIG && window.HUB_CONFIG.address) {
                     const addressEl = document.getElementById('hub-address');
                     if (addressEl) {
                         addressEl.textContent = window.HUB_CONFIG.address;
                     }
-                }
-                if (window.HUB_CONFIG && window.HUB_CONFIG.coordinates) {
-                    const [lat, lng] = window.HUB_CONFIG.coordinates.split(',').map(Number);
-                    map.setView([lat, lng], 15);
-                    marker.setLatLng([lat, lng]);
-                    marker.setPopupContent(`StrategyHub<br>${window.HUB_CONFIG.address || ''}`);
+                    hubMarker.setPopupContent(`StrategyHub<br>${window.HUB_CONFIG.address}`);
                 }
             } catch (error) {
                 console.error('Error initializing map:', error);
