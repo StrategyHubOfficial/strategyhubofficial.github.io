@@ -696,11 +696,16 @@
                 const bounds = L.latLngBounds([hubCoords, metroCoords]);
                 const map = L.map('map').fitBounds(bounds, { padding: [50, 50] });
             
-            // Use OpenStreetMap tiles (free, no API key needed)
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
-            }).addTo(map);
+                // Use OpenStreetMap tiles (free, no API key needed)
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                
+                // Remove or customize the attribution control
+                map.attributionControl.setPrefix(''); // Remove any prefix
+                // Optionally hide the attribution entirely
+                // map.attributionControl.remove();
             
                 // Create custom icon with label for hub
                 const hubIcon = L.divIcon({
