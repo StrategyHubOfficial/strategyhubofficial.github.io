@@ -549,7 +549,22 @@
     </div>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+    <script>
+        // Load Leaflet asynchronously with error handling
+        (function() {
+            const leafletScript = document.createElement('script');
+            leafletScript.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            leafletScript.crossOrigin = 'anonymous';
+            leafletScript.onerror = function() {
+                console.error('Failed to load Leaflet from unpkg.com, trying jsDelivr...');
+                const fallbackScript = document.createElement('script');
+                fallbackScript.src = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
+                fallbackScript.crossOrigin = 'anonymous';
+                document.head.appendChild(fallbackScript);
+            };
+            document.head.appendChild(leafletScript);
+        })();
+    </script>
     <script>
         // Load public announcements
         (async () => {
