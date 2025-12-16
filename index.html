@@ -714,8 +714,8 @@
                 const metroMarker = L.marker(metroCoords, { icon: metroIcon }).addTo(map)
                     .bindPopup('Tysons Corner Metro Station<br>Silver Line');
                 
-                // Draw direct walking path (as the crow flies, through the mall)
-                function drawDirectWalkingPath() {
+                // Draw curved walking path (following arc of a circle, bending to the right)
+                function drawCurvedWalkingPath() {
                     // Calculate distance using Haversine formula
                     function calculateDistance(lat1, lon1, lat2, lon2) {
                         const R = 6371; // Earth's radius in km
@@ -728,16 +728,83 @@
                         return R * c;
                     }
                     
-                    const distanceKm = calculateDistance(metroCoords[0], metroCoords[1], hubCoords[0], hubCoords[1]);
-                    const distanceMiles = (distanceKm * 0.621371).toFixed(2);
-                    const distanceMeters = (distanceKm * 1000).toFixed(0);
+                    // Calculate midpoint between metro and hub
+                    const midLat = (metroCoords[0] + hubCoords[0]) / 2;
+                    const midLon = (metroCoords[1] + hubCoords[1]) / 2;
                     
-                    // Estimate walking time (average walking speed: 5 km/h = 1.39 m/s)
+                    // Calculate perpendicular vector (to the right)
+                    // Get bearing from metro to hub
+                    const dLon = (hubCoords[1] - metroCoords[1]) * Math.PI / 180;
+                    const lat1 = metroCoords[0] * Math.PI / 180;
+                    const lat2 = hubCoords[0] * Math.PI / 180;
+                    const y = Math.sin(dLon) * Math.cos(lat2);
+                    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+                    const bearing = Math.atan2(y, x);
+                    
+                    // Perpendicular bearing (90 degrees to the right)
+                    const perpBearing = bearing + Math.PI / 2;
+                    
+                    // Calculate offset distance (about 30% of the straight-line distance)
+                    const straightDistance = calculateDistance(metroCoords[0], metroCoords[1], hubCoords[0], hubCoords[1]);
+                    const offsetDistanceKm = straightDistance * 0.3; // 30% offset
+                    const offsetDistanceMeters = offsetDistanceKm * 1000;
+                    
+                    // Calculate circle center (midpoint offset to the right)
+                    const R = 6371000; // Earth's radius in meters
+                    const offsetLat = midLat + (offsetDistanceMeters / R) * (180 / Math.PI) * Math.cos(perpBearing);
+                    const offsetLon = midLon + (offsetDistanceMeters / R) * (180 / Math.PI) * Math.sin(perpBearing) / Math.cos(midLat * Math.PI / 180);
+                    const circleCenter = [offsetLat, offsetLon];
+                    
+                    // Calculate radius of the circle (distance from center to either endpoint)
+                    const radius = calculateDistance(circleCenter[0], circleCenter[1], metroCoords[0], metroCoords[1]);
+                    
+                    // Calculate angles for metro and hub relative to circle center
+                    function getAngle(point, center) {
+                        const dLon = (point[1] - center[1]) * Math.PI / 180;
+                        const lat1 = center[0] * Math.PI / 180;
+                        const lat2 = point[0] * Math.PI / 180;
+                        const y = Math.sin(dLon) * Math.cos(lat2);
+                        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+                        return Math.atan2(y, x);
+                    }
+                    
+                    let startAngle = getAngle(metroCoords, circleCenter);
+                    let endAngle = getAngle(hubCoords, circleCenter);
+                    
+                    // Ensure we go the right direction (bend to the right)
+                    // If going clockwise, adjust angles
+                    let angleDiff = endAngle - startAngle;
+                    if (angleDiff > Math.PI) {
+                        angleDiff -= 2 * Math.PI;
+                    } else if (angleDiff < -Math.PI) {
+                        angleDiff += 2 * Math.PI;
+                    }
+                    
+                    // Generate points along the arc
+                    const numPoints = 50; // Number of points for smooth curve
+                    const arcPoints = [];
+                    
+                    for (let i = 0; i <= numPoints; i++) {
+                        const t = i / numPoints;
+                        const angle = startAngle + angleDiff * t;
+                        
+                        // Calculate point on circle
+                        const pointLat = circleCenter[0] + (radius * 1000 / R) * (180 / Math.PI) * Math.cos(angle);
+                        const pointLon = circleCenter[1] + (radius * 1000 / R) * (180 / Math.PI) * Math.sin(angle) / Math.cos(circleCenter[0] * Math.PI / 180);
+                        arcPoints.push([pointLat, pointLon]);
+                    }
+                    
+                    // Calculate arc distance (approximate)
+                    const arcDistanceKm = radius * Math.abs(angleDiff);
+                    const arcDistanceMiles = (arcDistanceKm * 0.621371).toFixed(2);
+                    const arcDistanceMeters = (arcDistanceKm * 1000).toFixed(0);
+                    
+                    // Estimate walking time (average walking speed: 5 km/h)
                     const walkingSpeedKmh = 5;
-                    const durationMin = Math.round((distanceKm / walkingSpeedKmh) * 60);
+                    const durationMin = Math.round((arcDistanceKm / walkingSpeedKmh) * 60);
                     
-                    // Draw direct straight line path (through the mall)
-                    const walkingPath = L.polyline([metroCoords, hubCoords], {
+                    // Draw curved path
+                    const walkingPath = L.polyline(arcPoints, {
                         color: '#f7931a', // Bitcoin orange
                         weight: 6,
                         opacity: 0.8,
@@ -745,20 +812,20 @@
                     }).addTo(map);
                     
                     walkingPath.bindPopup(`
-                        <strong>Walking Route (Direct)</strong><br>
+                        <strong>Walking Route (Through Mall)</strong><br>
                         From: Tysons Corner Metro<br>
                         To: StrategyHub<br>
-                        Distance: ${distanceMeters} m (${distanceMiles} mi)<br>
+                        Distance: ~${arcDistanceMeters} m (${arcDistanceMiles} mi)<br>
                         Duration: ~${durationMin} minutes<br>
-                        <em>Direct path through Tysons Corner Center</em>
+                        <em>Curved path through Tysons Corner Center</em>
                     `);
                     
                     // Fit map to show the entire route
                     map.fitBounds(walkingPath.getBounds(), { padding: [50, 50] });
                 }
                 
-                // Draw the direct walking path
-                drawDirectWalkingPath();
+                // Draw the curved walking path
+                drawCurvedWalkingPath();
                 
                 // Load address from config (if available)
                 if (window.HUB_CONFIG && window.HUB_CONFIG.address) {
