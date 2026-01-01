@@ -370,7 +370,7 @@ title: Events
                                     ? `<button class="btn btn-small" onclick="rsvpToEvent('${event.id}')">RSVP</button>`
                                     : `<button class="btn-secondary btn-small" onclick="cancelRSVP('${event.id}')">Cancel RSVP</button>`
                                 }
-                                <a href="${api.baseURL}/api/events/${event.id}/ics" 
+                                <a href="${api?.baseURL || window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev'}/api/events/${event.id}/ics" 
                                    class="btn-secondary btn-small" 
                                    style="text-decoration: none; display: inline-block;"
                                    download="event-${event.id}.ics"

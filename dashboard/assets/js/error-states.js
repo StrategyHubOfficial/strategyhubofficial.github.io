@@ -110,7 +110,7 @@ class ErrorStateManager {
       <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">Something went wrong</h3>
       <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${message}</p>
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <button class="btn" onclick="window.errorStateManager.retry('${errorId}')" style="
+        <button class="btn" onclick="if(window.errorStateManager){window.errorStateManager.retry('${errorId}');}" style="
           background: var(--bitcoin-orange);
           color: white;
           border: none;

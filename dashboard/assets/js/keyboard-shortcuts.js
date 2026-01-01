@@ -7,6 +7,8 @@ class KeyboardShortcuts {
   constructor() {
     this.shortcuts = new Map();
     this.helpVisible = false;
+    this.gKeyPressed = false;
+    this.gKeyTimeout = null;
     this.init();
   }
 
@@ -125,7 +127,10 @@ class KeyboardShortcuts {
       const shortcut = this.shortcuts.get(combo);
       if (shortcut) {
         e.preventDefault();
-        clearTimeout(this.gKeyTimeout);
+        if (this.gKeyTimeout) {
+          clearTimeout(this.gKeyTimeout);
+          this.gKeyTimeout = null;
+        }
         this.gKeyPressed = false;
         shortcut.handler();
       }

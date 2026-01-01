@@ -79,8 +79,14 @@ class FormValidator {
    * Validate a field with debouncing
    */
   validateField(input, rules = []) {
-    // Remove existing validation UI
+    // Remove existing validation UI and listeners
     this.clearValidation(input);
+    
+    // Remove old listeners if they exist
+    if (input._validationHandlers) {
+      input.removeEventListener('input', input._validationHandlers.input);
+      input.removeEventListener('blur', input._validationHandlers.blur);
+    }
 
     // Create debounced validator
     const debouncedValidate = this.debounce(() => {
@@ -106,6 +112,12 @@ class FormValidator {
 
       this.showValidation(input, isValid, errorMessage);
     }, 300);
+
+    // Store handlers for cleanup
+    input._validationHandlers = {
+      input: debouncedValidate,
+      blur: debouncedValidate
+    };
 
     // Validate on input
     input.addEventListener('input', debouncedValidate);
@@ -201,6 +213,13 @@ class FormValidator {
     // Reset padding if we added it
     if (input.style.paddingRight === '2.5rem') {
       input.style.paddingRight = '';
+    }
+    
+    // Remove event listeners
+    if (input._validationHandlers) {
+      input.removeEventListener('input', input._validationHandlers.input);
+      input.removeEventListener('blur', input._validationHandlers.blur);
+      delete input._validationHandlers;
     }
     
     const wrapper = this.getWrapper(input) || input.parentElement;
