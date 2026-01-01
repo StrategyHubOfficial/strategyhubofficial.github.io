@@ -9,6 +9,8 @@ class KeyboardShortcuts {
     this.helpVisible = false;
     this.gKeyPressed = false;
     this.gKeyTimeout = null;
+    this.keydownHandler = null;
+    this.escapeHandler = null;
     this.init();
   }
 
@@ -68,8 +70,9 @@ class KeyboardShortcuts {
       }
     }, 'Go to Admin');
 
-    // Add event listener
-    document.addEventListener('keydown', (e) => this.handleKeydown(e));
+    // Add event listener (store reference for cleanup)
+    this.keydownHandler = (e) => this.handleKeydown(e);
+    document.addEventListener('keydown', this.keydownHandler);
   }
 
   register(keys, handler, description) {
@@ -152,16 +155,20 @@ class KeyboardShortcuts {
   }
 
   focusSearch() {
-    // Try to find search input
-    const searchInputs = document.querySelectorAll('input[type="search"], input[placeholder*="search" i]');
-    if (searchInputs.length > 0) {
-      searchInputs[0].focus();
-      searchInputs[0].select();
-    } else {
-      // Show toast if no search available
-      if (typeof toast !== 'undefined') {
-        toast.info('No search available on this page');
+    try {
+      // Try to find search input
+      const searchInputs = document.querySelectorAll('input[type="search"], input[placeholder*="search" i]');
+      if (searchInputs.length > 0 && searchInputs[0]) {
+        searchInputs[0].focus();
+        searchInputs[0].select();
+      } else {
+        // Show toast if no search available
+        if (typeof toast !== 'undefined' && toast) {
+          toast.info('No search available on this page');
+        }
       }
+    } catch (error) {
+      console.error('Error focusing search:', error);
     }
   }
 
@@ -205,7 +212,7 @@ class KeyboardShortcuts {
       ">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
           <h2 style="margin: 0;">Keyboard Shortcuts</h2>
-          <button onclick="this.closest('.modal-overlay').remove()" style="
+          <button onclick="if(window.keyboardShortcuts){window.keyboardShortcuts.hideHelp();}" style="
             background: none;
             border: none;
             color: var(--text-primary);
@@ -217,9 +224,12 @@ class KeyboardShortcuts {
           ">×</button>
         </div>
         <div style="display: grid; gap: 1rem;">
-          ${shortcuts.map(s => `
+          ${shortcuts.map(s => {
+            const safeDesc = escapeHtml(s.description || '');
+            const safeKeys = escapeHtml(s.keys || '');
+            return `
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: var(--bg-darker); border-radius: 8px;">
-              <span style="color: var(--text-secondary);">${s.description}</span>
+              <span style="color: var(--text-secondary);">${safeDesc}</span>
               <kbd style="
                 background: var(--bg-card);
                 border: 1px solid var(--border-color);
@@ -228,9 +238,10 @@ class KeyboardShortcuts {
                 font-family: monospace;
                 font-size: 0.85rem;
                 color: var(--text-primary);
-              ">${s.keys}</kbd>
+              ">${safeKeys}</kbd>
             </div>
-          `).join('')}
+          `;
+          }).join('')}
         </div>
         <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); color: var(--text-secondary); font-size: 0.9rem;">
           Press <kbd style="padding: 0.2rem 0.4rem; background: var(--bg-darker); border-radius: 4px;">?</kbd> again or <kbd style="padding: 0.2rem 0.4rem; background: var(--bg-darker); border-radius: 4px;">Esc</kbd> to close
@@ -238,30 +249,48 @@ class KeyboardShortcuts {
       </div>
     `;
 
-    document.body.appendChild(modal);
-    this.helpVisible = true;
+    if (document.body) {
+      document.body.appendChild(modal);
+      this.helpVisible = true;
+    } else {
+      console.error('Cannot show help: document.body is not available');
+    }
 
     // Close on overlay click
-    modal.addEventListener('click', (e) => {
+    const overlayClickHandler = (e) => {
       if (e.target === modal) {
         this.hideHelp();
       }
-    });
+    };
+    modal.addEventListener('click', overlayClickHandler);
+    modal._overlayClickHandler = overlayClickHandler; // Store for cleanup
 
-    // Close on Escape
-    const escapeHandler = (e) => {
-      if (e.key === 'Escape') {
+    // Close on Escape (remove old handler if exists)
+    if (this.escapeHandler) {
+      document.removeEventListener('keydown', this.escapeHandler);
+    }
+    this.escapeHandler = (e) => {
+      if (e.key === 'Escape' && this.helpVisible) {
         this.hideHelp();
-        document.removeEventListener('keydown', escapeHandler);
       }
     };
-    document.addEventListener('keydown', escapeHandler);
+    document.addEventListener('keydown', this.escapeHandler);
   }
 
   hideHelp() {
     const modal = document.querySelector('.modal-overlay');
     if (modal) {
+      // Remove overlay click handler
+      if (modal._overlayClickHandler) {
+        modal.removeEventListener('click', modal._overlayClickHandler);
+        delete modal._overlayClickHandler;
+      }
       modal.remove();
+    }
+    // Remove escape handler
+    if (this.escapeHandler) {
+      document.removeEventListener('keydown', this.escapeHandler);
+      this.escapeHandler = null;
     }
     this.helpVisible = false;
   }
@@ -289,5 +318,17 @@ class KeyboardShortcuts {
   }
 }
 
-// Initialize keyboard shortcuts
-window.keyboardShortcuts = new KeyboardShortcuts();
+// Initialize keyboard shortcuts (only once)
+if (!window.keyboardShortcuts) {
+  window.keyboardShortcuts = new KeyboardShortcuts();
+  
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    if (window.keyboardShortcuts && window.keyboardShortcuts.keydownHandler) {
+      document.removeEventListener('keydown', window.keyboardShortcuts.keydownHandler);
+    }
+    if (window.keyboardShortcuts && window.keyboardShortcuts.escapeHandler) {
+      document.removeEventListener('keydown', window.keyboardShortcuts.escapeHandler);
+    }
+  });
+}

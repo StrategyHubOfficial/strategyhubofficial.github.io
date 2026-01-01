@@ -30,58 +30,70 @@ class ErrorStateManager {
    * Show network status indicator
    */
   showNetworkStatus(status) {
-    // Remove existing indicator
-    const existing = document.getElementById('network-status');
-    if (existing) {
-      existing.remove();
-    }
+    try {
+      // Remove existing indicator
+      const existing = document.getElementById('network-status');
+      if (existing) {
+        existing.remove();
+      }
 
-    if (status === 'offline') {
-      const indicator = document.createElement('div');
-      indicator.id = 'network-status';
-      indicator.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: var(--error);
-        color: white;
-        padding: 0.75rem;
-        text-align: center;
-        z-index: 10001;
-        animation: slideDown 0.3s ease;
-      `;
-      indicator.innerHTML = `
-        <span>⚠️ You're offline. Some features may not work.</span>
-      `;
-      document.body.insertBefore(indicator, document.body.firstChild);
-    } else if (status === 'online') {
-      const indicator = document.createElement('div');
-      indicator.id = 'network-status';
-      indicator.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: var(--success);
-        color: white;
-        padding: 0.75rem;
-        text-align: center;
-        z-index: 10001;
-        animation: slideDown 0.3s ease;
-      `;
-      indicator.innerHTML = `
-        <span>✓ You're back online!</span>
-      `;
-      document.body.insertBefore(indicator, document.body.firstChild);
-      
-      // Remove after 3 seconds
-      setTimeout(() => {
-        if (indicator.parentNode) {
-          indicator.style.animation = 'slideUp 0.3s ease';
-          setTimeout(() => indicator.remove(), 300);
+      if (status === 'offline') {
+        const indicator = document.createElement('div');
+        indicator.id = 'network-status';
+        indicator.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          background: var(--error);
+          color: white;
+          padding: 0.75rem;
+          text-align: center;
+          z-index: 10001;
+          animation: slideDown 0.3s ease;
+        `;
+        indicator.textContent = '⚠️ You\'re offline. Some features may not work.';
+        if (document.body && document.body.firstChild) {
+          document.body.insertBefore(indicator, document.body.firstChild);
+        } else if (document.body) {
+          document.body.appendChild(indicator);
         }
-      }, 3000);
+      } else if (status === 'online') {
+        const indicator = document.createElement('div');
+        indicator.id = 'network-status';
+        indicator.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          background: var(--success);
+          color: white;
+          padding: 0.75rem;
+          text-align: center;
+          z-index: 10001;
+          animation: slideDown 0.3s ease;
+        `;
+        indicator.textContent = '✓ You\'re back online!';
+        if (document.body && document.body.firstChild) {
+          document.body.insertBefore(indicator, document.body.firstChild);
+        } else if (document.body) {
+          document.body.appendChild(indicator);
+        }
+        
+        // Remove after 3 seconds
+        setTimeout(() => {
+          if (indicator.parentNode) {
+            indicator.style.animation = 'slideUp 0.3s ease';
+            setTimeout(() => {
+              if (indicator.parentNode) {
+                indicator.remove();
+              }
+            }, 300);
+          }
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Error showing network status:', error);
     }
   }
 
@@ -105,10 +117,20 @@ class ErrorStateManager {
       animation: slideDown 0.3s ease;
     `;
 
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text) => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
+    
+    const escapedMessage = escapeHtml(message);
+    const escapedDetails = context.details ? escapeHtml(context.details) : '';
+    
     errorDiv.innerHTML = `
       <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
       <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">Something went wrong</h3>
-      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${message}</p>
+      <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">${escapedMessage}</p>
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
         <button class="btn" onclick="if(window.errorStateManager){window.errorStateManager.retry('${errorId}');}" style="
           background: var(--bitcoin-orange);
@@ -132,7 +154,7 @@ class ErrorStateManager {
           Dismiss
         </button>
       </div>
-      ${context.details ? `<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">${context.details}</p>` : ''}
+      ${escapedDetails ? `<p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 1rem;">${escapedDetails}</p>` : ''}
     `;
 
     return errorDiv;
@@ -166,17 +188,27 @@ class ErrorStateManager {
     try {
       return await apiCall();
     } catch (error) {
-      // Show error with retry
+      // Show error with retry (escape error message to prevent XSS)
+      const safeErrorMessage = error?.message ? String(error.message) : 'Unknown error';
       const errorDiv = this.showErrorWithRetry(
         errorMessage,
         () => this.withRetry(apiCall, errorMessage),
-        { details: error.message }
+        { details: safeErrorMessage }
       );
 
       // Insert error into page
-      const container = document.querySelector('.container, main, #content');
-      if (container) {
-        container.appendChild(errorDiv);
+      try {
+        const container = document.querySelector('.container, main, #content');
+        if (container) {
+          container.appendChild(errorDiv);
+        } else {
+          // Fallback: append to body
+          if (document.body) {
+            document.body.appendChild(errorDiv);
+          }
+        }
+      } catch (error) {
+        console.error('Error inserting error div:', error);
       }
 
       throw error;
@@ -187,28 +219,32 @@ class ErrorStateManager {
    * Show friendly 404 page
    */
   show404() {
-    const container = document.querySelector('.container, main');
-    if (container) {
-      container.innerHTML = `
-        <div style="text-align: center; padding: 4rem 2rem;">
-          <div style="font-size: 6rem; margin-bottom: 1rem;">404</div>
-          <h1 style="color: var(--text-primary); margin-bottom: 0.5rem;">Page Not Found</h1>
-          <p style="color: var(--text-secondary); margin-bottom: 2rem;">
-            The page you're looking for doesn't exist or has been moved.
-          </p>
-          <a href="/dashboard/" class="btn" style="
-            display: inline-block;
-            text-decoration: none;
-            padding: 0.75rem 1.5rem;
-            background: var(--bitcoin-orange);
-            color: white;
-            border-radius: 8px;
-            font-weight: 600;
-          ">
-            Go to Dashboard
-          </a>
-        </div>
-      `;
+    try {
+      const container = document.querySelector('.container, main');
+      if (container) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 4rem 2rem;">
+            <div style="font-size: 6rem; margin-bottom: 1rem;">404</div>
+            <h1 style="color: var(--text-primary); margin-bottom: 0.5rem;">Page Not Found</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+              The page you're looking for doesn't exist or has been moved.
+            </p>
+            <a href="/dashboard/" class="btn" style="
+              display: inline-block;
+              text-decoration: none;
+              padding: 0.75rem 1.5rem;
+              background: var(--bitcoin-orange);
+              color: white;
+              border-radius: 8px;
+              font-weight: 600;
+            ">
+              Go to Dashboard
+            </a>
+          </div>
+        `;
+      }
+    } catch (error) {
+      console.error('Error showing 404 page:', error);
     }
   }
 
@@ -255,5 +291,19 @@ class ErrorStateManager {
   }
 }
 
-// Initialize error state manager
-window.errorStateManager = new ErrorStateManager();
+// Initialize error state manager (only once)
+if (!window.errorStateManager) {
+  window.errorStateManager = new ErrorStateManager();
+  
+  // Cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    if (window.errorStateManager) {
+      if (window.errorStateManager.onlineHandler) {
+        window.removeEventListener('online', window.errorStateManager.onlineHandler);
+      }
+      if (window.errorStateManager.offlineHandler) {
+        window.removeEventListener('offline', window.errorStateManager.offlineHandler);
+      }
+    }
+  });
+}

@@ -250,32 +250,43 @@ class FormValidator {
    * Validate entire form
    */
   validateForm(form) {
-    const inputs = form.querySelectorAll('input[data-validate], textarea[data-validate]');
-    let isValid = true;
+    try {
+      const inputs = form.querySelectorAll('input[data-validate], textarea[data-validate]');
+      let isValid = true;
 
-    inputs.forEach(input => {
-      const rules = this.parseRules(input.getAttribute('data-validate'));
-      const value = input.value;
-      
-      for (const rule of rules) {
-        const validator = this.validators.get(rule.type);
-        if (!validator) {
-          continue;
+      inputs.forEach(input => {
+        try {
+          const rules = this.parseRules(input.getAttribute('data-validate'));
+          const value = input.value;
+          
+          for (const rule of rules) {
+            const validator = this.validators.get(rule.type);
+            if (!validator) {
+              continue;
+            }
+
+            const ruleValid = validator.validate(value, rule.value);
+            if (!ruleValid) {
+              isValid = false;
+              this.showValidation(input, false, 
+                typeof validator.message === 'function' 
+                  ? validator.message(rule.value) 
+                  : validator.message
+              );
+            }
+          }
+        } catch (error) {
+          console.error('Error validating input:', error);
+          // Continue with other inputs
         }
+      });
 
-        const ruleValid = validator.validate(value, rule.value);
-        if (!ruleValid) {
-          isValid = false;
-          this.showValidation(input, false, 
-            typeof validator.message === 'function' 
-              ? validator.message(rule.value) 
-              : validator.message
-          );
-        }
-      }
-    });
-
-    return isValid;
+      return isValid;
+    } catch (error) {
+      console.error('Error validating form:', error);
+      // Return true to allow submission if validation fails catastrophically
+      return true;
+    }
   }
 
   /**
@@ -295,6 +306,12 @@ class FormValidator {
    * Initialize form with validation
    */
   initForm(form) {
+    // Prevent multiple initializations
+    if (form._validationInitialized) {
+      return;
+    }
+    form._validationInitialized = true;
+    
     const inputs = form.querySelectorAll('input[data-validate], textarea[data-validate]');
     
     inputs.forEach(input => {
@@ -302,35 +319,50 @@ class FormValidator {
       this.validateField(input, rules);
     });
 
-    // Validate on submit
-    form.addEventListener('submit', (e) => {
-      if (!this.validateForm(form)) {
-        e.preventDefault();
-        const firstInvalid = form.querySelector('.invalid');
-        if (firstInvalid) {
-          firstInvalid.focus();
-          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Validate on submit (store handler for cleanup)
+    const submitHandler = (e) => {
+      try {
+        if (!this.validateForm(form)) {
+          e.preventDefault();
+          const firstInvalid = form.querySelector('.invalid');
+          if (firstInvalid) {
+            try {
+              firstInvalid.focus();
+              firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } catch (error) {
+              console.error('Error focusing invalid field:', error);
+            }
+          }
+          if (typeof toast !== 'undefined' && toast) {
+            toast.error('Please fix the errors in the form');
+          }
         }
-        if (typeof toast !== 'undefined') {
-          toast.error('Please fix the errors in the form');
-        }
+      } catch (error) {
+        console.error('Form validation error:', error);
+        // Don't prevent submission if validation throws
       }
-    });
+    };
+    form.addEventListener('submit', submitHandler);
+    form._validationSubmitHandler = submitHandler; // Store for cleanup
   }
 }
 
-// Global form validator instance
-window.formValidator = new FormValidator();
+// Global form validator instance (only once)
+if (!window.formValidator) {
+  window.formValidator = new FormValidator();
 
-// Auto-initialize forms with data-validate attributes
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
+  // Auto-initialize forms with data-validate attributes
+  const initForms = () => {
     document.querySelectorAll('form[data-validate]').forEach(form => {
-      window.formValidator.initForm(form);
+      if (!form._validationInitialized) {
+        window.formValidator.initForm(form);
+      }
     });
-  });
-} else {
-  document.querySelectorAll('form[data-validate]').forEach(form => {
-    window.formValidator.initForm(form);
-  });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initForms);
+  } else {
+    initForms();
+  }
 }
