@@ -59,7 +59,9 @@ class KeyboardShortcuts {
     }, 'Go to Resources');
 
     this.register('g a', () => {
-      if (window.isAdmin) {
+      // Check both window.isAdmin and auth.getCurrentUser for admin status
+      const isAdmin = window.isAdmin || (typeof auth !== 'undefined' && auth.getCurrentUser()?.role === 'admin');
+      if (isAdmin) {
         window.location.href = '/dashboard/admin/users.html';
       }
     }, 'Go to Admin');

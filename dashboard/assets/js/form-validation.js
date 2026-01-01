@@ -168,6 +168,10 @@ class FormValidator {
       const wrapper = this.getWrapper(input);
       if (wrapper) {
         wrapper.style.position = 'relative';
+        // Ensure input has padding-right for icon
+        if (!input.style.paddingRight) {
+          input.style.paddingRight = '2.5rem';
+        }
         wrapper.appendChild(errorIcon);
       }
 
@@ -194,6 +198,10 @@ class FormValidator {
    */
   clearValidation(input) {
     input.classList.remove('valid', 'invalid');
+    // Reset padding if we added it
+    if (input.style.paddingRight === '2.5rem') {
+      input.style.paddingRight = '';
+    }
     
     const wrapper = this.getWrapper(input) || input.parentElement;
     const icon = wrapper.querySelector('.validation-icon');
