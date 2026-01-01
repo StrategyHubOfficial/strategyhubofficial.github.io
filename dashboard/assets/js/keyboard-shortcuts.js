@@ -114,9 +114,14 @@ class KeyboardShortcuts {
 
     // Handle 'g' prefix shortcuts (GitHub-style)
     if (key === 'g' && !ctrl && !shift && !alt) {
+      // Clear any existing timeout
+      if (this.gKeyTimeout) {
+        clearTimeout(this.gKeyTimeout);
+      }
       this.gKeyPressed = true;
       this.gKeyTimeout = setTimeout(() => {
         this.gKeyPressed = false;
+        this.gKeyTimeout = null;
       }, 1000);
       return;
     }

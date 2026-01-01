@@ -253,7 +253,7 @@ title: Studio Booking
                         ${booking.notes ? `<p>${booking.notes}</p>` : ''}
                         <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button class="btn-secondary btn-small" onclick="cancelBooking('${booking.id}')">Cancel</button>
-                            <a href="${api?.baseURL || window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev'}/api/studio/bookings/${booking.id}/ics" 
+                            <a href="${(typeof api !== 'undefined' ? api.baseURL : null) || window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev'}/api/studio/bookings/${booking.id}/ics" 
                                class="btn-secondary btn-small" 
                                style="text-decoration: none; display: inline-block;"
                                download="booking-${booking.id}.ics"

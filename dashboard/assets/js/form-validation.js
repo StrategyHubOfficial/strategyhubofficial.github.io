@@ -81,12 +81,6 @@ class FormValidator {
   validateField(input, rules = []) {
     // Remove existing validation UI and listeners
     this.clearValidation(input);
-    
-    // Remove old listeners if they exist
-    if (input._validationHandlers) {
-      input.removeEventListener('input', input._validationHandlers.input);
-      input.removeEventListener('blur', input._validationHandlers.blur);
-    }
 
     // Create debounced validator
     const debouncedValidate = this.debounce(() => {
