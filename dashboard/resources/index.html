@@ -114,28 +114,21 @@ title: Equipment
 <div class="container">
         <h1>Equipment & Infrastructure</h1>
         
-        <div id="loading" class="skeleton-container">
-            <div class="skeleton-grid">
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card"></div>
-            </div>
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading equipment...</p>
         </div>
         <div id="error" class="error" style="display: none;"></div>
         
         <div id="equipment-content" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
                 <div class="tabs" style="margin: 0;">
                     <button class="tab-btn active" data-tab="all">All Equipment</button>
                     <button class="tab-btn" data-tab="borrowable">Borrowable</button>
                     <button class="tab-btn" data-tab="servers">Servers</button>
                     <button class="tab-btn" data-tab="infrastructure">Infrastructure</button>
                 </div>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button id="qr-labels-btn" class="btn btn-secondary" style="display: none;" onclick="window.location.href='/dashboard/admin/equipment/labels.html'">📋 Print QR Labels</button>
-                    <button id="checkin-btn" class="btn btn-secondary" style="display: none;" onclick="window.location.href='/dashboard/admin/equipment/check-in.html'">📷 Check-in Equipment</button>
-                    <button id="add-equipment-btn" class="btn" style="display: none;" onclick="showAddEquipmentModal()">+ Add Equipment</button>
-                </div>
+                <button id="add-equipment-btn" class="btn" style="display: none;" onclick="showAddEquipmentModal()">+ Add Equipment</button>
             </div>
 
             <div id="equipment-grid" class="equipment-grid"></div>
@@ -295,13 +288,13 @@ title: Equipment
                 }
 
                 return `
-                    <div class="equipment-card" style="cursor: pointer;" onclick="window.location.href='/dashboard/equipment?id=${item.id}'">
+                    <div class="equipment-card">
                         <h3>${item.name}</h3>
                         <div class="category">${item.category}</div>
                         <span class="status ${statusClass}">${item.status}</span>
                         ${item.description ? `<p style="color: #aaa; margin: 0.5rem 0;">${item.description}</p>` : ''}
                         ${info}
-                        <div class="equipment-actions" onclick="event.stopPropagation();">${actions}</div>
+                        <div class="equipment-actions">${actions}</div>
                     </div>
                 `;
             }).join('');
@@ -309,7 +302,7 @@ title: Equipment
 
         function selectItem(id) {
             const item = allEquipment.find(e => e.id === id);
-            if (!item) {return;}
+            if (!item) return;
             
             if (!selectedItems.find(i => i.id === id)) {
                 selectedItems.push(item);
@@ -384,8 +377,6 @@ title: Equipment
         function checkAdminStatus() {
             if (window.isAdmin) {
                 document.getElementById('add-equipment-btn').style.display = 'block';
-                document.getElementById('qr-labels-btn').style.display = 'block';
-                document.getElementById('checkin-btn').style.display = 'block';
             }
         }
 
@@ -441,8 +432,8 @@ title: Equipment
             if (type === 'server' || type === 'infrastructure') {
                 const ip = document.getElementById('equipment-ip').value;
                 const endpoint = document.getElementById('equipment-endpoint').value;
-                if (ip) {equipmentData.ipAddress = ip;}
-                if (endpoint) {equipmentData.endpoint = endpoint;}
+                if (ip) equipmentData.ipAddress = ip;
+                if (endpoint) equipmentData.endpoint = endpoint;
             }
 
             try {
@@ -450,9 +441,7 @@ title: Equipment
                 
                 if (response.success) {
                     toast.success('Equipment added successfully!');
-                    if (typeof window.closeAddEquipmentModal === 'function') {
-                        window.closeAddEquipmentModal();
-                    }
+                    closeAddEquipmentModal();
                     await loadEquipment();
                 } else {
                     toast.error('Failed to add equipment: ' + (response.error || 'Unknown error'));
@@ -467,7 +456,7 @@ title: Equipment
         (async () => {
             await auth.requireAuth();
             checkAdminStatus();
-            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('loading').style.display = 'none';
             document.getElementById('equipment-content').style.display = 'block';
             await loadEquipment();
         })();

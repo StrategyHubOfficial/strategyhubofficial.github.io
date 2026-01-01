@@ -1,397 +1,315 @@
 /**
- * Real-Time Form Validation Utility
- * Provides debounced validation with visual feedback
+ * Real-Time Form Validation
+ * Provides debounced validation feedback as user types
  */
 
 class FormValidator {
-  constructor(form, options = {}) {
-    this.form = typeof form === 'string' ? document.querySelector(form) : form;
-    this.options = {
-      debounce: 300,
-      validateOnBlur: true,
-      validateOnInput: true,
-      showSuccessIcon: true,
-      showErrorIcon: true,
-      ...options
-    };
-    
+  constructor() {
     this.validators = new Map();
-    this.debounceTimers = new Map();
-    this.validationState = new Map();
-    
-    if (this.form) {
-      this.init();
+    this.setupDefaultValidators();
+  }
+
+  setupDefaultValidators() {
+    // Email validation
+    this.validators.set('email', {
+      validate: (value) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(value);
+      },
+      message: 'Please enter a valid email address'
+    });
+
+    // Required validation
+    this.validators.set('required', {
+      validate: (value) => {
+        return value && value.trim().length > 0;
+      },
+      message: 'This field is required'
+    });
+
+    // Min length validation
+    this.validators.set('minLength', {
+      validate: (value, min) => {
+        return value && value.length >= min;
+      },
+      message: (min) => `Must be at least ${min} characters`
+    });
+
+    // Password validation
+    this.validators.set('password', {
+      validate: (value) => {
+        return value && value.length >= 8;
+      },
+      message: 'Password must be at least 8 characters'
+    });
+
+    // URL validation
+    this.validators.set('url', {
+      validate: (value) => {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      },
+      message: 'Please enter a valid URL'
+    });
+
+    // Date validation
+    this.validators.set('date', {
+      validate: (value) => {
+        const date = new Date(value);
+        return !isNaN(date.getTime());
+      },
+      message: 'Please enter a valid date'
+    });
+
+    // Future date validation
+    this.validators.set('futureDate', {
+      validate: (value) => {
+        const date = new Date(value);
+        return !isNaN(date.getTime()) && date > new Date();
+      },
+      message: 'Date must be in the future'
+    });
+  }
+
+  /**
+   * Validate a field with debouncing
+   */
+  validateField(input, rules = []) {
+    // Remove existing validation UI
+    this.clearValidation(input);
+
+    // Create debounced validator
+    const debouncedValidate = this.debounce(() => {
+      const value = input.value;
+      let isValid = true;
+      let errorMessage = '';
+
+      for (const rule of rules) {
+        const validator = this.validators.get(rule.type);
+        if (!validator) {
+          continue;
+        }
+
+        const ruleValid = validator.validate(value, rule.value);
+        if (!ruleValid) {
+          isValid = false;
+          errorMessage = typeof validator.message === 'function' 
+            ? validator.message(rule.value) 
+            : validator.message;
+          break;
+        }
+      }
+
+      this.showValidation(input, isValid, errorMessage);
+    }, 300);
+
+    // Validate on input
+    input.addEventListener('input', debouncedValidate);
+    input.addEventListener('blur', debouncedValidate);
+
+    // Initial validation if field has value
+    if (input.value) {
+      debouncedValidate();
     }
   }
 
-  init() {
-    // Add validation styles if not already present
-    this.injectStyles();
-    
-    // Set up input listeners
-    const inputs = this.form.querySelectorAll('input, textarea, select');
-    inputs.forEach(input => {
-      if (this.options.validateOnInput) {
-        input.addEventListener('input', (e) => {
-          this.debounceValidate(e.target);
-        });
-      }
-      
-      if (this.options.validateOnBlur) {
-        input.addEventListener('blur', (e) => {
-          this.validateField(e.target);
-        });
-      }
-    });
-    
-    // Validate on form submit
-    this.form.addEventListener('submit', (e) => {
-      if (!this.validateForm()) {
-        e.preventDefault();
-        return false;
-      }
-    });
-  }
+  /**
+   * Show validation feedback
+   */
+  showValidation(input, isValid, message) {
+    this.clearValidation(input);
 
-  injectStyles() {
-    if (document.getElementById('form-validation-styles')) {
-      return; // Styles already injected
-    }
-    
-    const style = document.createElement('style');
-    style.id = 'form-validation-styles';
-    style.textContent = `
-      .form-group {
-        position: relative;
-      }
+    // Add visual indicator
+    if (isValid) {
+      input.classList.add('valid');
+      input.classList.remove('invalid');
       
-      .form-group.has-success input,
-      .form-group.has-success textarea,
-      .form-group.has-success select {
-        border-color: var(--success, #00b894);
-      }
-      
-      .form-group.has-error input,
-      .form-group.has-error textarea,
-      .form-group.has-error select {
-        border-color: var(--error, #d63031);
-      }
-      
-      .validation-icon {
+      // Add checkmark icon
+      const checkmark = document.createElement('span');
+      checkmark.className = 'validation-icon valid-icon';
+      checkmark.innerHTML = '✓';
+      checkmark.style.cssText = `
         position: absolute;
         right: 0.75rem;
         top: 50%;
         transform: translateY(-50%);
+        color: var(--success);
+        font-weight: bold;
         pointer-events: none;
-        font-size: 1.1rem;
-        z-index: 10;
-      }
+      `;
       
-      .form-group input[type="password"] ~ .validation-icon,
-      .form-group input[type="email"] ~ .validation-icon,
-      .form-group textarea ~ .validation-icon {
-        top: 1.5rem;
+      const wrapper = this.getWrapper(input);
+      if (wrapper) {
+        wrapper.style.position = 'relative';
+        wrapper.appendChild(checkmark);
       }
-      
-      .validation-icon.success {
-        color: var(--success, #00b894);
-      }
-      
-      .validation-icon.error {
-        color: var(--error, #d63031);
-      }
-      
-      .validation-message {
-        font-size: 0.85rem;
-        margin-top: 0.5rem;
-        display: block;
-        min-height: 1.25rem;
-      }
-      
-      .validation-message.success {
-        color: var(--success, #00b894);
-      }
-      
-      .validation-message.error {
-        color: var(--error, #d63031);
-      }
-      
-      .validation-message.hint {
-        color: var(--text-secondary, #b0b0b0);
-      }
-    `;
-    document.head.appendChild(style);
-  }
-
-  registerValidator(fieldName, validator) {
-    this.validators.set(fieldName, validator);
-  }
-
-  debounceValidate(field) {
-    const fieldName = field.name || field.id;
-    
-    // Clear existing timer
-    if (this.debounceTimers.has(fieldName)) {
-      clearTimeout(this.debounceTimers.get(fieldName));
-    }
-    
-    // Set new timer
-    const timer = setTimeout(() => {
-      this.validateField(field);
-      this.debounceTimers.delete(fieldName);
-    }, this.options.debounce);
-    
-    this.debounceTimers.set(fieldName, timer);
-  }
-
-  validateField(field) {
-    const fieldName = field.name || field.id;
-    const value = field.value.trim();
-    const formGroup = field.closest('.form-group');
-    
-    if (!formGroup) return true;
-    
-    // Get validator for this field
-    const validator = this.validators.get(fieldName);
-    
-    if (!validator) {
-      // Use default HTML5 validation
-      return this.validateHTML5(field, formGroup);
-    }
-    
-    // Run custom validator
-    const result = validator(value, field, this.form);
-    
-    if (result === true || result.valid === true) {
-      this.showSuccess(field, formGroup, result?.message);
-      this.validationState.set(fieldName, true);
-      return true;
     } else {
-      const errorMessage = typeof result === 'string' ? result : result?.message || 'Invalid input';
-      const suggestion = result?.suggestion || '';
-      this.showError(field, formGroup, errorMessage, suggestion);
-      this.validationState.set(fieldName, false);
-      return false;
-    }
-  }
+      input.classList.add('invalid');
+      input.classList.remove('valid');
 
-  validateHTML5(field, formGroup) {
-    if (!field.validity.valid) {
-      let message = field.validationMessage;
-      
-      // Provide better messages for common cases
-      if (field.validity.valueMissing) {
-        message = field.required ? `${field.labels?.[0]?.textContent || 'This field'} is required` : message;
-      } else if (field.validity.typeMismatch) {
-        if (field.type === 'email') {
-          message = 'Please enter a valid email address';
-        } else if (field.type === 'url') {
-          message = 'Please enter a valid URL (e.g., https://example.com)';
-        }
-      } else if (field.validity.tooShort) {
-        message = `Must be at least ${field.minLength} characters`;
-      } else if (field.validity.tooLong) {
-        message = `Must be no more than ${field.maxLength} characters`;
-      } else if (field.validity.patternMismatch) {
-        message = field.title || 'Invalid format';
+      // Add error icon
+      const errorIcon = document.createElement('span');
+      errorIcon.className = 'validation-icon invalid-icon';
+      errorIcon.innerHTML = '✕';
+      errorIcon.style.cssText = `
+        position: absolute;
+        right: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--error);
+        font-weight: bold;
+        pointer-events: none;
+      `;
+
+      const wrapper = this.getWrapper(input);
+      if (wrapper) {
+        wrapper.style.position = 'relative';
+        wrapper.appendChild(errorIcon);
       }
-      
-      this.showError(field, formGroup, message);
-      return false;
-    } else {
-      this.showSuccess(field, formGroup);
-      return true;
+
+      // Show error message
+      if (message) {
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'validation-error';
+        errorMsg.textContent = message;
+        errorMsg.style.cssText = `
+          color: var(--error);
+          font-size: 0.85rem;
+          margin-top: 0.25rem;
+          animation: slideDown 0.2s ease;
+        `;
+        
+        const wrapper = this.getWrapper(input) || input.parentElement;
+        wrapper.appendChild(errorMsg);
+      }
     }
   }
 
-  showSuccess(field, formGroup, message = null) {
-    formGroup.classList.remove('has-error');
-    formGroup.classList.add('has-success');
+  /**
+   * Clear validation UI
+   */
+  clearValidation(input) {
+    input.classList.remove('valid', 'invalid');
     
-    // Remove existing icons
-    const existingIcon = formGroup.querySelector('.validation-icon');
-    if (existingIcon) {
-      existingIcon.remove();
-    }
+    const wrapper = this.getWrapper(input) || input.parentElement;
+    const icon = wrapper.querySelector('.validation-icon');
+    if (icon) icon.remove();
     
-    // Add success icon
-    if (this.options.showSuccessIcon) {
-      const icon = document.createElement('span');
-      icon.className = 'validation-icon success';
-      icon.innerHTML = '✓';
-      icon.setAttribute('aria-label', 'Valid');
-      field.parentElement.appendChild(icon);
-    }
-    
-    // Update message
-    this.updateMessage(formGroup, message || '', 'success');
+    const errorMsg = wrapper.querySelector('.validation-error');
+    if (errorMsg) errorMsg.remove();
   }
 
-  showError(field, formGroup, message, suggestion = '') {
-    formGroup.classList.remove('has-success');
-    formGroup.classList.add('has-error');
-    
-    // Remove existing icons
-    const existingIcon = formGroup.querySelector('.validation-icon');
-    if (existingIcon) {
-      existingIcon.remove();
-    }
-    
-    // Add error icon
-    if (this.options.showErrorIcon) {
-      const icon = document.createElement('span');
-      icon.className = 'validation-icon error';
-      icon.innerHTML = '✕';
-      icon.setAttribute('aria-label', 'Invalid');
-      field.parentElement.appendChild(icon);
-    }
-    
-    // Update message with suggestion
-    const fullMessage = suggestion ? `${message} ${suggestion}` : message;
-    this.updateMessage(formGroup, fullMessage, 'error');
+  /**
+   * Get form group wrapper
+   */
+  getWrapper(input) {
+    return input.closest('.form-group') || input.parentElement;
   }
 
-  updateMessage(formGroup, message, type) {
-    let messageEl = formGroup.querySelector('.validation-message');
-    
-    if (!messageEl) {
-      messageEl = document.createElement('span');
-      messageEl.className = 'validation-message';
-      formGroup.appendChild(messageEl);
-    }
-    
-    messageEl.className = `validation-message ${type}`;
-    messageEl.textContent = message;
-    messageEl.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  /**
+   * Debounce function
+   */
+  debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
 
-  validateForm() {
-    const inputs = this.form.querySelectorAll('input, textarea, select');
+  /**
+   * Validate entire form
+   */
+  validateForm(form) {
+    const inputs = form.querySelectorAll('input[data-validate], textarea[data-validate]');
     let isValid = true;
-    
+
     inputs.forEach(input => {
-      if (!this.validateField(input)) {
-        isValid = false;
+      const rules = this.parseRules(input.getAttribute('data-validate'));
+      const value = input.value;
+      
+      for (const rule of rules) {
+        const validator = this.validators.get(rule.type);
+        if (!validator) {
+          continue;
+        }
+
+        const ruleValid = validator.validate(value, rule.value);
+        if (!ruleValid) {
+          isValid = false;
+          this.showValidation(input, false, 
+            typeof validator.message === 'function' 
+              ? validator.message(rule.value) 
+              : validator.message
+          );
+        }
       }
     });
-    
+
     return isValid;
   }
 
-  // Common validators
-  static validators = {
-    required: (value) => {
-      if (!value || value.trim() === '') {
-        return { valid: false, message: 'This field is required' };
-      }
-      return true;
-    },
+  /**
+   * Parse validation rules from data attribute
+   * Format: "required|email|minLength:8"
+   */
+  parseRules(rulesString) {
+    if (!rulesString) return [];
     
-    email: (value) => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        return { 
-          valid: false, 
-          message: 'Please enter a valid email address',
-          suggestion: 'Example: user@example.com'
-        };
-      }
-      return true;
-    },
+    return rulesString.split('|').map((rule) => {
+      const [type, value] = rule.split(':');
+      return { type, value: value ? parseInt(value, 10) : undefined };
+    });
+  }
+
+  /**
+   * Initialize form with validation
+   */
+  initForm(form) {
+    const inputs = form.querySelectorAll('input[data-validate], textarea[data-validate]');
     
-    url: (value) => {
-      try {
-        new URL(value);
-        return true;
-      } catch {
-        return { 
-          valid: false, 
-          message: 'Please enter a valid URL',
-          suggestion: 'Include https:// or http://'
-        };
+    inputs.forEach(input => {
+      const rules = this.parseRules(input.getAttribute('data-validate'));
+      this.validateField(input, rules);
+    });
+
+    // Validate on submit
+    form.addEventListener('submit', (e) => {
+      if (!this.validateForm(form)) {
+        e.preventDefault();
+        const firstInvalid = form.querySelector('.invalid');
+        if (firstInvalid) {
+          firstInvalid.focus();
+          firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (typeof toast !== 'undefined') {
+          toast.error('Please fix the errors in the form');
+        }
       }
-    },
-    
-    minLength: (min) => (value) => {
-      if (value.length < min) {
-        return { 
-          valid: false, 
-          message: `Must be at least ${min} characters`,
-          suggestion: `You need ${min - value.length} more character${min - value.length === 1 ? '' : 's'}`
-        };
-      }
-      return true;
-    },
-    
-    maxLength: (max) => (value) => {
-      if (value.length > max) {
-        return { 
-          valid: false, 
-          message: `Must be no more than ${max} characters`,
-          suggestion: `Remove ${value.length - max} character${value.length - max === 1 ? '' : 's'}`
-        };
-      }
-      return true;
-    },
-    
-    password: (value) => {
-      const issues = [];
-      if (value.length < 8) {
-        issues.push('at least 8 characters');
-      }
-      if (!/[A-Z]/.test(value)) {
-        issues.push('one uppercase letter');
-      }
-      if (!/[a-z]/.test(value)) {
-        issues.push('one lowercase letter');
-      }
-      if (!/[0-9]/.test(value)) {
-        issues.push('one number');
-      }
-      
-      if (issues.length > 0) {
-        return { 
-          valid: false, 
-          message: 'Password must contain:',
-          suggestion: issues.join(', ')
-        };
-      }
-      return true;
-    },
-    
-    passwordMatch: (passwordField) => (value) => {
-      const password = passwordField.value;
-      if (value !== password) {
-        return { 
-          valid: false, 
-          message: 'Passwords do not match',
-          suggestion: 'Make sure both passwords are the same'
-        };
-      }
-      return true;
-    },
-    
-    lightningAddress: (value) => {
-      const lightningRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!lightningRegex.test(value)) {
-        return { 
-          valid: false, 
-          message: 'Please enter a valid Lightning address',
-          suggestion: 'Format: username@domain.com'
-        };
-      }
-      return true;
-    }
-  };
+    });
+  }
 }
 
-// Auto-initialize forms with data-validate attribute
-document.addEventListener('DOMContentLoaded', () => {
-  const forms = document.querySelectorAll('form[data-validate]');
-  forms.forEach(form => {
-    const validator = new FormValidator(form);
-    window.formValidators = window.formValidators || new Map();
-    window.formValidators.set(form.id || form, validator);
-  });
-});
+// Global form validator instance
+window.formValidator = new FormValidator();
 
+// Auto-initialize forms with data-validate attributes
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('form[data-validate]').forEach(form => {
+      window.formValidator.initForm(form);
+    });
+  });
+} else {
+  document.querySelectorAll('form[data-validate]').forEach(form => {
+    window.formValidator.initForm(form);
+  });
+}

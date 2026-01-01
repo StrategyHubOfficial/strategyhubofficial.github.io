@@ -2,33 +2,12 @@
 layout: default
 title: StrategyHub Dashboard
 ---
-<!-- Version: 2025-01-13-fix -->
 
 <div class="container">
-    <div id="loading" class="skeleton-container">
-        <!-- Header skeleton -->
-        <div style="margin-bottom: 2rem;">
-            <div class="skeleton skeleton-title"></div>
-            <div class="skeleton skeleton-subtitle" style="margin-top: 1rem;"></div>
-        </div>
-        
-        <!-- Stats grid skeleton -->
-        <div class="skeleton-stats-grid">
-            <div class="skeleton skeleton-stat-card"></div>
-            <div class="skeleton skeleton-stat-card"></div>
-            <div class="skeleton skeleton-stat-card"></div>
-            <div class="skeleton skeleton-stat-card"></div>
-        </div>
-        
-        <!-- Cards skeleton -->
-        <div style="margin: 3rem 0;">
-            <div class="skeleton skeleton-title" style="width: 40%; margin-bottom: 1.5rem;"></div>
-            <div class="skeleton-grid">
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card"></div>
-            </div>
-        </div>
+    <div id="loading" class="loading">
+        <div class="skeleton skeleton-card" style="width: 100%; height: 200px; margin-bottom: 1rem;"></div>
+        <div class="skeleton skeleton-card" style="width: 100%; height: 200px; margin-bottom: 1rem;"></div>
+        <div class="skeleton skeleton-card" style="width: 100%; height: 200px;"></div>
     </div>
     <div id="content" style="display: none;">
         <div style="margin-bottom: 2rem;">
@@ -53,12 +32,6 @@ title: StrategyHub Dashboard
                 <div class="stat-value" id="stat-equipment">-</div>
                 <div class="stat-label">Equipment Available</div>
             </div>
-        </div>
-
-        <!-- Recent Activity Section -->
-        <div id="activity-section" style="margin: 3rem 0; display: none;">
-            <h2 style="margin-bottom: 1.5rem; font-size: 1.75rem;">Recent Activity</h2>
-            <div id="activity-list" class="grid"></div>
         </div>
 
         <!-- Announcements Section -->
@@ -127,70 +100,6 @@ title: StrategyHub Dashboard
                         }
                     }
                     
-                    // Load recent activity (optional, admin only)
-                    try {
-                        const activityResponse = await api.get('/api/audit?limit=10&offset=0').catch(() => ({ success: false }));
-                        if (activityResponse.success && activityResponse.data && activityResponse.data.logs) {
-                            const activities = activityResponse.data.logs;
-                            const activitySection = document.getElementById('activity-section');
-                            const activityList = document.getElementById('activity-list');
-                            
-                            if (activities.length > 0 && activitySection && activityList) {
-                                activitySection.style.display = 'block';
-                                
-                                function escapeHtml(text) {
-                                    if (!text) {return '';}
-                                    const div = document.createElement('div');
-                                    div.textContent = text;
-                                    return div.innerHTML;
-                                }
-                                
-                                function formatActivity(log) {
-                                    const timestamp = new Date(log.timestamp).toLocaleString();
-                                    const actionMap = {
-                                        'create': 'created',
-                                        'update': 'updated',
-                                        'delete': 'deleted',
-                                        'approve': 'approved',
-                                        'reject': 'rejected',
-                                        'bulk.approve': 'bulk approved',
-                                        'bulk.reject': 'bulk rejected',
-                                        'donation.forwarded': 'forwarded donation for',
-                                    };
-                                    const action = actionMap[log.action] || log.action;
-                                    
-                                    let resourceLink = '';
-                                    if (log.resourceId) {
-                                        if (log.resourceType === 'projects') {
-                                            resourceLink = `<a href="/dashboard/projects#${log.resourceId}" style="color: var(--bitcoin-orange);">${log.resourceType.slice(0, -1)}</a>`;
-                                        } else if (log.resourceType === 'events') {
-                                            resourceLink = `<a href="/dashboard/events#${log.resourceId}" style="color: var(--bitcoin-orange);">${log.resourceType.slice(0, -1)}</a>`;
-                                        } else {
-                                            resourceLink = log.resourceType.slice(0, -1);
-                                        }
-                                    } else {
-                                        resourceLink = log.resourceType;
-                                    }
-                                    
-                                    return `
-                                        <div class="card">
-                                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                                                <div>
-                                                    <strong>${escapeHtml(log.userEmail)}</strong> ${action} ${resourceLink}
-                                                </div>
-                                                <span style="color: var(--text-secondary); font-size: 0.85rem;">${timestamp}</span>
-                                            </div>
-                                        </div>
-                                    `;
-                                }
-                                
-                                activityList.innerHTML = activities.map(formatActivity).join('');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error loading activity:', error);
-                    }
-                    
                     // Load announcements
                     try {
                         const announcementsRes = await api.get('/api/announcements?status=published');
@@ -228,111 +137,35 @@ title: StrategyHub Dashboard
                         console.error('Error loading announcements:', error);
                     }
                     
-                    // Load stats (fully sequential to avoid R2 rate limiting)
+                    // Load stats
                     try {
-                        // Make requests sequentially with delays to avoid R2 rate limiting
-                        const bookingsRes = await Promise.allSettled([api.get('/api/studio/bookings').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
-                        await new Promise(resolve => setTimeout(resolve, 200)); // Delay between requests
-                        
-                        const eventsRes = await Promise.allSettled([api.get('/api/events').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                        
-                        const projectsRes = await Promise.allSettled([api.get('/api/projects').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                        
-                        const equipmentRes = await Promise.allSettled([api.get('/api/equipment').catch(err => ({ success: false, error: err }))]).then(r => r[0]);
-                        await new Promise(resolve => setTimeout(resolve, 200));
-                        
-                        // Optional admin stats (fail silently)
-                        const adminStatsRes = await Promise.allSettled([api.get('/api/admin/stats').catch(() => ({ success: false }))]).then(r => r[0]);
+                        const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
+                            api.get('/api/studio/bookings'),
+                            api.get('/api/events'),
+                            api.get('/api/projects'),
+                            api.get('/api/equipment')
+                        ]);
 
-                        const bookings = bookingsRes.status === 'fulfilled' && bookingsRes.value.success 
-                            ? (Array.isArray(bookingsRes.value.data) ? bookingsRes.value.data : []).filter(b => b && b.startTime && new Date(b.startTime) > new Date()).length 
-                            : 0;
-                        const eventsData = eventsRes.status === 'fulfilled' && eventsRes.value.success 
-                            ? (Array.isArray(eventsRes.value.data) ? eventsRes.value.data : [])
-                            : [];
-                        const events = eventsData.filter(e => {
-                            if (!e || !e.startTime) {return false;}
+                        const bookings = bookingsRes.status === 'fulfilled' ? (bookingsRes.value.data || []).filter(b => new Date(b.startTime) > new Date()).length : 0;
+                        const events = eventsRes.status === 'fulfilled' ? (eventsRes.value.data || []).filter(e => {
                             const eventDate = new Date(e.startTime);
                             const weekFromNow = new Date();
                             weekFromNow.setDate(weekFromNow.getDate() + 7);
                             return eventDate > new Date() && eventDate < weekFromNow;
-                        }).length;
-                        const projects = projectsRes.status === 'fulfilled' && projectsRes.value.success
-                            ? (Array.isArray(projectsRes.value.data) ? projectsRes.value.data : []).filter(p => p && p.status === 'active').length 
-                            : 0;
-                        const equipment = equipmentRes.status === 'fulfilled' && equipmentRes.value.success
-                            ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length 
-                            : 0;
+                        }).length : 0;
+                        const projects = projectsRes.status === 'fulfilled' ? (projectsRes.value.data || []).filter(p => p.status === 'active').length : 0;
+                        const equipment = equipmentRes.status === 'fulfilled' ? (equipmentRes.value.data?.all || []).filter(e => e.status === 'available').length : 0;
 
-                        // Progressive loading: reveal stats as they load
                         document.getElementById('stat-bookings').textContent = bookings;
                         document.getElementById('stat-events').textContent = events;
                         document.getElementById('stat-projects').textContent = projects;
                         document.getElementById('stat-equipment').textContent = equipment;
                         document.getElementById('stats-grid').style.display = 'grid';
-                        
-                        // Hide stats skeleton once stats are loaded
-                        const statsSkeleton = document.querySelector('.skeleton-stats-grid');
-                        if (statsSkeleton) {
-                            statsSkeleton.style.display = 'none';
-                        }
-
-                        // Load enhanced admin stats if available (optional, fail silently)
-                        if (adminStatsRes && adminStatsRes.status === 'fulfilled' && adminStatsRes.value.success && adminStatsRes.value.data) {
-                            const stats = adminStatsRes.value.data;
-                            
-                            // Add admin stats section if user is admin
-                            const isAdmin = auth.isAdmin();
-                            if (isAdmin) {
-                                const adminStatsHtml = `
-                                    <div style="margin-top: 2rem;">
-                                        <h2 style="margin-bottom: 1.5rem; font-size: 1.75rem; color: var(--text-primary);">Admin Statistics</h2>
-                                        <div class="stats-grid">
-                                            <div class="stat-card">
-                                                <div class="stat-value">${stats.projects.pending || 0}</div>
-                                                <div class="stat-label">Pending Projects</div>
-                                            </div>
-                                            <div class="stat-card">
-                                                <div class="stat-value">${stats.events.pending || 0}</div>
-                                                <div class="stat-label">Pending Events</div>
-                                            </div>
-                                            <div class="stat-card">
-                                                <div class="stat-value">${stats.members.newThisMonth || 0}</div>
-                                                <div class="stat-label">New Members (Month)</div>
-                                            </div>
-                                            <div class="stat-card">
-                                                <div class="stat-value">${stats.sponsorships.active || 0}</div>
-                                                <div class="stat-label">Active Sponsorships</div>
-                                            </div>
-                                            <div class="stat-card">
-                                                <div class="stat-value">${stats.donations.donorCount || 0}</div>
-                                                <div class="stat-label">Donors</div>
-                                            </div>
-                                            <div class="stat-card">
-                                                <div class="stat-value">${stats.activity.last24Hours || 0}</div>
-                                                <div class="stat-label">Activity (24h)</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                                
-                                const statsGrid = document.getElementById('stats-grid');
-                                if (statsGrid && !document.getElementById('admin-stats')) {
-                                    const adminStatsDiv = document.createElement('div');
-                                    adminStatsDiv.id = 'admin-stats';
-                                    adminStatsDiv.innerHTML = adminStatsHtml;
-                                    statsGrid.parentElement.insertBefore(adminStatsDiv, statsGrid.nextSibling);
-                                }
-                            }
-                        }
                     } catch (err) {
                         console.error('Error loading stats:', err);
                     }
                     
-                    // Progressive loading: hide skeleton, show content
-                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('loading').style.display = 'none';
                     document.getElementById('content').style.display = 'block';
                 } else {
                     // Redirect handled by requireAuth
@@ -340,7 +173,7 @@ title: StrategyHub Dashboard
                 }
             } catch (error) {
                 console.error('Dashboard init error:', error);
-                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('loading').style.display = 'none';
                 const errorDiv = document.getElementById('error');
                 errorDiv.className = 'error';
                 errorDiv.textContent = 'Failed to load dashboard. Please try again.';

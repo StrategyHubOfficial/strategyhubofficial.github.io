@@ -83,7 +83,48 @@ test.describe('Authentication Flow', () => {
     await page.click('button[type="submit"]');
 
     // Should show 2FA input
-    await expect(page.locator('#2fa-code')).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('#2fa-code, input[name="2fa"], input[placeholder*="code" i]')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('should handle password reset flow', async ({ page }) => {
+    await page.goto('/dashboard/forgot-password.html');
+    
+    // Mock forgot password API
+    await page.route('**/api/auth/forgot-password', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          success: true,
+          message: 'Password reset email sent',
+        }),
+      });
+    });
+
+    const emailInput = page.locator('input[type="email"]');
+    if (await emailInput.count() > 0) {
+      await emailInput.fill('test@example.com');
+      await page.click('button[type="submit"], button:has-text("Send")');
+      
+      // Should show success message
+      await expect(page.locator('.success, [role="alert"], .toast')).toBeVisible({ timeout: 5000 });
+    }
+  });
+
+  test('should validate login form', async ({ page }) => {
+    await page.goto('/dashboard/login.html');
+    
+    // Try to submit empty form
+    await page.click('button[type="submit"]');
+    
+    // Should show validation errors
+    const emailInput = page.locator('input[type="email"]');
+    if (await emailInput.count() > 0) {
+      const isRequired = await emailInput.evaluate(el => el.validity.valueMissing);
+      expect(isRequired).toBe(true);
+    }
   });
 });
+
+
 

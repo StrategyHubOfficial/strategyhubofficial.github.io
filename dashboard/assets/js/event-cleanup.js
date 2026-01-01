@@ -13,9 +13,12 @@ class EventCleanup {
    * Add a tracked event listener
    */
   add(element, event, handler, options = {}) {
-    if (!element) return null;
+    if (!element) {
+      return null;
+    }
 
     // Use AbortController for automatic cleanup
+    // eslint-disable-next-line no-undef
     const controller = new AbortController();
     this.abortControllers.push(controller);
 
@@ -45,10 +48,10 @@ class EventCleanup {
    */
   cleanup() {
     // Abort all controllers (removes listeners automatically)
-    this.abortControllers.forEach(controller => {
+    this.abortControllers.forEach((controller) => {
       try {
         controller.abort();
-      } catch (e) {
+      } catch {
         // Ignore errors during cleanup
       }
     });
@@ -57,7 +60,7 @@ class EventCleanup {
     this.listeners.forEach(({ element, event, handler }) => {
       try {
         element.removeEventListener(event, handler);
-      } catch (e) {
+      } catch {
         // Ignore errors during cleanup
       }
     });
@@ -87,4 +90,6 @@ document.addEventListener('visibilitychange', () => {
 
 // Export for use
 window.EventCleanup = EventCleanup;
+
+
 

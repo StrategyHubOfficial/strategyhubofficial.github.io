@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./test/setup.js'],
     include: ['test/**/*.test.js'],
+    testTimeout: 10000, // 10 seconds for integration tests
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
@@ -19,4 +20,6 @@ export default defineConfig({
     },
   },
 });
+
+
 

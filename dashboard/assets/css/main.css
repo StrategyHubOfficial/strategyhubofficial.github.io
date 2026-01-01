@@ -26,6 +26,55 @@
   --transition-fast: all 0.15s ease;
 }
 
+/* Form Validation Styles */
+input.valid,
+textarea.valid {
+  border-color: var(--success) !important;
+}
+
+input.invalid,
+textarea.invalid {
+  border-color: var(--error) !important;
+}
+
+.validation-error {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -486,180 +535,18 @@ body {
     var(--bg-card) 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.5s ease-in-out infinite;
+  animation: loading 1.5s ease-in-out infinite;
   border-radius: 8px;
-  position: relative;
-  overflow: hidden;
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
-/* Enhanced shimmer effect */
-.skeleton::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(247, 147, 26, 0.1) 50%,
-    transparent 100%
-  );
-  animation: shimmer-overlay 1.5s ease-in-out infinite;
-}
-
-@keyframes shimmer-overlay {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
-}
-
-/* Skeleton Components */
 .skeleton-card {
   height: 200px;
   border-radius: 16px;
-  margin-bottom: 1rem;
-}
-
-.skeleton-stat-card {
-  height: 120px;
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.skeleton-text {
-  height: 1rem;
-  margin-bottom: 0.75rem;
-  border-radius: 4px;
-}
-
-.skeleton-text:last-child {
-  margin-bottom: 0;
-}
-
-.skeleton-title {
-  height: 1.5rem;
-  width: 60%;
-  margin-bottom: 1rem;
-  border-radius: 4px;
-}
-
-.skeleton-subtitle {
-  height: 1.25rem;
-  width: 40%;
-  margin-bottom: 0.75rem;
-  border-radius: 4px;
-}
-
-.skeleton-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.skeleton-avatar-lg {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.skeleton-list-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 0.5rem;
-}
-
-.skeleton-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-  margin: 2rem 0;
-}
-
-.skeleton-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin: 2rem 0;
-}
-
-/* Skeleton loading container - replaces spinner */
-.skeleton-container {
-  display: block;
-}
-
-.skeleton-container.hidden {
-  display: none;
-}
-
-/* Error States */
-.error-state {
-  text-align: center;
-  padding: 3rem 2rem;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  margin: 2rem 0;
-}
-
-.error-state h3 {
-  color: var(--text-primary);
-  margin-bottom: 0.75rem;
-  font-size: 1.5rem;
-}
-
-.error-state p {
-  color: var(--text-secondary);
-  margin-bottom: 1.5rem;
-  line-height: 1.6;
-}
-
-.error-state details {
-  text-align: left;
-  margin: 1rem 0;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-.error-state summary {
-  cursor: pointer;
-  margin-bottom: 0.5rem;
-  color: var(--text-secondary);
-}
-
-.error-state pre {
-  background: var(--bg-darker);
-  padding: 1rem;
-  border-radius: 8px;
-  overflow-x: auto;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-/* Network Status Indicator */
-#network-status-indicator {
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateX(-50%) translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-  }
 }
 
 /* Toast Notifications */

@@ -5,213 +5,55 @@
 class HubAPI {
   constructor(baseURL) {
     this.baseURL = baseURL || (window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev');
-    this.abortControllers = new Map(); // Track active requests for cancellation
   }
 
   async request(endpoint, options = {}) {
-    // Cancel previous request for same endpoint if it exists
-    const existingController = this.abortControllers.get(endpoint);
-    if (existingController) {
-      existingController.abort();
-    }
-
-    // Create new AbortController for this request
-    const controller = new AbortController();
-    this.abortControllers.set(endpoint, controller);
+    // Ensure endpoint starts with /api
+    const normalizedEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+    const url = `${this.baseURL}${normalizedEndpoint}`;
     
-    // Retry logic with exponential backoff
-    const maxRetries = options.retries !== undefined ? options.retries : 3;
-    const retryDelay = options.retryDelay !== undefined ? options.retryDelay : 1000;
-    
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        // Ensure endpoint starts with /api
-        const normalizedEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-        const url = `${this.baseURL}${normalizedEndpoint}`;
-        
-        // Get auth token from localStorage if available
-        const token = localStorage.getItem('hub_token');
-        const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
-        
-        const config = {
-          ...options,
-          mode: 'cors',
-          credentials: 'omit',
-          signal: controller.signal, // Add abort signal for request cancellation
-          headers: {
-            'Content-Type': 'application/json',
-            ...authHeaders,
-            ...options.headers
-          }
-        };
-
-        const response = await fetch(url, config);
-        
-        // Remove controller on success
-        this.abortControllers.delete(endpoint);
-        
-        // Handle blocked requests (browser extensions, CORS, etc.)
-        if (!response.ok && response.status === 0) {
-          const error = new Error('Request blocked by browser. This may be caused by an ad blocker or privacy extension. Please disable extensions for this site or check network settings.');
-          error.name = 'BlockedRequestError';
-          throw error;
-        }
-        
-        const data = await response.json();
-        
-        if (!response.ok) {
-          // If unauthorized, try token refresh first (except for auth endpoints)
-          if (response.status === 401 && !endpoint.includes('/auth/')) {
-            const refreshed = await this.refreshToken();
-            if (refreshed && attempt < maxRetries) {
-              // Retry with new token
-              await new Promise(resolve => setTimeout(resolve, retryDelay * (attempt + 1)));
-              continue;
-            }
-            // Token refresh failed or max retries reached
-            localStorage.removeItem('hub_token');
-            if (window.location.pathname !== '/dashboard/login.html') {
-              window.location.href = '/dashboard/login.html';
-            }
-          }
-          throw new Error(data.error || `HTTP ${response.status}`);
-        }
-        
-        return data;
-      } catch (error) {
-        // Remove controller on error (unless it was aborted)
-        if (error.name !== 'AbortError') {
-          this.abortControllers.delete(endpoint);
-        }
-        
-        // Don't throw for aborted requests (they're intentional)
-        if (error.name === 'AbortError') {
-          return null;
-        }
-        
-        // Retry on network errors (not 4xx/5xx)
-        const isNetworkError = error.name === 'TypeError' || error.message.includes('fetch');
-        const isRetryable = isNetworkError && attempt < maxRetries;
-        
-        if (isRetryable) {
-          // Exponential backoff
-          const delay = retryDelay * Math.pow(2, attempt);
-          await new Promise(resolve => setTimeout(resolve, delay));
-          continue;
-        }
-        
-        // Last attempt or non-retryable error
-        if (attempt === maxRetries || !isRetryable) {
-          console.error('API Error:', error);
-          
-          // Enhance error with user-friendly message if errorHandler is available
-          if (window.errorHandler) {
-            error.userMessage = window.errorHandler.getErrorMessage(error);
-            error.isRetryable = window.errorHandler.isRetryable(error);
-          }
-          
-          throw error;
-        }
-      }
-    }
-  }
-
-  // Token refresh mechanism
-  async refreshToken() {
+    // Get auth token from localStorage if available
     const token = localStorage.getItem('hub_token');
-    if (!token) return false;
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
     
+    const config = {
+      ...options,
+      mode: 'cors',
+      credentials: 'omit',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+        ...options.headers
+      }
+    };
+
     try {
-      // Decode token to check expiration
-      const parts = token.split('.');
-      if (parts.length !== 3) {
-        // Invalid token format
-        return false;
+      const response = await fetch(url, config);
+      
+      // Handle blocked requests (browser extensions, CORS, etc.)
+      if (!response.ok && response.status === 0) {
+        const error = new Error('Request blocked by browser. This may be caused by an ad blocker or privacy extension. Please disable extensions for this site or check network settings.');
+        error.name = 'BlockedRequestError';
+        throw error;
       }
       
-      let payload;
-      try {
-        payload = JSON.parse(atob(parts[1]));
-      } catch (e) {
-        // Invalid token payload
-        return false;
-      }
+      const data = await response.json();
       
-      const expiresAt = payload.exp * 1000;
-      const now = Date.now();
-      
-      // Check if token is already expired (with 5 minute buffer)
-      if (expiresAt - now < -300000) {
-        // Token expired more than 5 minutes ago, can't refresh
-        return false;
-      }
-      
-      // Only refresh if expires in less than 1 hour
-      if (expiresAt - now > 3600000) {
-        return true; // Token still valid
-      }
-      
-      // Call refresh endpoint
-      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ token })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data?.token) {
-          localStorage.setItem('hub_token', data.data.token);
-          // Update auth manager if available
-          if (window.auth && window.auth.setToken) {
-            window.auth.setToken(data.data.token);
-            if (data.data.user) {
-              window.auth.currentUser = data.data.user;
-            }
+      if (!response.ok) {
+        // If unauthorized, clear token and redirect to login
+        if (response.status === 401) {
+          localStorage.removeItem('hub_token');
+          if (window.location.pathname !== '/dashboard/login.html') {
+            window.location.href = '/dashboard/login.html';
           }
-          return true;
         }
-      } else if (response.status === 401) {
-        // Refresh failed, token is invalid - clear it
-        localStorage.removeItem('hub_token');
-        if (window.auth && window.auth.clearToken) {
-          window.auth.clearToken();
-        }
-        return false;
+        throw new Error(data.error || `HTTP ${response.status}`);
       }
       
-      return false;
+      return data;
     } catch (error) {
-      console.error('Token refresh failed:', error);
-      // On network error, don't clear token (might be temporary)
-      // Only clear on parsing/format errors
-      if (error.name !== 'TypeError' && !error.message.includes('fetch')) {
-        localStorage.removeItem('hub_token');
-        if (window.auth && window.auth.clearToken) {
-          window.auth.clearToken();
-        }
-      }
-      return false;
-    }
-  }
-
-  // Cancel all pending requests
-  cancelAll() {
-    this.abortControllers.forEach((controller) => {
-      controller.abort();
-    });
-    this.abortControllers.clear();
-  }
-
-  // Cancel specific request
-  cancel(endpoint) {
-    const controller = this.abortControllers.get(endpoint);
-    if (controller) {
-      controller.abort();
-      this.abortControllers.delete(endpoint);
+      console.error('API Error:', error);
+      throw error;
     }
   }
 
@@ -239,46 +81,6 @@ class HubAPI {
   async logout() {
     localStorage.removeItem('hub_token');
     return { success: true };
-  }
-
-  // 2FA Methods
-  async setup2FA(userId) {
-    return this.request('/api/auth/2fa/setup', {
-      method: 'POST',
-      body: JSON.stringify({ userId })
-    });
-  }
-
-  async verify2FASetup(userId, code) {
-    return this.request('/api/auth/2fa/verify', {
-      method: 'POST',
-      body: JSON.stringify({ userId, code })
-    });
-  }
-
-  async enable2FA(userId) {
-    return this.request('/api/auth/2fa/enable', {
-      method: 'POST',
-      body: JSON.stringify({ userId })
-    });
-  }
-
-  async disable2FA(userId, password) {
-    return this.request('/api/auth/2fa/disable', {
-      method: 'POST',
-      body: JSON.stringify({ userId, password })
-    });
-  }
-
-  async verify2FALogin(userId, code, tempToken) {
-    return this.request('/api/auth/2fa/verify-login', {
-      method: 'POST',
-      body: JSON.stringify({ userId, code, tempToken })
-    });
-  }
-
-  async get2FAStatus() {
-    return this.request('/api/auth/2fa/status');
   }
 
   // Studio
@@ -348,8 +150,8 @@ class HubAPI {
 
   async searchMembers(query, skills) {
     const params = new URLSearchParams();
-    if (query) {params.append('q', query);}
-    if (skills) {params.append('skills', skills);}
+    if (query) params.append('q', query);
+    if (skills) params.append('skills', skills);
     return this.request(`/api/members/search?${params.toString()}`);
   }
 
@@ -416,19 +218,6 @@ class HubAPI {
     });
   }
 
-  async updateEvent(eventId, updates) {
-    return this.request(`/api/events/${eventId}`, {
-      method: 'PUT',
-      body: JSON.stringify(updates)
-    });
-  }
-
-  async deleteEvent(eventId) {
-    return this.request(`/api/events/${eventId}`, {
-      method: 'DELETE'
-    });
-  }
-
   async rsvpToEvent(eventId) {
     return this.request(`/api/events/${eventId}/rsvp`, {
       method: 'POST'
@@ -438,39 +227,6 @@ class HubAPI {
   async cancelRSVP(eventId) {
     return this.request(`/api/events/${eventId}/rsvp`, {
       method: 'DELETE'
-    });
-  }
-
-  async addEventGuest(eventId, guest) {
-    return this.request(`/api/events/${eventId}/guests`, {
-      method: 'POST',
-      body: JSON.stringify(guest)
-    });
-  }
-
-  async removeEventGuest(eventId, guestEmail) {
-    return this.request(`/api/events/${eventId}/guests/${encodeURIComponent(guestEmail)}`, {
-      method: 'DELETE'
-    });
-  }
-
-  async addStudioGuest(bookingId, guest) {
-    return this.request(`/api/studio/bookings/${bookingId}/guests`, {
-      method: 'POST',
-      body: JSON.stringify(guest)
-    });
-  }
-
-  async removeStudioGuest(bookingId, guestEmail) {
-    return this.request(`/api/studio/bookings/${bookingId}/guests/${encodeURIComponent(guestEmail)}`, {
-      method: 'DELETE'
-    });
-  }
-
-  async updateStudioBooking(bookingId, updates) {
-    return this.request(`/api/studio/bookings/${bookingId}`, {
-      method: 'PUT',
-      body: JSON.stringify(updates)
     });
   }
 
@@ -625,29 +381,6 @@ class HubAPI {
 
   async getUserPermissions(userId) {
     return this.get(`/api/users/${userId}/permissions`);
-  }
-
-  // Supporters (includes sponsorships and guest donors)
-  async getSupporters() {
-    return this.get('/api/supporters');
-  }
-
-  // Create guest employee account (admin only)
-  async createGuestEmployee(data) {
-    return this.post('/api/members/guest-employee', data);
-  }
-
-  // Bulk operations
-  async bulkProjects(projectIds, action) {
-    return this.post('/api/projects/bulk', { projectIds, action });
-  }
-
-  async bulkEvents(eventIds, action) {
-    return this.post('/api/events/bulk', { eventIds, action });
-  }
-
-  async bulkUsers(userIds, action) {
-    return this.post('/api/users/bulk', { userIds, action });
   }
 }
 

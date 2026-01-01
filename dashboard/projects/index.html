@@ -85,33 +85,6 @@ title: Projects
             padding-top: 1rem;
             border-top: 1px solid var(--border-color);
         }
-        .search-bar {
-            position: relative;
-            width: 100%;
-        }
-        .search-bar input {
-            width: 100%;
-            padding: 0.75rem 1rem 0.75rem 2.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-size: 1rem;
-            transition: var(--transition);
-        }
-        .search-bar input:focus {
-            outline: none;
-            border-color: var(--bitcoin-orange);
-            box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
-        }
-        .search-bar::before {
-            content: '🔍';
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            pointer-events: none;
-        }
         .team-title {
             font-size: 0.9rem;
             color: var(--text-secondary);
@@ -160,20 +133,8 @@ title: Projects
 
 <div class="container">
         <div class="projects-header">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <h1>Projects</h1>
-                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--text-secondary);">
-                    <input type="checkbox" id="select-all-projects" onchange="toggleSelectAllProjects()">
-                    <span style="font-size: 0.9rem;">Select All</span>
-                </label>
-            </div>
+            <h1>Projects</h1>
             <button class="btn" onclick="showCreateProject()">Create Project</button>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-            <div class="search-bar" style="max-width: 500px;">
-                <input type="text" id="search-input" placeholder="Search projects by name, description, tags, or skills...">
-            </div>
         </div>
 
         <div class="filters" style="margin-bottom: 2rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
@@ -184,28 +145,14 @@ title: Projects
             <button class="btn btn-secondary filter-btn" data-filter="archived">Archived</button>
         </div>
 
-        <div id="loading" class="skeleton-container">
-            <div class="skeleton-grid">
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card"></div>
-                <div class="skeleton skeleton-card"></div>
-            </div>
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading projects...</p>
         </div>
         <div id="error" class="error" style="display: none;"></div>
         
         <div id="projects-content" style="display: none;">
-            <!-- Bulk Actions Toolbar -->
-            <div id="bulk-actions-toolbar" style="display: none; margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                <span id="selected-count" style="color: var(--text-primary); font-weight: 600;"></span>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="bulkApproveProjects()">Approve Selected</button>
-                    <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="bulkRejectProjects()">Reject Selected</button>
-                    <button class="btn btn-secondary btn-small" onclick="clearSelection()">Clear Selection</button>
-                </div>
-            </div>
             <div id="projects-list"></div>
-            <div id="pagination-container"></div>
             <div id="no-results" style="display: none; text-align: center; padding: 3rem; color: var(--text-secondary);">
                 <p>No projects found.</p>
             </div>
@@ -215,10 +162,7 @@ title: Projects
     <!-- Create Project Modal -->
     <div id="create-project-modal" class="create-project-modal">
         <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2>Create New Project</h2>
-                <button onclick="closeCreateProject()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
-            </div>
+            <h2>Create New Project</h2>
             <form id="create-project-form">
                 <div class="form-group">
                     <label>Project Name:</label>
@@ -280,96 +224,6 @@ title: Projects
         </div>
     </div>
 
-    <!-- View Project Details Modal -->
-    <div id="view-project-modal" class="create-project-modal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 id="view-project-title">Project Details</h2>
-                <button onclick="closeViewProjectModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
-            </div>
-            <div id="view-project-content"></div>
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                <button type="button" class="btn-secondary" onclick="closeViewProjectModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm Rejection Modal -->
-    <div id="confirm-reject-modal" class="create-project-modal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2>Confirm Rejection</h2>
-                <button onclick="closeConfirmRejectModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
-            </div>
-            <p id="confirm-reject-message">Are you sure you want to reject this project?</p>
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                <button type="button" class="btn" style="background: #7f1d1d; color: #f87171;" onclick="confirmRejectProject()">Reject</button>
-                <button type="button" class="btn-secondary" onclick="closeConfirmRejectModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm Bulk Action Modal -->
-    <div id="confirm-bulk-modal" class="create-project-modal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 id="confirm-bulk-title">Confirm Action</h2>
-                <button onclick="closeConfirmBulkModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
-            </div>
-            <p id="confirm-bulk-message"></p>
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                <button type="button" class="btn" id="confirm-bulk-button" onclick="executeBulkAction()">Confirm</button>
-                <button type="button" class="btn-secondary" onclick="closeConfirmBulkModal()">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Donation Modal -->
-    <div id="donation-modal" class="create-project-modal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 id="donation-modal-title">Donate to Project</h2>
-                <button onclick="closeDonationModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
-            </div>
-            <form id="donation-form">
-                <div class="form-group">
-                    <label>Amount (sats) *</label>
-                    <input type="number" id="donation-amount" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label>Your Name (optional, for supporter badge)</label>
-                    <input type="text" id="donation-name" placeholder="Your name">
-                </div>
-                <div class="form-group">
-                    <label>Your Email (optional, for supporter badge)</label>
-                    <input type="email" id="donation-email" placeholder="your@email.com">
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button type="submit" class="btn" style="background: var(--bitcoin-orange);">Donate</button>
-                    <button type="button" class="btn-secondary" onclick="closeDonationModal()">Cancel</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Lightning Invoice Modal -->
-    <div id="invoice-modal" class="create-project-modal">
-        <div class="modal-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2>Lightning Invoice</h2>
-                <button onclick="closeInvoiceModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
-            </div>
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Invoice:</label>
-                <textarea id="invoice-text" readonly style="width: 100%; padding: 0.75rem; background: var(--bg-darker); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-family: monospace; font-size: 0.9rem; min-height: 100px; resize: vertical;"></textarea>
-            </div>
-            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                <button type="button" class="btn" onclick="copyInvoice()">Copy to Clipboard</button>
-                <button type="button" class="btn-secondary" onclick="closeInvoiceModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
 <script>
     (async function() {
         if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
@@ -379,52 +233,16 @@ title: Projects
         let allProjects = [];
         let filteredProjects = [];
         let currentFilter = 'all';
-        let searchQuery = '';
-        let searchTimeout = null;
-        let pagination = null;
-        let currentPage = 1;
-        const pageSize = 20;
 
-        async function loadProjects(page = 1) {
+        async function loadProjects() {
             try {
-                currentPage = page;
-                const offset = (page - 1) * pageSize;
                 // Admins can see pending projects, regular users only see approved
                 const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
-                const url = isAdmin 
-                    ? `/api/projects?includePending=true&limit=${pageSize}&offset=${offset}`
-                    : `/api/projects?limit=${pageSize}&offset=${offset}`;
+                const url = isAdmin ? '/api/projects?includePending=true' : '/api/projects';
                 const response = await api.get(url);
                 if (response.success) {
-                    // Handle paginated response
-                    if (response.data?.data && response.data?.pagination) {
-                        allProjects = Array.isArray(response.data.data) ? response.data.data : [];
-                        filteredProjects = allProjects;
-                        // Initialize or update pagination
-                        if (!pagination) {
-                            pagination = new Pagination({
-                                currentPage: page,
-                                pageSize: pageSize,
-                                totalItems: response.data.pagination.total,
-                                onPageChange: (newPage) => {
-                                    loadProjects(newPage);
-                                }
-                            });
-                        } else {
-                            pagination.update(response.data.pagination.total, page);
-                        }
-                        pagination.render('pagination-container');
-                        applyFilters();
-                    } else {
-                        // Fallback for non-paginated response
-                        allProjects = Array.isArray(response.data) ? response.data : [];
-                        filteredProjects = allProjects;
-                        if (pagination) {
-                            pagination.update(allProjects.length, page);
-                            pagination.render('pagination-container');
-                        }
-                        applyFilters();
-                    }
+                    allProjects = response.data || [];
+                    applyFilters();
                 } else {
                     toast.error('Failed to load projects');
                     document.getElementById('error').textContent = 'Failed to load projects';
@@ -432,95 +250,19 @@ title: Projects
                 }
             } catch (error) {
                 console.error('Error loading projects:', error);
-                
-                // Use error handler for better UX
-                if (window.errorHandler) {
-                    const retryCallback = () => loadProjects();
-                    window.errorHandler.showErrorState(
-                        '#projects-content',
-                        window.errorHandler.getErrorMessage(error),
-                        error,
-                        retryCallback,
-                        { title: 'Failed to Load Projects', icon: '📁' }
-                    );
-                } else {
-                    // Fallback to simple error display
-                    toast.error('Error loading projects');
-                    document.getElementById('error').textContent = 'Error loading projects';
-                    document.getElementById('error').style.display = 'block';
-                }
+                toast.error('Error loading projects');
+                document.getElementById('error').textContent = 'Error loading projects';
+                document.getElementById('error').style.display = 'block';
             }
         }
 
-        async function applyFilters(page = 1) {
-            // Ensure searchQuery is defined
-            if (typeof searchQuery === 'undefined') {
-                searchQuery = '';
-            }
-            // If search query exists, use search endpoint with pagination
-            if (searchQuery && searchQuery.trim()) {
-                try {
-                    currentPage = page;
-                    const offset = (page - 1) * pageSize;
-                    const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
-                    const includePending = isAdmin ? '&includePending=true' : '';
-                    const response = await api.get(`/api/projects/search?q=${encodeURIComponent(searchQuery.trim())}&limit=${pageSize}&offset=${offset}${includePending}`);
-                    if (response.success) {
-                        // Handle paginated search response
-                        if (response.data?.data && response.data?.pagination) {
-                            filteredProjects = response.data.data.filter(project => {
-                                if (currentFilter !== 'all' && project.status !== currentFilter) {
-                                    return false;
-                                }
-                                return true;
-                            });
-                            // Update pagination for search results
-                            if (!pagination) {
-                                pagination = new Pagination({
-                                    currentPage: page,
-                                    pageSize: pageSize,
-                                    totalItems: response.data.pagination.total,
-                                    onPageChange: (newPage) => {
-                                        applyFilters(newPage);
-                                    }
-                                });
-                            } else {
-                                pagination.update(response.data.pagination.total, page);
-                            }
-                            pagination.render('pagination-container');
-                        } else {
-                            // Fallback for non-paginated search
-                            filteredProjects = (response.data?.data || []).filter(project => {
-                                if (currentFilter !== 'all' && project.status !== currentFilter) {
-                                    return false;
-                                }
-                                return true;
-                            });
-                            if (pagination) {
-                                pagination.update(filteredProjects.length, page);
-                                pagination.render('pagination-container');
-                            }
-                        }
-                    } else {
-                        filteredProjects = [];
-                        if (pagination) {
-                            pagination.update(0, 1);
-                            pagination.render('pagination-container');
-                        }
-                    }
-                } catch (error) {
-                    console.error('Search error:', error);
-                    filteredProjects = [];
-                    if (pagination) {
-                        pagination.update(0, 1);
-                        pagination.render('pagination-container');
-                    }
+        function applyFilters() {
+            filteredProjects = allProjects.filter(project => {
+                if (currentFilter !== 'all' && project.status !== currentFilter) {
+                    return false;
                 }
-            } else {
-                // No search query - reload projects with pagination
-                await loadProjects(page);
-                return; // loadProjects will call applyFilters
-            }
+                return true;
+            });
 
             renderProjects();
         }
@@ -551,12 +293,8 @@ title: Projects
                 return `
                     <div class="project-card" id="project-${project.id}">
                         <div class="project-header">
-                            <div style="display: flex; align-items: start; gap: 0.75rem; flex: 1;">
-                                ${isAdmin() ? `
-                                    <input type="checkbox" class="project-checkbox" data-project-id="${project.id}" onchange="updateBulkActionsToolbar()" style="margin-top: 0.25rem; cursor: pointer;">
-                                ` : ''}
-                                <div>
-                                    <div class="project-title">${project.name}</div>
+                            <div>
+                                <div class="project-title">${project.name}</div>
                                 <span class="project-status status ${statusClass}">${statusClass}</span>
                                 ${approvalBadge}
                             </div>
@@ -623,52 +361,13 @@ title: Projects
             document.getElementById('create-project-modal').classList.remove('active');
             document.getElementById('create-project-form').reset();
         }
-        
-        // Expose to global scope for onclick handlers
-        window.closeCreateProject = closeCreateProject;
-
-        let currentRejectProjectId = null;
-        let currentBulkAction = null;
-        let currentBulkActionType = null;
-        let currentDonationProjectId = null;
-        let currentDonationProjectName = null;
 
         async function viewProject(id) {
             try {
                 const response = await api.get(`/api/projects/${id}`);
                 if (response.success) {
                     const project = response.data;
-                    document.getElementById('view-project-title').textContent = project.name;
-                    const content = document.getElementById('view-project-content');
-                    content.innerHTML = `
-                        <div style="margin-bottom: 1rem;">
-                            <strong style="color: var(--text-primary);">Description:</strong>
-                            <p style="color: var(--text-secondary); margin-top: 0.5rem;">${project.description || 'No description'}</p>
-                        </div>
-                        <div style="margin-bottom: 1rem;">
-                            <strong style="color: var(--text-primary);">Status:</strong>
-                            <span class="project-status status ${project.status || 'idea'}" style="margin-left: 0.5rem;">${project.status || 'idea'}</span>
-                        </div>
-                        <div style="margin-bottom: 1rem;">
-                            <strong style="color: var(--text-primary);">Team Members:</strong>
-                            <span style="color: var(--text-secondary); margin-left: 0.5rem;">${(project.teamMembers || []).length} member${(project.teamMembers || []).length !== 1 ? 's' : ''}</span>
-                        </div>
-                        ${project.githubRepo ? `
-                            <div style="margin-bottom: 1rem;">
-                                <strong style="color: var(--text-primary);">GitHub:</strong>
-                                <a href="https://github.com/${project.githubRepo}" target="_blank" style="color: var(--bitcoin-orange); margin-left: 0.5rem;">${project.githubRepo}</a>
-                            </div>
-                        ` : ''}
-                        ${(project.tags || []).length > 0 ? `
-                            <div style="margin-bottom: 1rem;">
-                                <strong style="color: var(--text-primary);">Tags:</strong>
-                                <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                    ${(project.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
-                                </div>
-                            </div>
-                        ` : ''}
-                    `;
-                    document.getElementById('view-project-modal').classList.add('active');
+                    alert(`Project: ${project.name}\n\n${project.description}\n\nStatus: ${project.status}\nTeam: ${project.teamMembers.length} members`);
                 } else {
                     toast.error('Failed to load project details');
                 }
@@ -676,10 +375,6 @@ title: Projects
                 console.error('Error loading project:', error);
                 toast.error('Error loading project');
             }
-        }
-
-        function closeViewProjectModal() {
-            document.getElementById('view-project-modal').classList.remove('active');
         }
         
         function editProject(id) {
@@ -701,20 +396,10 @@ title: Projects
             }
         }
 
-        function rejectProject(id) {
-            currentRejectProjectId = id;
-            document.getElementById('confirm-reject-modal').classList.add('active');
-        }
-
-        function closeConfirmRejectModal() {
-            document.getElementById('confirm-reject-modal').classList.remove('active');
-            currentRejectProjectId = null;
-        }
-
-        async function confirmRejectProject() {
-            if (!currentRejectProjectId) {return;}
-            const id = currentRejectProjectId;
-            closeConfirmRejectModal();
+        async function rejectProject(id) {
+            if (!confirm('Are you sure you want to reject this project?')) {
+                return;
+            }
             try {
                 const response = await api.rejectProject(id);
                 if (response.success) {
@@ -735,109 +420,6 @@ title: Projects
         window.donateToProject = donateToProject;
         window.approveProject = approveProject;
         window.rejectProject = rejectProject;
-        window.closeViewProjectModal = closeViewProjectModal;
-        window.closeConfirmRejectModal = closeConfirmRejectModal;
-        window.closeConfirmBulkModal = closeConfirmBulkModal;
-        window.closeDonationModal = closeDonationModal;
-        window.closeInvoiceModal = closeInvoiceModal;
-        window.copyInvoice = copyInvoice;
-
-        // Bulk operations
-        function getSelectedProjectIds() {
-            return Array.from(document.querySelectorAll('.project-checkbox:checked')).map(cb => cb.dataset.projectId);
-        }
-
-        function updateBulkActionsToolbar() {
-            const selected = getSelectedProjectIds();
-            const toolbar = document.getElementById('bulk-actions-toolbar');
-            const countSpan = document.getElementById('selected-count');
-            
-            if (selected.length > 0) {
-                toolbar.style.display = 'flex';
-                countSpan.textContent = `${selected.length} project${selected.length !== 1 ? 's' : ''} selected`;
-            } else {
-                toolbar.style.display = 'none';
-            }
-        }
-
-        function toggleSelectAllProjects() {
-            const selectAll = document.getElementById('select-all-projects');
-            const checkboxes = document.querySelectorAll('.project-checkbox');
-            checkboxes.forEach(cb => cb.checked = selectAll.checked);
-            updateBulkActionsToolbar();
-        }
-
-        function clearSelection() {
-            document.getElementById('select-all-projects').checked = false;
-            document.querySelectorAll('.project-checkbox').forEach(cb => cb.checked = false);
-            updateBulkActionsToolbar();
-        }
-
-        function bulkApproveProjects() {
-            const selected = getSelectedProjectIds();
-            if (selected.length === 0) {
-                toast.error('Please select at least one project');
-                return;
-            }
-            currentBulkAction = selected;
-            currentBulkActionType = 'approve';
-            document.getElementById('confirm-bulk-title').textContent = 'Confirm Approval';
-            document.getElementById('confirm-bulk-message').textContent = `Approve ${selected.length} project${selected.length !== 1 ? 's' : ''}?`;
-            const btn = document.getElementById('confirm-bulk-button');
-            btn.textContent = 'Approve';
-            btn.style.background = '#2d5016';
-            btn.style.color = '#4ade80';
-            document.getElementById('confirm-bulk-modal').classList.add('active');
-        }
-
-        function bulkRejectProjects() {
-            const selected = getSelectedProjectIds();
-            if (selected.length === 0) {
-                toast.error('Please select at least one project');
-                return;
-            }
-            currentBulkAction = selected;
-            currentBulkActionType = 'reject';
-            document.getElementById('confirm-bulk-title').textContent = 'Confirm Rejection';
-            document.getElementById('confirm-bulk-message').textContent = `Reject ${selected.length} project${selected.length !== 1 ? 's' : ''}?`;
-            const btn = document.getElementById('confirm-bulk-button');
-            btn.textContent = 'Reject';
-            btn.style.background = '#7f1d1d';
-            btn.style.color = '#f87171';
-            document.getElementById('confirm-bulk-modal').classList.add('active');
-        }
-
-        function closeConfirmBulkModal() {
-            document.getElementById('confirm-bulk-modal').classList.remove('active');
-            currentBulkAction = null;
-            currentBulkActionType = null;
-        }
-
-        async function executeBulkAction() {
-            if (!currentBulkAction || !currentBulkActionType) {return;}
-            const selected = currentBulkAction;
-            const action = currentBulkActionType;
-            closeConfirmBulkModal();
-            try {
-                const response = await api.bulkProjects(selected, action);
-                if (response.success) {
-                    toast.success(response.data.message || `${action === 'approve' ? 'Approved' : 'Rejected'} ${selected.length} project${selected.length !== 1 ? 's' : ''}`);
-                    clearSelection();
-                    await loadProjects();
-                } else {
-                    toast.error(response.error || `Failed to ${action} projects`);
-                }
-            } catch (error) {
-                console.error(`Error ${action}ing projects:`, error);
-                toast.error(`Error ${action}ing projects`);
-            }
-        }
-
-        window.updateBulkActionsToolbar = updateBulkActionsToolbar;
-        window.toggleSelectAllProjects = toggleSelectAllProjects;
-        window.clearSelection = clearSelection;
-        window.bulkApproveProjects = bulkApproveProjects;
-        window.bulkRejectProjects = bulkRejectProjects;
 
         document.getElementById('create-project-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -877,26 +459,6 @@ title: Projects
             }
         });
 
-        // Search functionality with debouncing (using utility function)
-        const searchInput = document.getElementById('search-input');
-        if (searchInput) {
-            // Import debounce utility (if available) or use inline
-            const debouncedSearch = (() => {
-                let timeout;
-                return (func, wait = 300) => {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(func, wait);
-                };
-            })();
-            
-            searchInput.addEventListener('input', (e) => {
-                searchQuery = e.target.value;
-                debouncedSearch(() => {
-                    applyFilters();
-                }, 300);
-            });
-        }
-
         // Filter buttons
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -908,63 +470,32 @@ title: Projects
         });
 
         // Donate to project
-        function donateToProject(projectId, projectName) {
-            currentDonationProjectId = projectId;
-            currentDonationProjectName = projectName;
-            document.getElementById('donation-modal-title').textContent = `Donate to ${projectName}`;
-            document.getElementById('donation-form').reset();
-            document.getElementById('donation-modal').classList.add('active');
-        }
-
-        function closeDonationModal() {
-            document.getElementById('donation-modal').classList.remove('active');
-            currentDonationProjectId = null;
-            currentDonationProjectName = null;
-        }
-
-        function closeInvoiceModal() {
-            document.getElementById('invoice-modal').classList.remove('active');
-        }
-
-        function copyInvoice() {
-            const invoiceText = document.getElementById('invoice-text').value;
-            navigator.clipboard.writeText(invoiceText).then(() => {
-                toast.success('Lightning invoice copied to clipboard');
-            }).catch(() => {
-                toast.error('Failed to copy invoice');
-            });
-        }
-
-        document.getElementById('donation-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const amount = parseInt(document.getElementById('donation-amount').value);
-            const donorName = document.getElementById('donation-name').value.trim();
-            const donorEmail = document.getElementById('donation-email').value.trim();
-
-            if (!amount || amount <= 0) {
-                toast.error('Please enter a valid amount in sats');
+        async function donateToProject(projectId, projectName) {
+            const amount = prompt(`Enter donation amount in sats for "${projectName}":`);
+            if (!amount || isNaN(parseInt(amount)) || parseInt(amount) <= 0) {
+                if (amount !== null) {
+                    toast.error('Please enter a valid amount in sats');
+                }
                 return;
             }
 
-            closeDonationModal();
-
             try {
-                const response = await api.post(`/api/projects/${currentDonationProjectId}/donate`, {
-                    amount,
-                    donorName: donorName || undefined,
-                    donorEmail: donorEmail || undefined,
+                const response = await api.post(`/api/projects/${projectId}/donate`, {
+                    amount: parseInt(amount)
                 });
 
                 if (response.success && response.data) {
                     if (response.data.paymentUrl) {
                         // Redirect to OpenNode payment page
                         window.open(response.data.paymentUrl, '_blank');
-                        toast.success(`Opening payment page for ${amount} sats donation to ${currentDonationProjectName}`);
+                        toast.success(`Opening payment page for ${amount} sats donation to ${projectName}`);
                     } else if (response.data.lightningInvoice) {
                         // Show Lightning invoice
                         const invoice = response.data.lightningInvoice.payreq;
-                        document.getElementById('invoice-text').value = invoice;
-                        document.getElementById('invoice-modal').classList.add('active');
+                        if (confirm(`Lightning Invoice:\n\n${invoice}\n\nCopy to clipboard?`)) {
+                            navigator.clipboard.writeText(invoice);
+                            toast.success('Lightning invoice copied to clipboard');
+                        }
                     }
                 } else {
                     toast.error('Failed to create donation: ' + (response.error || 'Unknown error'));
@@ -973,12 +504,12 @@ title: Projects
                 console.error('Error creating donation:', error);
                 toast.error('Error creating donation');
             }
-        });
+        }
 
         // Initialize
         (async () => {
             await auth.requireAuth();
-            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('loading').style.display = 'none';
             document.getElementById('projects-content').style.display = 'block';
             await loadProjects();
         })();
