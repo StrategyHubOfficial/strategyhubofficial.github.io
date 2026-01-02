@@ -38,22 +38,33 @@
     
     <script>
         // Show admin menu if user is admin
-        (async function() {
-            if (typeof auth !== 'undefined') {
-                try {
-                    const isAuthenticated = auth.isAuthenticated();
-                    if (isAuthenticated) {
-                        const user = auth.getCurrentUser();
-                        if (user && user.role === 'admin') {
-                            const adminMenu = document.getElementById('admin-menu');
-                            if (adminMenu) {
-                                adminMenu.style.display = 'block';
-                            }
-                        }
+        (async function showAdminMenu() {
+            // Wait for auth to be available
+            let attempts = 0;
+            while (typeof auth === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (typeof auth === 'undefined') {
+                console.warn('Auth not available for admin menu check');
+                return;
+            }
+            
+            try {
+                // Wait for auth to be initialized
+                await auth.requireAuth();
+                const user = auth.getCurrentUser();
+                if (user && user.role === 'admin') {
+                    const adminMenu = document.getElementById('admin-menu');
+                    if (adminMenu) {
+                        // Remove Bootstrap's d-none class to show the menu
+                        adminMenu.classList.remove('d-none');
                     }
-                } catch (error) {
-                    console.error('Error checking admin status:', error);
                 }
+            } catch (error) {
+                // Not authenticated or error - menu stays hidden
+                console.debug('Admin menu check:', error.message || error);
             }
         })();
 
