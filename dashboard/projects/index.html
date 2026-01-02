@@ -364,11 +364,10 @@ title: Projects
         
         // Expose to global scope for onclick handlers
         window.showCreateProject = showCreateProject;
-
-        function closeCreateProject() {
+        window.closeCreateProject = function() {
             document.getElementById('create-project-modal').classList.remove('active');
             document.getElementById('create-project-form').reset();
-        }
+        };
 
         async function viewProject(id) {
             try {
