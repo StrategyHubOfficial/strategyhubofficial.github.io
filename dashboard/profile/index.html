@@ -383,6 +383,7 @@ title: My Profile
                 reader.readAsDataURL(file);
             }
         });
+        }
 
         // Form submission (if form exists)
         const profileForm = document.getElementById('profile-form');
@@ -469,7 +470,6 @@ title: My Profile
                 toast.error('Error updating profile');
             }
         });
-        }
 
         // Change password form handler (if form exists)
         const changePasswordForm = document.getElementById('change-password-form');
