@@ -366,9 +366,12 @@ title: My Profile
                 }
             }
         });
+        }
 
-        // Avatar preview
-        document.getElementById('avatar-input').addEventListener('change', (e) => {
+        // Avatar preview (if input exists)
+        const avatarInput = document.getElementById('avatar-input');
+        if (avatarInput) {
+            avatarInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
@@ -465,8 +468,10 @@ title: My Profile
             }
         });
 
-        // Change password form handler
-        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+        // Change password form handler (if form exists)
+        const changePasswordForm = document.getElementById('change-password-form');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const currentPassword = document.getElementById('current-password').value;
@@ -500,6 +505,7 @@ title: My Profile
                 toast.error('Error changing password');
             }
         });
+        }
 
         // Initialize
         await auth.requireAuth();
