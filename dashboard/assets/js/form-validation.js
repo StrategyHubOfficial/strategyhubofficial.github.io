@@ -258,6 +258,8 @@ class FormValidator {
         try {
           const rules = this.parseRules(input.getAttribute('data-validate'));
           const value = input.value;
+          let inputValid = true;
+          let errorMessage = '';
           
           for (const rule of rules) {
             const validator = this.validators.get(rule.type);
@@ -268,13 +270,16 @@ class FormValidator {
             const ruleValid = validator.validate(value, rule.value);
             if (!ruleValid) {
               isValid = false;
-              this.showValidation(input, false, 
-                typeof validator.message === 'function' 
-                  ? validator.message(rule.value) 
-                  : validator.message
-              );
+              inputValid = false;
+              errorMessage = typeof validator.message === 'function' 
+                ? validator.message(rule.value) 
+                : validator.message;
+              break; // Stop at first invalid rule
             }
           }
+          
+          // Show validation state for both valid and invalid
+          this.showValidation(input, inputValid, errorMessage);
         } catch (error) {
           console.error('Error validating input:', error);
           // Continue with other inputs

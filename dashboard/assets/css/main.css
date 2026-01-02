@@ -601,6 +601,14 @@ body {
   border-left: 4px solid var(--info);
 }
 
+/* Prevent duplicate icons in toasts - toasts have icons in HTML, not CSS */
+.toast.error::before,
+.toast.success::before,
+.toast.warning::before,
+.toast.info::before {
+  display: none;
+}
+
 .toast-icon {
   font-size: 1.5rem;
 }
