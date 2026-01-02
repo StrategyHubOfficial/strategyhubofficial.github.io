@@ -220,8 +220,16 @@ title: Events
                 const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
                 const url = isAdmin ? '/api/events?includePending=true' : '/api/events';
                 const response = await api.get(url);
-                if (response.success) {
-                    events = response.data || [];
+                if (response.success && response.data) {
+                    // Handle paginated response structure: { data: [...], pagination: {...} }
+                    if (Array.isArray(response.data)) {
+                        events = response.data;
+                    } else if (response.data.data && Array.isArray(response.data.data)) {
+                        events = response.data.data;
+                    } else {
+                        console.warn('Unexpected events response structure:', response.data);
+                        events = [];
+                    }
                     renderEvents();
                 } else {
                     toast.error('Failed to load events');
