@@ -240,8 +240,16 @@ title: Projects
                 const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
                 const url = isAdmin ? '/api/projects?includePending=true' : '/api/projects';
                 const response = await api.get(url);
-                if (response.success) {
-                    allProjects = response.data || [];
+                if (response.success && response.data) {
+                    // Handle paginated response structure: { data: [...], pagination: {...} }
+                    if (Array.isArray(response.data)) {
+                        allProjects = response.data;
+                    } else if (response.data.data && Array.isArray(response.data.data)) {
+                        allProjects = response.data.data;
+                    } else {
+                        console.warn('Unexpected projects response structure:', response.data);
+                        allProjects = [];
+                    }
                     applyFilters();
                 } else {
                     toast.error('Failed to load projects');
