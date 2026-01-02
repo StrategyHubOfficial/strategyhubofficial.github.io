@@ -601,14 +601,6 @@ body {
   border-left: 4px solid var(--info);
 }
 
-/* Prevent duplicate icons in toasts - toasts have icons in HTML, not CSS */
-.toast.error::before,
-.toast.success::before,
-.toast.warning::before,
-.toast.info::before {
-  display: none;
-}
-
 .toast-icon {
   font-size: 1.5rem;
 }
@@ -743,7 +735,7 @@ body {
 }
 
 /* Error & Success Messages */
-.error {
+.error:not(.toast) {
   background: rgba(214, 48, 49, 0.1);
   border: 1px solid rgba(214, 48, 49, 0.3);
   color: var(--error);
@@ -755,12 +747,12 @@ body {
   gap: 0.75rem;
 }
 
-.error::before {
+.error:not(.toast)::before {
   content: "⚠";
   font-size: 1.25rem;
 }
 
-.success {
+.success:not(.toast) {
   background: rgba(0, 184, 148, 0.1);
   border: 1px solid rgba(0, 184, 148, 0.3);
   color: var(--success);
@@ -772,7 +764,7 @@ body {
   gap: 0.75rem;
 }
 
-.success::before {
+.success:not(.toast)::before {
   content: "✓";
   font-size: 1.25rem;
 }
