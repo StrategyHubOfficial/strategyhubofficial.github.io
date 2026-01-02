@@ -1,15 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Announcements - StrategyHub</title>
-    <link rel="stylesheet" href="../assets/css/main.css">
-    <script src="../assets/js/config.js"></script>
-    <script src="../assets/js/api.js"></script>
-    <script src="../assets/js/auth.js"></script>
-    <script src="../assets/js/toast.js"></script>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+---
+layout: default
+title: Manage Announcements
+styles: |
     <style>
         .announcements-container {
             max-width: 1200px;
@@ -276,260 +268,255 @@
             color: var(--text-secondary);
         }
     </style>
-</head>
-<body>
-    <div id="navbar-container"></div>
+---
 
-    <div class="announcements-container">
-        <div class="page-header">
-            <h1>Manage Announcements</h1>
-            <button class="btn-create" onclick="openCreateModal()">+ Create Announcement</button>
-        </div>
-
-        <div id="announcements-grid" class="announcements-grid">
-            <div class="empty-state">Loading announcements...</div>
-        </div>
+<div class="announcements-container">
+    <div class="page-header">
+        <h1>Manage Announcements</h1>
+        <button class="btn-create" onclick="openCreateModal()">+ Create Announcement</button>
     </div>
 
-    <!-- Create/Edit Modal -->
-    <div id="announcement-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modal-title">Create Announcement</h2>
-                <button class="btn-close" onclick="closeModal()">&times;</button>
+    <div id="announcements-grid" class="announcements-grid">
+        <div class="empty-state">Loading announcements...</div>
+    </div>
+</div>
+
+<!-- Create/Edit Modal -->
+<div id="announcement-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title" id="modal-title">Create Announcement</h2>
+            <button class="btn-close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="announcement-form">
+            <input type="hidden" id="announcement-id">
+            
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" required>
             </div>
-            <form id="announcement-form">
-                <input type="hidden" id="announcement-id">
-                
+
+            <div class="form-group">
+                <label for="content">Content *</label>
+                <textarea id="content" required></textarea>
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
-                    <label for="title">Title *</label>
-                    <input type="text" id="title" required>
+                    <label for="visibility">Visibility *</label>
+                    <select id="visibility" required>
+                        <option value="public">Public (visible to everyone)</option>
+                        <option value="members">Members Only (logged-in users)</option>
+                    </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="content">Content *</label>
-                    <textarea id="content" required></textarea>
+                    <label for="status">Status *</label>
+                    <select id="status" required>
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="priority">Priority</label>
+                    <select id="priority">
+                        <option value="low">Low</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="high">High</option>
+                    </select>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="visibility">Visibility *</label>
-                        <select id="visibility" required>
-                            <option value="public">Public (visible to everyone)</option>
-                            <option value="members">Members Only (logged-in users)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="status">Status *</label>
-                        <select id="status" required>
-                            <option value="draft">Draft</option>
-                            <option value="published">Published</option>
-                            <option value="archived">Archived</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="expires-at">Expires At (optional)</label>
+                    <input type="datetime-local" id="expires-at">
                 </div>
+            </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="priority">Priority</label>
-                        <select id="priority">
-                            <option value="low">Low</option>
-                            <option value="normal" selected>Normal</option>
-                            <option value="high">High</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="expires-at">Expires At (optional)</label>
-                        <input type="datetime-local" id="expires-at">
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="submit" class="btn-create" style="flex: 1;">Save</button>
-                    <button type="button" class="btn-small" onclick="closeModal()" style="flex: 1;">Cancel</button>
-                </div>
-            </form>
-        </div>
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="submit" class="btn-create" style="flex: 1;">Save</button>
+                <button type="button" class="btn-small" onclick="closeModal()" style="flex: 1;">Cancel</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <script>
-        let announcements = [];
-        let editingId = null;
+<script>
+    let announcements = [];
+    let editingId = null;
 
-        async function loadAnnouncements() {
-            try {
-                const response = await api.get('/api/announcements?status=');
-                if (response.success) {
-                    announcements = response.data.announcements || [];
-                    renderAnnouncements();
-                } else {
-                    toast.error('Failed to load announcements');
-                }
-            } catch (error) {
-                console.error('Error loading announcements:', error);
-                toast.error('Error loading announcements');
+    async function loadAnnouncements() {
+        try {
+            const response = await api.get('/api/announcements?status=');
+            if (response.success) {
+                announcements = response.data.announcements || [];
+                renderAnnouncements();
+            } else {
+                toast.error('Failed to load announcements');
             }
+        } catch (error) {
+            console.error('Error loading announcements:', error);
+            toast.error('Error loading announcements');
+        }
+    }
+
+    function renderAnnouncements() {
+        const grid = document.getElementById('announcements-grid');
+        
+        if (announcements.length === 0) {
+            grid.innerHTML = '<div class="empty-state">No announcements yet. Create one to get started!</div>';
+            return;
         }
 
-        function renderAnnouncements() {
-            const grid = document.getElementById('announcements-grid');
-            
-            if (announcements.length === 0) {
-                grid.innerHTML = '<div class="empty-state">No announcements yet. Create one to get started!</div>';
-                return;
-            }
+        grid.innerHTML = announcements.map(announcement => {
+            const publishedDate = announcement.publishedAt 
+                ? new Date(announcement.publishedAt).toLocaleDateString()
+                : 'Not published';
+            const expiresDate = announcement.expiresAt
+                ? new Date(announcement.expiresAt).toLocaleDateString()
+                : null;
 
-            grid.innerHTML = announcements.map(announcement => {
-                const publishedDate = announcement.publishedAt 
-                    ? new Date(announcement.publishedAt).toLocaleDateString()
-                    : 'Not published';
-                const expiresDate = announcement.expiresAt
-                    ? new Date(announcement.expiresAt).toLocaleDateString()
-                    : null;
-
-                return `
-                    <div class="announcement-card">
-                        <div class="announcement-header">
-                            <div>
-                                <div class="announcement-title">${escapeHtml(announcement.title)}</div>
-                                <div class="announcement-meta">
-                                    <span class="badge badge-${announcement.visibility}">${announcement.visibility}</span>
-                                    <span class="badge badge-${announcement.status}">${announcement.status}</span>
-                                    <span class="badge badge-${announcement.priority || 'normal'}">${announcement.priority || 'normal'}</span>
-                                    <span>By ${escapeHtml(announcement.authorName)}</span>
-                                    <span>${publishedDate}</span>
-                                    ${expiresDate ? `<span>Expires: ${expiresDate}</span>` : ''}
-                                </div>
+            return `
+                <div class="announcement-card">
+                    <div class="announcement-header">
+                        <div>
+                            <div class="announcement-title">${escapeHtml(announcement.title)}</div>
+                            <div class="announcement-meta">
+                                <span class="badge badge-${announcement.visibility}">${announcement.visibility}</span>
+                                <span class="badge badge-${announcement.status}">${announcement.status}</span>
+                                <span class="badge badge-${announcement.priority || 'normal'}">${announcement.priority || 'normal'}</span>
+                                <span>By ${escapeHtml(announcement.authorName)}</span>
+                                <span>${publishedDate}</span>
+                                ${expiresDate ? `<span>Expires: ${expiresDate}</span>` : ''}
                             </div>
                         </div>
-                        <div class="announcement-content">${escapeHtml(announcement.content)}</div>
-                        <div class="announcement-actions">
-                            <button class="btn-small" onclick="editAnnouncement('${announcement.id}')">Edit</button>
-                            <button class="btn-small btn-danger" onclick="deleteAnnouncement('${announcement.id}')">Delete</button>
-                        </div>
                     </div>
-                `;
-            }).join('');
+                    <div class="announcement-content">${escapeHtml(announcement.content)}</div>
+                    <div class="announcement-actions">
+                        <button class="btn-small" onclick="editAnnouncement('${announcement.id}')">Edit</button>
+                        <button class="btn-small btn-danger" onclick="deleteAnnouncement('${announcement.id}')">Delete</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function openCreateModal() {
+        editingId = null;
+        document.getElementById('modal-title').textContent = 'Create Announcement';
+        document.getElementById('announcement-form').reset();
+        document.getElementById('announcement-id').value = '';
+        document.getElementById('status').value = 'draft';
+        document.getElementById('priority').value = 'normal';
+        document.getElementById('announcement-modal').classList.add('show');
+    }
+
+    function editAnnouncement(id) {
+        const announcement = announcements.find(a => a.id === id);
+        if (!announcement) {return;}
+
+        editingId = id;
+        document.getElementById('modal-title').textContent = 'Edit Announcement';
+        document.getElementById('announcement-id').value = id;
+        document.getElementById('title').value = announcement.title;
+        document.getElementById('content').value = announcement.content;
+        document.getElementById('visibility').value = announcement.visibility;
+        document.getElementById('status').value = announcement.status;
+        document.getElementById('priority').value = announcement.priority || 'normal';
+        
+        if (announcement.expiresAt) {
+            const date = new Date(announcement.expiresAt);
+            const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+            document.getElementById('expires-at').value = localDate.toISOString().slice(0, 16);
+        } else {
+            document.getElementById('expires-at').value = '';
         }
 
-        function openCreateModal() {
-            editingId = null;
-            document.getElementById('modal-title').textContent = 'Create Announcement';
-            document.getElementById('announcement-form').reset();
-            document.getElementById('announcement-id').value = '';
-            document.getElementById('status').value = 'draft';
-            document.getElementById('priority').value = 'normal';
-            document.getElementById('announcement-modal').classList.add('show');
-        }
+        document.getElementById('announcement-modal').classList.add('show');
+    }
 
-        function editAnnouncement(id) {
-            const announcement = announcements.find(a => a.id === id);
-            if (!announcement) {return;}
+    function closeModal() {
+        document.getElementById('announcement-modal').classList.remove('show');
+        editingId = null;
+    }
 
-            editingId = id;
-            document.getElementById('modal-title').textContent = 'Edit Announcement';
-            document.getElementById('announcement-id').value = id;
-            document.getElementById('title').value = announcement.title;
-            document.getElementById('content').value = announcement.content;
-            document.getElementById('visibility').value = announcement.visibility;
-            document.getElementById('status').value = announcement.status;
-            document.getElementById('priority').value = announcement.priority || 'normal';
-            
-            if (announcement.expiresAt) {
-                const date = new Date(announcement.expiresAt);
-                const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-                document.getElementById('expires-at').value = localDate.toISOString().slice(0, 16);
+    async function deleteAnnouncement(id) {
+        if (!confirm('Are you sure you want to delete this announcement?')) {return;}
+
+        try {
+            const response = await api.delete(`/api/announcements/${id}`);
+            if (response.success) {
+                toast.success('Announcement deleted');
+                await loadAnnouncements();
             } else {
-                document.getElementById('expires-at').value = '';
+                toast.error(response.error || 'Failed to delete announcement');
+            }
+        } catch (error) {
+            console.error('Error deleting announcement:', error);
+            toast.error('Error deleting announcement');
+        }
+    }
+
+    document.getElementById('announcement-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const id = document.getElementById('announcement-id').value;
+        const title = document.getElementById('title').value;
+        const content = document.getElementById('content').value;
+        const visibility = document.getElementById('visibility').value;
+        const status = document.getElementById('status').value;
+        const priority = document.getElementById('priority').value;
+        const expiresAt = document.getElementById('expires-at').value;
+
+        const data = {
+            title,
+            content,
+            visibility,
+            status,
+            priority,
+            expiresAt: expiresAt || undefined,
+        };
+
+        try {
+            let response;
+            if (id) {
+                response = await api.put(`/api/announcements/${id}`, data);
+            } else {
+                response = await api.post('/api/announcements', data);
             }
 
-            document.getElementById('announcement-modal').classList.add('show');
-        }
-
-        function closeModal() {
-            document.getElementById('announcement-modal').classList.remove('show');
-            editingId = null;
-        }
-
-        async function deleteAnnouncement(id) {
-            if (!confirm('Are you sure you want to delete this announcement?')) {return;}
-
-            try {
-                const response = await api.delete(`/api/announcements/${id}`);
-                if (response.success) {
-                    toast.success('Announcement deleted');
-                    await loadAnnouncements();
-                } else {
-                    toast.error(response.error || 'Failed to delete announcement');
-                }
-            } catch (error) {
-                console.error('Error deleting announcement:', error);
-                toast.error('Error deleting announcement');
-            }
-        }
-
-        document.getElementById('announcement-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const id = document.getElementById('announcement-id').value;
-            const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
-            const visibility = document.getElementById('visibility').value;
-            const status = document.getElementById('status').value;
-            const priority = document.getElementById('priority').value;
-            const expiresAt = document.getElementById('expires-at').value;
-
-            const data = {
-                title,
-                content,
-                visibility,
-                status,
-                priority,
-                expiresAt: expiresAt || undefined,
-            };
-
-            try {
-                let response;
-                if (id) {
-                    response = await api.put(`/api/announcements/${id}`, data);
-                } else {
-                    response = await api.post('/api/announcements', data);
-                }
-
-                if (response.success) {
-                    toast.success(id ? 'Announcement updated' : 'Announcement created');
-                    closeModal();
-                    await loadAnnouncements();
-                } else {
-                    toast.error(response.error || 'Failed to save announcement');
-                }
-            } catch (error) {
-                console.error('Error saving announcement:', error);
-                toast.error('Error saving announcement');
-            }
-        });
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        // Close modal on outside click
-        document.getElementById('announcement-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'announcement-modal') {
+            if (response.success) {
+                toast.success(id ? 'Announcement updated' : 'Announcement created');
                 closeModal();
+                await loadAnnouncements();
+            } else {
+                toast.error(response.error || 'Failed to save announcement');
             }
-        });
+        } catch (error) {
+            console.error('Error saving announcement:', error);
+            toast.error('Error saving announcement');
+        }
+    });
 
-        // Initialize
-        (async () => {
-            await auth.requireAuth();
-            await loadAnnouncements();
-        })();
-    </script>
-</body>
-</html>
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
+    // Close modal on outside click
+    document.getElementById('announcement-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'announcement-modal') {
+            closeModal();
+        }
+    });
+
+    // Initialize
+    (async () => {
+        await auth.requireAuth();
+        await loadAnnouncements();
+    })();
+</script>
