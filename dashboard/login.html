@@ -192,21 +192,23 @@
     </div>
 
     <script>
-        // Check for token in URL (from OAuth callback) - do this first
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
-        if (token) {
-            localStorage.setItem('hub_token', token);
-            window.location.href = '/dashboard';
-            return;
-        }
+        (function() {
+            // Check for token in URL (from OAuth callback) - do this first
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            if (token) {
+                localStorage.setItem('hub_token', token);
+                window.location.href = '/dashboard';
+                return;
+            }
 
-        // Check for registration success
-        if (urlParams.get('registered') === 'true') {
-            const successDiv = document.getElementById('success-message');
-            successDiv.textContent = 'Registration successful! Please log in with your new account.';
-            successDiv.style.display = 'block';
-        }
+            // Check for registration success
+            if (urlParams.get('registered') === 'true') {
+                const successDiv = document.getElementById('success-message');
+                successDiv.textContent = 'Registration successful! Please log in with your new account.';
+                successDiv.style.display = 'block';
+            }
+        })();
 
         // Check if already logged in
         (async () => {
