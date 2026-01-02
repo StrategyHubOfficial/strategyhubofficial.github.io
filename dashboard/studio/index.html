@@ -273,8 +273,19 @@ title: Studio Booking
                     const currentUser = auth.getCurrentUser();
                     if (!currentUser) return;
                     
+                    // Handle both array and object with data property
+                    let events = [];
+                    if (Array.isArray(response.data)) {
+                        events = response.data;
+                    } else if (response.data.data && Array.isArray(response.data.data)) {
+                        events = response.data.data;
+                    } else {
+                        console.warn('Unexpected events response structure:', response.data);
+                        events = [];
+                    }
+                    
                     // Filter to only events the user has RSVP'd to
-                    const rsvpEvents = (response.data || []).filter(event => 
+                    const rsvpEvents = events.filter(event => 
                         event.rsvps && event.rsvps.includes(currentUser.id) && 
                         new Date(event.startTime) > new Date()
                     );
