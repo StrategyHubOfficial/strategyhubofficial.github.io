@@ -181,7 +181,18 @@ class KeyboardShortcuts {
   }
 
   showHelp() {
+    if (this.helpVisible) {
+      return;
+    }
+    
     const shortcuts = Array.from(this.shortcuts.values());
+    
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text) => {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    };
     
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
