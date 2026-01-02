@@ -384,8 +384,10 @@ title: My Profile
             }
         });
 
-        // Form submission
-        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+        // Form submission (if form exists)
+        const profileForm = document.getElementById('profile-form');
+        if (profileForm) {
+            profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             // Upload avatar first if selected
@@ -467,6 +469,7 @@ title: My Profile
                 toast.error('Error updating profile');
             }
         });
+        }
 
         // Change password form handler (if form exists)
         const changePasswordForm = document.getElementById('change-password-form');
