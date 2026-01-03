@@ -301,15 +301,15 @@ scripts: |
                         <input type="datetime-local" id="event-start-time" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
                     </div>
                     <div class="form-group">
-                        <label for="event-end-time" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">End Time *</label>
-                        <input type="datetime-local" id="event-end-time" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
+                        <label for="event-end-time" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">End Time (optional)</label>
+                        <input type="datetime-local" id="event-end-time" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
                     </div>
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                     <div class="form-group">
-                        <label for="event-location" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Location *</label>
-                        <input type="text" id="event-location" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
+                        <label for="event-location" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Location (optional)</label>
+                        <input type="text" id="event-location" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
                     </div>
                     <div class="form-group">
                         <label for="event-type" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Type *</label>
@@ -507,8 +507,53 @@ scripts: |
                             ` : ''}
                         </div>
                         <div class="event-details">
-                            <p><strong>When:</strong> ${eventDate.toLocaleString()}</p>
-                            <p><strong>Where:</strong> ${event.location}</p>
+                            ${(() => {
+                                const startDate = new Date(event.startTime);
+                                const endDate = event.endTime ? new Date(event.endTime) : null;
+                                
+                                // Format date nicely
+                                const dateOptions: Intl.DateTimeFormatOptions = { 
+                                    weekday: 'short', 
+                                    year: 'numeric', 
+                                    month: 'short', 
+                                    day: 'numeric' 
+                                };
+                                const timeOptions: Intl.DateTimeFormatOptions = { 
+                                    hour: 'numeric', 
+                                    minute: '2-digit',
+                                    hour12: true
+                                };
+                                
+                                const dateStr = startDate.toLocaleDateString('en-US', dateOptions);
+                                const startTimeStr = startDate.toLocaleTimeString('en-US', timeOptions);
+                                
+                                let whenHtml = `<p><strong>When:</strong> ${dateStr} at ${startTimeStr}`;
+                                
+                                if (endDate) {
+                                    const endTimeStr = endDate.toLocaleTimeString('en-US', timeOptions);
+                                    const durationMs = endDate.getTime() - startDate.getTime();
+                                    const durationHours = Math.round(durationMs / (1000 * 60 * 60) * 10) / 10;
+                                    const durationMins = Math.round(durationMs / (1000 * 60));
+                                    
+                                    let durationStr = '';
+                                    if (durationHours >= 1) {
+                                        durationStr = durationHours === 1 ? '1 hour' : `${durationHours} hours`;
+                                    } else {
+                                        durationStr = durationMins === 1 ? '1 minute' : `${durationMins} minutes`;
+                                    }
+                                    
+                                    whenHtml += ` - ${endTimeStr} <span style="color: var(--text-secondary); font-size: 0.9em;">(${durationStr})</span>`;
+                                }
+                                
+                                whenHtml += '</p>';
+                                
+                                let locationHtml = '';
+                                if (event.location) {
+                                    locationHtml = `<p><strong>Where:</strong> ${event.location}</p>`;
+                                }
+                                
+                                return whenHtml + locationHtml;
+                            })()}
                             ${event.description ? `<p>${event.description}</p>` : ''}
                         </div>
                         ${event.enableRSVP ? `
@@ -846,22 +891,42 @@ scripts: |
             if (editingEventId) {
                 // Update existing event
                 try {
-                    const response = await api.put(`/api/events/${editingEventId}`, { title, description, location, startTime, endTime, type, maxAttendees, enableRSVP });
-                    if (response.success) {
-                        toast.success('Event updated successfully');
-                        closeCreateEventModal();
-                        await loadEvents();
-                    } else {
-                        toast.error('Failed to update event: ' + (response.error || 'Unknown error'));
-                    }
-                } catch (error) {
-                    console.error('Error updating event:', error);
-                    toast.error('Error updating event');
+                    const eventData = {
+                        title,
+                        description,
+                        startTime,
+                        endTime: endTime || undefined,
+                        location: location || undefined,
+                        type,
+                        maxAttendees,
+                        enableRSVP
+                    };
+                    const response = await api.put(`/api/events/${editingEventId}`, eventData);
+                if (response.success) {
+                    toast.success('Event updated successfully');
+                    closeCreateEventModal();
+                    await loadEvents();
+                } else {
+                    toast.error('Failed to update event: ' + (response.error || 'Unknown error'));
                 }
-            } else {
-                // Create new event
-                await createEvent({ title, description, location, startTime, endTime, type, maxAttendees, enableRSVP });
+            } catch (error) {
+                console.error('Error updating event:', error);
+                toast.error('Error updating event');
             }
+        } else {
+            // Create new event
+            const eventData = {
+                title,
+                description,
+                startTime,
+                endTime: endTime || undefined,
+                location: location || undefined,
+                type,
+                maxAttendees,
+                enableRSVP
+            };
+            await createEvent(eventData);
+        }
         });
 
         // Close modal on outside click
