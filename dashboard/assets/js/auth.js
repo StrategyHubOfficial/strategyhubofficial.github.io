@@ -84,9 +84,9 @@ class AuthManager {
   /**
    * Login (handles 2FA flow)
    */
-  async login(email, password) {
+  async login(email, password, rememberMe = false) {
     try {
-      const response = await this.api.login(email, password);
+      const response = await this.api.login(email, password, rememberMe);
       if (response.success && response.data) {
         // Check if 2FA is required
         if (response.data.requires2FA) {
@@ -94,7 +94,8 @@ class AuthManager {
             success: true,
             requires2FA: true,
             tempToken: response.data.tempToken,
-            userId: response.data.userId
+            userId: response.data.userId,
+            rememberMe: rememberMe
           };
         }
         // Normal login (no 2FA)
