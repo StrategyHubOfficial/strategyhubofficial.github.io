@@ -276,8 +276,9 @@ title: Members
                     ? `<img src="${avatarUrl}" alt="${member.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
                     : initials;
 
+                const memberId = member.id || member.userId || '';
                 return `
-                    <div class="member-card">
+                    <div class="member-card" id="member-${memberId}" data-member-id="${memberId}">
                         <div class="member-avatar">${avatarDisplay}</div>
                         <div class="member-info">
                             <div class="member-name">${member.name || 'Unknown'}</div>
@@ -328,6 +329,30 @@ title: Members
             });
         });
 
+        // Scroll to member if hash is present in URL
+        function scrollToMember() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#')) {
+                const memberId = hash.substring(1);
+                if (memberId) {
+                    // Wait for members to render, then scroll
+                    setTimeout(() => {
+                        const memberCard = document.getElementById(`member-${memberId}`);
+                        if (memberCard) {
+                            memberCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            // Highlight the card briefly
+                            memberCard.style.border = '2px solid var(--bitcoin-orange)';
+                            memberCard.style.boxShadow = '0 0 20px rgba(247, 147, 26, 0.5)';
+                            setTimeout(() => {
+                                memberCard.style.border = '';
+                                memberCard.style.boxShadow = '';
+                            }, 2000);
+                        }
+                    }, 500);
+                }
+            }
+        }
+
         // Initialize
         (async () => {
             await auth.requireAuth();
@@ -344,5 +369,11 @@ title: Members
             document.getElementById('loading').style.display = 'none';
             document.getElementById('members-content').style.display = 'block';
             await loadMembers();
+            
+            // Scroll to member if hash is in URL
+            scrollToMember();
+            
+            // Listen for hash changes
+            window.addEventListener('hashchange', scrollToMember);
         })();
     })();</script>
