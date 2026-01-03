@@ -205,8 +205,8 @@ title: Events
     </div>
 
     <!-- Create Event Modal -->
-    <div id="create-event-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; align-items: center; justify-content: center;">
-        <div class="modal-content" style="max-width: 600px; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto;">
+    <div id="create-event-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; align-items: center; justify-content: center; pointer-events: none;">
+        <div class="modal-content" style="max-width: 600px; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto; pointer-events: auto;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2 style="margin: 0; color: var(--text-primary);">Create Event</h2>
                 <button onclick="closeCreateEventModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
