@@ -163,11 +163,12 @@ title: Equipment
         </div>
     </div>
 
-    <!-- Add Equipment Modal (Admin Only) -->
+    <!-- Add/Edit Equipment Modal (Admin Only) -->
     <div id="add-equipment-modal" class="checkout-modal">
         <div class="modal-content">
-            <h2>Add Equipment</h2>
+            <h2 id="equipment-modal-title">Add Equipment</h2>
             <form id="add-equipment-form">
+                <input type="hidden" id="equipment-id" value="">
                 <div class="form-group">
                     <label>Name *:</label>
                     <input type="text" id="equipment-name" required>
@@ -206,8 +207,8 @@ title: Equipment
                     <input type="url" id="equipment-endpoint">
                 </div>
                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button type="submit" class="btn">Add Equipment</button>
-                    <button type="button" class="btn-secondary" onclick="closeAddEquipmentModal()">Cancel</button>
+                    <button type="submit" class="btn" id="equipment-submit-btn">Add Equipment</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddEquipmentModal()">Cancel</button>
                 </div>
             </form>
         </div>
@@ -285,6 +286,12 @@ title: Equipment
                             info += `<div class="equipment-info"><strong>${key}:</strong> ${value}</div>`;
                         });
                     }
+                }
+
+                // Add edit button for admins
+                const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+                if (isAdmin) {
+                    actions += `<button class="btn btn-small" onclick="editEquipment('${item.id}')" style="background: var(--bitcoin-orange); margin-left: 0.5rem;">Edit</button>`;
                 }
 
                 return `
@@ -382,12 +389,54 @@ title: Equipment
 
         // Add Equipment Modal Functions
         window.showAddEquipmentModal = function() {
+            editingEquipmentId = null;
+            document.getElementById('equipment-id').value = '';
+            document.getElementById('equipment-modal-title').textContent = 'Add Equipment';
+            document.getElementById('equipment-submit-btn').textContent = 'Add Equipment';
             document.getElementById('add-equipment-modal').classList.add('active');
         }
+
+        let editingEquipmentId = null;
+
+        async function editEquipment(id) {
+            const equipment = allEquipment.find(e => e.id === id);
+            if (!equipment) {
+                toast.error('Equipment not found');
+                return;
+            }
+
+            editingEquipmentId = id;
+            document.getElementById('equipment-id').value = id;
+            document.getElementById('equipment-modal-title').textContent = 'Edit Equipment';
+            document.getElementById('equipment-submit-btn').textContent = 'Update Equipment';
+
+            // Populate form
+            document.getElementById('equipment-name').value = equipment.name || '';
+            document.getElementById('equipment-category').value = equipment.category || '';
+            document.getElementById('equipment-type').value = equipment.type || 'borrowable';
+            document.getElementById('equipment-description').value = equipment.description || '';
+            document.getElementById('equipment-studio-parent').value = equipment.studioParent || '';
+            document.getElementById('equipment-ip').value = equipment.ipAddress || '';
+            document.getElementById('equipment-endpoint').value = equipment.endpoint || '';
+
+            // Show/hide relevant fields
+            updateEquipmentTypeFields();
+            const studioParentGroup = document.getElementById('studio-parent-group');
+            if (studioParentGroup) {
+                studioParentGroup.style.display = equipment.type === 'borrowable' ? 'block' : 'none';
+            }
+
+            // Show modal
+            document.getElementById('add-equipment-modal').classList.add('active');
+        }
+
+        window.editEquipment = editEquipment;
 
         window.closeAddEquipmentModal = function() {
             document.getElementById('add-equipment-modal').classList.remove('active');
             document.getElementById('add-equipment-form').reset();
+            document.getElementById('equipment-id').value = '';
+            editingEquipmentId = null;
             updateEquipmentTypeFields();
         }
 
@@ -437,20 +486,27 @@ title: Equipment
             }
 
             try {
-                const response = await api.post('/api/resources/equipment', equipmentData);
+                let response;
+                if (editingEquipmentId) {
+                    // Update existing equipment
+                    response = await api.put(`/api/resources/equipment/${editingEquipmentId}`, equipmentData);
+                } else {
+                    // Create new equipment
+                    response = await api.post('/api/resources/equipment', equipmentData);
+                }
                 
                 if (response.success) {
-                    toast.success('Equipment added successfully!');
+                    toast.success(`Equipment ${editingEquipmentId ? 'updated' : 'added'} successfully!`);
                     if (window.closeAddEquipmentModal) {
                         window.closeAddEquipmentModal();
                     }
                     await loadEquipment();
                 } else {
-                    toast.error('Failed to add equipment: ' + (response.error || 'Unknown error'));
+                    toast.error(`Failed to ${editingEquipmentId ? 'update' : 'add'} equipment: ` + (response.error || 'Unknown error'));
                 }
             } catch (error) {
-                console.error('Error adding equipment:', error);
-                toast.error('Error adding equipment');
+                console.error(`Error ${editingEquipmentId ? 'updating' : 'adding'} equipment:`, error);
+                toast.error(`Error ${editingEquipmentId ? 'updating' : 'adding'} equipment`);
             }
         });
 

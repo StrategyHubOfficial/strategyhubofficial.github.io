@@ -346,7 +346,10 @@ title: Projects
                         <div class="project-actions">
                             <button class="btn btn-small" onclick="viewProject('${project.id}')">View Details</button>
                             <button class="btn btn-small" onclick="donateToProject('${project.id}', '${project.name}')" style="background: var(--bitcoin-orange);">Donate</button>
-                            ${isAdmin() ? `<button class="btn-secondary btn-small" onclick="editProject('${project.id}')">Edit</button>` : ''}
+                            ${(currentUser && (currentUser.id === project.teamMembers[0] || isAdmin())) ? `
+                                <button class="btn btn-small" onclick="editProject('${project.id}')" style="background: var(--bitcoin-orange);">Edit</button>
+                                <button class="btn btn-small" onclick="deleteProject('${project.id}')" style="background: #7f1d1d; color: #f87171;">Delete</button>
+                            ` : ''}
                         </div>
                     </div>
                 `;
@@ -359,6 +362,20 @@ title: Projects
         }
 
         function showCreateProject() {
+            editingProjectId = null;
+            
+            // Reset modal title
+            const modalTitle = document.querySelector('#create-project-modal h2');
+            if (modalTitle) {
+                modalTitle.textContent = 'Create New Project';
+            }
+
+            // Reset submit button
+            const submitBtn = document.querySelector('#create-project-form button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.textContent = 'Create Project';
+            }
+
             document.getElementById('create-project-modal').classList.add('active');
         }
         
@@ -367,6 +384,7 @@ title: Projects
         window.closeCreateProject = function() {
             document.getElementById('create-project-modal').classList.remove('active');
             document.getElementById('create-project-form').reset();
+            editingProjectId = null;
         };
 
         async function viewProject(id) {
@@ -424,6 +442,7 @@ title: Projects
         // Expose to global scope for onclick handlers
         window.viewProject = viewProject;
         window.editProject = editProject;
+        window.deleteProject = deleteProject;
         window.donateToProject = donateToProject;
         window.approveProject = approveProject;
         window.rejectProject = rejectProject;
@@ -437,28 +456,48 @@ title: Projects
             const githubRepo = document.getElementById('project-github').value;
             const tags = document.getElementById('project-tags').value.split(',').map(t => t.trim()).filter(t => t);
             const visibility = document.getElementById('project-visibility').value;
+            const lookingForCollaboration = document.getElementById('project-looking-for-collaboration').checked;
+            const collaborationNote = document.getElementById('project-collaboration-note').value.trim() || undefined;
+            const showInPortfolio = document.getElementById('project-show-in-portfolio').checked;
 
             try {
-                const response = await api.post('/api/projects', {
+                const projectData = {
                     name,
                     description,
                     status,
                     githubRepo: githubRepo || undefined,
                     tags,
-                    visibility
-                });
+                    visibility,
+                    skillsNeeded: skillsNeeded.length > 0 ? skillsNeeded : undefined,
+                    lookingForCollaboration,
+                    collaborationNote,
+                    showInPortfolio
+                };
+
+                let response;
+                if (editingProjectId) {
+                    // Update existing project
+                    response = await api.put(`/api/projects/${editingProjectId}`, projectData);
+                } else {
+                    // Create new project
+                    response = await api.post('/api/projects', projectData);
+                }
 
                 if (response.success) {
-                    const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
-                    if (isAdmin) {
-                        toast.success('Project created!');
+                    if (editingProjectId) {
+                        toast.success('Project updated successfully!');
                     } else {
-                        toast.success('Project submitted for approval!');
+                        const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+                        if (isAdmin) {
+                            toast.success('Project created!');
+                        } else {
+                            toast.success('Project submitted for approval!');
+                        }
                     }
                     closeCreateProject();
                     await loadProjects();
                 } else {
-                    toast.error('Failed to create project: ' + (response.error || 'Unknown error'));
+                    toast.error(`Failed to ${editingProjectId ? 'update' : 'create'} project: ` + (response.error || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error creating project:', error);
