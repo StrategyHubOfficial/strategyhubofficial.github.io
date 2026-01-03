@@ -225,6 +225,7 @@ title: My Profile
                 <label>
                     <span>Email</span>
                     <select id="visibility-email" name="visibility-email">
+                        <option value="public">Public</option>
                         <option value="members">Members</option>
                         <option value="private">Private</option>
                     </select>
@@ -296,6 +297,13 @@ title: My Profile
                 if (response.success) {
                     profileData = response.data;
                     populateForm(response.data);
+                    
+                    // Show "View My Profile" link if member ID exists
+                    const viewProfileLink = document.getElementById('view-profile-link');
+                    if (viewProfileLink && profileData.id) {
+                        viewProfileLink.href = `/dashboard/members#${profileData.id}`;
+                        viewProfileLink.style.display = 'inline-block';
+                    }
                 } else {
                     toast.error('Failed to load profile');
                 }
