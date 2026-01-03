@@ -273,11 +273,14 @@ scripts: |
             setTimeout(arguments.callee, 50);
             return;
         }
+        let editingBookingId = null;
+        
         async function loadBookings() {
             try {
                 const response = await api.get('/api/studio/bookings');
                 if (response.success) {
-                    renderBookings(response.data || []);
+                    const bookings = Array.isArray(response.data) ? response.data : (response.data?.all || response.data?.data || []);
+                    renderBookings(bookings);
                 } else {
                     toast.error('Failed to load bookings');
                     document.getElementById('error').textContent = 'Failed to load bookings';
@@ -373,14 +376,11 @@ scripts: |
                         }
                         ${booking.notes ? `<p>${booking.notes}</p>` : ''}
                         <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-small" onclick="editBooking('${booking.id}')" style="background: var(--bitcoin-orange);">Edit</button>
                             <button class="btn-secondary btn-small" onclick="cancelBooking('${booking.id}')">Cancel</button>
-                            <a href="${(typeof api !== 'undefined' ? api.baseURL : null) || window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev'}/api/studio/bookings/${booking.id}/ics" 
-                               class="btn-secondary btn-small" 
-                               style="text-decoration: none; display: inline-block;"
-                               download="booking-${booking.id}.ics"
-                               title="Add to Calendar">
+                            <button class="btn-secondary btn-small" onclick="downloadBookingICS('${booking.id}')" title="Add to Calendar">
                                 📅 Add to Calendar
-                            </a>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -477,25 +477,54 @@ scripts: |
             const notes = document.getElementById('notes').value;
 
             try {
-                const response = await api.post('/api/studio/bookings', {
-                    startTime: new Date(startTime).toISOString(),
-                    endTime: new Date(endTime).toISOString(),
-                    equipment,
-                    needsTechnicalAssistance,
-                    notes
-                });
+                if (editingBookingId) {
+                    // Update existing booking
+                    const response = await api.put(`/api/studio/bookings/${editingBookingId}`, {
+                        startTime: new Date(startTime).toISOString(),
+                        endTime: new Date(endTime).toISOString(),
+                        equipment,
+                        needsTechnicalAssistance,
+                        notes
+                    });
 
-                if (response.success) {
-                    toast.success('Studio booked successfully!');
-                    document.getElementById('booking-form').reset();
-                    await loadBookings();
-                } else {
-                    // Check for conflict error
-                    if (response.error === 'CONFLICT' || response.error?.includes('already booked') || response.error?.includes('Time slot')) {
-                        toast.error('This time slot is already booked. Please choose a different time.');
+                    if (response.success) {
+                        toast.success('Booking updated successfully!');
+                        document.getElementById('booking-form').reset();
+                        editingBookingId = null;
+                        const submitBtn = document.querySelector('#booking-form button[type="submit"]');
+                        if (submitBtn) {
+                            submitBtn.textContent = 'Book Studio';
+                        }
+                        await loadBookings();
                     } else {
-                        const errorMsg = 'Failed to book studio: ' + (response.error || 'Unknown error');
-                        toast.error(errorMsg);
+                        if (response.error === 'CONFLICT' || response.error?.includes('already booked') || response.error?.includes('Time slot')) {
+                            toast.error('This time slot is already booked. Please choose a different time.');
+                        } else {
+                            toast.error('Failed to update booking: ' + (response.error || 'Unknown error'));
+                        }
+                    }
+                } else {
+                    // Create new booking
+                    const response = await api.post('/api/studio/bookings', {
+                        startTime: new Date(startTime).toISOString(),
+                        endTime: new Date(endTime).toISOString(),
+                        equipment,
+                        needsTechnicalAssistance,
+                        notes
+                    });
+
+                    if (response.success) {
+                        toast.success('Studio booked successfully!');
+                        document.getElementById('booking-form').reset();
+                        await loadBookings();
+                    } else {
+                        // Check for conflict error
+                        if (response.error === 'CONFLICT' || response.error?.includes('already booked') || response.error?.includes('Time slot')) {
+                            toast.error('This time slot is already booked. Please choose a different time.');
+                        } else {
+                            const errorMsg = 'Failed to book studio: ' + (response.error || 'Unknown error');
+                            toast.error(errorMsg);
+                        }
                     }
                 }
             } catch (error) {
