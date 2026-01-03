@@ -140,8 +140,9 @@ title: My Profile
 </style>
 
 <div class="profile-container">
-    <div class="profile-header">
+    <div class="profile-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
         <h1>My Profile</h1>
+        <a href="/dashboard/members#{{ page.userId }}" class="btn btn-secondary" id="view-profile-link" style="text-decoration: none; display: none;">View My Profile</a>
     </div>
 
     <form id="profile-form" class="profile-form">
