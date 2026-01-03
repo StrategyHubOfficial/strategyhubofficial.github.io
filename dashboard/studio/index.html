@@ -483,23 +483,23 @@ scripts: |
                 // Initialize Flatpickr for start time
                 flatpickr('#start-time', {
                     enableTime: true,
-                    dateFormat: 'Y-m-d H:i',
+                    dateFormat: 'Y-m-d\\TH:i',
                     time_24hr: true,
                     minDate: 'today',
                     allowInput: true, // Allow manual input
                     clickOpens: true,
-                    theme: 'dark'
+                    minuteIncrement: 15
                 });
 
                 // Initialize Flatpickr for end time
                 flatpickr('#end-time', {
                     enableTime: true,
-                    dateFormat: 'Y-m-d H:i',
+                    dateFormat: 'Y-m-d\\TH:i',
                     time_24hr: true,
                     minDate: 'today',
                     allowInput: true, // Allow manual input
                     clickOpens: true,
-                    theme: 'dark'
+                    minuteIncrement: 15
                 });
             }
         }
