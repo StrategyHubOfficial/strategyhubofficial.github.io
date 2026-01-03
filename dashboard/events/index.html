@@ -507,13 +507,9 @@ scripts: |
                                     ? `<button class="btn btn-small" onclick="rsvpToEvent('${event.id}')">RSVP</button>`
                                     : `<button class="btn-secondary btn-small" onclick="cancelRSVP('${event.id}')">Cancel RSVP</button>`
                                 }
-                                <a href="${(typeof api !== 'undefined' ? api.baseURL : null) || window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev'}/api/events/${event.id}/ics" 
-                                   class="btn-secondary btn-small" 
-                                   style="text-decoration: none; display: inline-block;"
-                                   download="event-${event.id}.ics"
-                                   title="Add to Calendar">
+                                <button class="btn-secondary btn-small" onclick="downloadEventICS('${event.id}')" title="Add to Calendar">
                                     📅 Add to Calendar
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -660,9 +656,50 @@ scripts: |
             }
         }
         
+        // Download ICS file for event
+        async function downloadEventICS(eventId) {
+            try {
+                const token = auth.getToken();
+                if (!token) {
+                    toast.error('Please log in to download calendar file');
+                    return;
+                }
+
+                const baseURL = (typeof api !== 'undefined' ? api.baseURL : null) || window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev';
+                const response = await fetch(`${baseURL}/api/events/${eventId}/ics`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        toast.error('Authentication required. Please log in again.');
+                        window.location.href = '/dashboard/login.html';
+                        return;
+                    }
+                    throw new Error(`Failed to download: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `event-${eventId}.ics`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading ICS:', error);
+                toast.error('Failed to download calendar file');
+            }
+        }
+
         // Expose to global scope for onclick handlers
         window.showCreateEvent = showCreateEvent;
         window.closeCreateEventModal = closeCreateEventModal;
+        window.downloadEventICS = downloadEventICS;
 
         async function createEvent(data) {
             try {
