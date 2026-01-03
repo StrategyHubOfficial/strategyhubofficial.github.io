@@ -204,6 +204,59 @@ title: Events
         </div>
     </div>
 
+    <!-- Create Event Modal -->
+    <div id="create-event-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="modal-content" style="max-width: 600px; background: var(--bg-card); border-radius: 16px; padding: 2rem; border: 1px solid var(--border-color); max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; color: var(--text-primary);">Create Event</h2>
+                <button onclick="closeCreateEventModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+            </div>
+            <form id="create-event-form">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="event-title" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Title *</label>
+                    <input type="text" id="event-title" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label for="event-description" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Description</label>
+                    <textarea id="event-description" rows="4" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label for="event-start-time" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Start Time *</label>
+                        <input type="datetime-local" id="event-start-time" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-end-time" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">End Time *</label>
+                        <input type="datetime-local" id="event-end-time" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label for="event-location" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Location *</label>
+                        <input type="text" id="event-location" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
+                    </div>
+                    <div class="form-group">
+                        <label for="event-type" style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500;">Type *</label>
+                        <select id="event-type" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); font-size: 1rem;">
+                            <option value="meetup">Meetup</option>
+                            <option value="workshop">Workshop</option>
+                            <option value="talk">Talk</option>
+                            <option value="networking">Networking</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn" style="background: var(--bitcoin-orange); flex: 1;">Create Event</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeCreateEventModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 <script>
     (async function() {
         if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
@@ -474,26 +527,23 @@ title: Events
         }
 
         function showCreateEvent() {
-            // Simple create event form
-            const title = prompt('Event Title:');
-            if (!title) return;
-            
-            const description = prompt('Description:');
-            const location = prompt('Location:');
-            const startTime = prompt('Start Time (YYYY-MM-DDTHH:MM):');
-            const endTime = prompt('End Time (YYYY-MM-DDTHH:MM):');
-            const type = prompt('Type (meetup/workshop/talk/networking):') || 'meetup';
-
-            if (!startTime || !endTime || !location) {
-                toast.error('All fields are required');
-                return;
+            const modal = document.getElementById('create-event-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.getElementById('create-event-form').reset();
             }
+        }
 
-            createEvent({ title, description, location, startTime, endTime, type });
+        function closeCreateEventModal() {
+            const modal = document.getElementById('create-event-modal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
         
         // Expose to global scope for onclick handlers
         window.showCreateEvent = showCreateEvent;
+        window.closeCreateEventModal = closeCreateEventModal;
 
         async function createEvent(data) {
             try {
@@ -505,6 +555,7 @@ title: Events
                     } else {
                         toast.success('Event submitted for approval!');
                     }
+                    closeCreateEventModal();
                     await loadEvents();
                 } else {
                     toast.error('Failed to create event: ' + (response.error || 'Unknown error'));
@@ -514,6 +565,32 @@ title: Events
                 toast.error('Error creating event');
             }
         }
+
+        // Handle create event form submission
+        document.getElementById('create-event-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const title = document.getElementById('event-title').value.trim();
+            const description = document.getElementById('event-description').value.trim();
+            const location = document.getElementById('event-location').value.trim();
+            const startTime = document.getElementById('event-start-time').value;
+            const endTime = document.getElementById('event-end-time').value;
+            const type = document.getElementById('event-type').value;
+
+            if (!title || !location || !startTime || !endTime) {
+                toast.error('Please fill in all required fields');
+                return;
+            }
+
+            await createEvent({ title, description, location, startTime, endTime, type });
+        });
+
+        // Close modal on outside click
+        document.getElementById('create-event-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'create-event-modal') {
+                closeCreateEventModal();
+            }
+        });
 
         async function approveEvent(id) {
             try {
