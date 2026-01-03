@@ -354,18 +354,20 @@ title: My Profile
             renderSkills();
         };
 
-        // Add skill on Enter
-        document.getElementById('skill-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const skill = e.target.value.trim();
-                if (skill && !currentSkills.includes(skill)) {
-                    currentSkills.push(skill);
-                    renderSkills();
-                    e.target.value = '';
+        // Add skill on Enter (if input exists)
+        const skillInput = document.getElementById('skill-input');
+        if (skillInput) {
+            skillInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const skill = e.target.value.trim();
+                    if (skill && !currentSkills.includes(skill)) {
+                        currentSkills.push(skill);
+                        renderSkills();
+                        e.target.value = '';
+                    }
                 }
-            }
-        });
+            });
         }
 
         // Avatar preview (if input exists)
@@ -389,7 +391,7 @@ title: My Profile
         const profileForm = document.getElementById('profile-form');
         if (profileForm) {
             profileForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+                e.preventDefault();
 
             // Upload avatar first if selected
             const avatarFile = document.getElementById('avatar-input').files[0];
@@ -469,13 +471,14 @@ title: My Profile
                 console.error('Error updating profile:', error);
                 toast.error('Error updating profile');
             }
-        });
+            });
+        }
 
         // Change password form handler (if form exists)
         const changePasswordForm = document.getElementById('change-password-form');
         if (changePasswordForm) {
             changePasswordForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+                e.preventDefault();
             
             const currentPassword = document.getElementById('current-password').value;
             const newPassword = document.getElementById('new-password').value;
@@ -507,7 +510,7 @@ title: My Profile
                 console.error('Error changing password:', error);
                 toast.error('Error changing password');
             }
-        });
+            });
         }
 
         // Initialize
