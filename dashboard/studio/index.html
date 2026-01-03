@@ -1,6 +1,52 @@
 ---
 layout: default
 title: Studio Booking
+styles: |
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .flatpickr-calendar {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        .flatpickr-months {
+            background: var(--bg-darker) !important;
+            color: var(--text-primary) !important;
+        }
+        .flatpickr-weekdays {
+            background: var(--bg-darker) !important;
+        }
+        .flatpickr-weekday {
+            color: var(--text-secondary) !important;
+        }
+        .flatpickr-day {
+            color: var(--text-primary) !important;
+        }
+        .flatpickr-day:hover {
+            background: rgba(247, 147, 26, 0.2) !important;
+            border-color: var(--bitcoin-orange) !important;
+        }
+        .flatpickr-day.selected {
+            background: var(--bitcoin-orange) !important;
+            border-color: var(--bitcoin-orange) !important;
+            color: var(--bg-darker) !important;
+        }
+        .flatpickr-day.today {
+            border-color: var(--bitcoin-orange) !important;
+        }
+        .flatpickr-time {
+            background: var(--bg-darker) !important;
+            border-top: 1px solid var(--border-color) !important;
+        }
+        .flatpickr-time input {
+            color: var(--text-primary) !important;
+        }
+        .flatpickr-time .flatpickr-time-separator {
+            color: var(--text-primary) !important;
+        }
+    </style>
+scripts: |
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 ---
 
 <style>
@@ -145,6 +191,54 @@ title: Studio Booking
             </div>
         </div>
     </div>
+
+<!-- Flatpickr CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<style>
+    .flatpickr-calendar {
+        background: var(--bg-card) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-months {
+        background: var(--bg-darker) !important;
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-weekdays {
+        background: var(--bg-darker) !important;
+    }
+    .flatpickr-weekday {
+        color: var(--text-secondary) !important;
+    }
+    .flatpickr-day {
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-day:hover {
+        background: rgba(247, 147, 26, 0.2) !important;
+        border-color: var(--bitcoin-orange) !important;
+    }
+    .flatpickr-day.selected {
+        background: var(--bitcoin-orange) !important;
+        border-color: var(--bitcoin-orange) !important;
+        color: var(--bg-darker) !important;
+    }
+    .flatpickr-day.today {
+        border-color: var(--bitcoin-orange) !important;
+    }
+    .flatpickr-time {
+        background: var(--bg-darker) !important;
+        border-top: 1px solid var(--border-color) !important;
+    }
+    .flatpickr-time input {
+        color: var(--text-primary) !important;
+    }
+    .flatpickr-time .flatpickr-time-separator {
+        color: var(--text-primary) !important;
+    }
+</style>
+
+<!-- Flatpickr JS -->
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script>
     (async function() {
@@ -383,6 +477,33 @@ title: Studio Booking
             }
         });
 
+        // Initialize datetime pickers
+        function initDateTimePickers() {
+            if (typeof flatpickr !== 'undefined') {
+                // Initialize Flatpickr for start time
+                flatpickr('#start-time', {
+                    enableTime: true,
+                    dateFormat: 'Y-m-d H:i',
+                    time_24hr: true,
+                    minDate: 'today',
+                    allowInput: true, // Allow manual input
+                    clickOpens: true,
+                    theme: 'dark'
+                });
+
+                // Initialize Flatpickr for end time
+                flatpickr('#end-time', {
+                    enableTime: true,
+                    dateFormat: 'Y-m-d H:i',
+                    time_24hr: true,
+                    minDate: 'today',
+                    allowInput: true, // Allow manual input
+                    clickOpens: true,
+                    theme: 'dark'
+                });
+            }
+        }
+
         // Initialize
         (async () => {
             await auth.requireAuth();
@@ -390,6 +511,11 @@ title: Studio Booking
             await loadBookings();
             await loadEvents();
             await loadEquipment();
+            
+            // Initialize datetime pickers after a short delay to ensure flatpickr is loaded
+            setTimeout(() => {
+                initDateTimePickers();
+            }, 100);
         })();
     })();
 </script>
