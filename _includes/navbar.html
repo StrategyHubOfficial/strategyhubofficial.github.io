@@ -16,14 +16,8 @@
                         <li><a class="dropdown-item {% if page.url contains '/resources' %}active{% endif %}" href="/dashboard/resources">Equipment</a></li>
                     </ul>
                 </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle {% if page.url contains '/members' or page.url contains '/sponsors' or page.url contains '/profile' %}active{% endif %}" href="#" id="usersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Users</a>
-                    <ul class="dropdown-menu" aria-labelledby="usersDropdown">
-                        <li><a class="dropdown-item {% if page.url contains '/profile' %}active{% endif %}" href="/dashboard/profile">My Profile</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item {% if page.url contains '/members' %}active{% endif %}" href="/dashboard/members">Members</a></li>
-                        <li><a class="dropdown-item {% if page.url contains '/sponsors' %}active{% endif %}" href="/dashboard/sponsors">Supporters</a></li>
-                    </ul>
+                <li class="nav-item">
+                    <a class="nav-link {% if page.url contains '/members' %}active{% endif %}" href="/dashboard/members">Members</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link {% if page.url contains '/projects' %}active{% endif %}" href="/dashboard/projects">Projects</a>
