@@ -512,13 +512,13 @@ scripts: |
                                 const endDate = event.endTime ? new Date(event.endTime) : null;
                                 
                                 // Format date nicely
-                                const dateOptions: Intl.DateTimeFormatOptions = { 
+                                const dateOptions = { 
                                     weekday: 'short', 
                                     year: 'numeric', 
                                     month: 'short', 
                                     day: 'numeric' 
                                 };
-                                const timeOptions: Intl.DateTimeFormatOptions = { 
+                                const timeOptions = { 
                                     hour: 'numeric', 
                                     minute: '2-digit',
                                     hour12: true
