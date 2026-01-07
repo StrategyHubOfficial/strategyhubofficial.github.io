@@ -579,16 +579,7 @@ scripts: |
                                         truncate: 50, // Truncate displayed text to 50 characters
                                         target: '_blank', // Open links in new tab
                                         rel: 'noopener noreferrer', // Security best practice
-                                        className: 'event-link', // Add class for styling
-                                        format: {
-                                            url: (value) => {
-                                                // Truncate long URLs in display text
-                                                if (value.length > 50) {
-                                                    return value.slice(0, 50) + '…';
-                                                }
-                                                return value;
-                                            }
-                                        }
+                                        className: 'event-link' // Add class for styling
                                     });
                                 }
                                 // Fallback if library not loaded
