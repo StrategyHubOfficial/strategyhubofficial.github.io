@@ -580,26 +580,21 @@ scripts: |
                                 // Use linkify-html to convert URLs to clickable links and truncate long URLs
                                 try {
                                     if (typeof linkifyHtml !== 'undefined') {
-                                        return linkifyHtml(event.description, {
+                                        const linked = linkifyHtml(event.description, {
                                             truncate: 50, // Truncate displayed text to 50 characters
                                             target: '_blank', // Open links in new tab
                                             rel: 'noopener noreferrer', // Security best practice
                                             className: 'event-link' // Add class for styling
                                         });
-                                    } else if (typeof linkify !== 'undefined' && typeof linkifyHtml !== 'undefined') {
-                                        // Alternative check
-                                        return linkifyHtml(event.description, {
-                                            truncate: 50,
-                                            target: '_blank',
-                                            rel: 'noopener noreferrer',
-                                            className: 'event-link'
-                                        });
+                                        return linked;
+                                    } else {
+                                        console.warn('linkifyHtml not available');
                                     }
                                 } catch (e) {
                                     console.error('Linkify error:', e);
                                 }
-                                // Fallback if library not loaded
-                                return event.description;
+                                // Fallback if library not loaded - escape HTML to prevent XSS
+                                return event.description.replace(/</g, '&lt;').replace(/>/g, '&gt;');
                             })()}</p>` : ''}
                         </div>
                         ${event.enableRSVP ? `
