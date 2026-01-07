@@ -285,6 +285,26 @@ body {
   color: var(--bitcoin-orange) !important;
 }
 
+/* Logout button separator - only on desktop */
+@media (min-width: 992px) {
+  .navbar-nav .logout-nav-item {
+    position: relative;
+    margin-left: 0.5rem;
+    padding-left: 0.5rem;
+  }
+  
+  .navbar-nav .logout-nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 60%;
+    width: 1px;
+    background: var(--border-color);
+  }
+}
+
 .nav-links a {
   color: var(--text-secondary);
   text-decoration: none;
