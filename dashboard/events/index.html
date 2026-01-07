@@ -188,6 +188,10 @@ scripts: |
             font-size: 0.75rem;
             margin-top: 0.25rem;
             cursor: pointer;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
         }
         .subscriptions-panel {
             background: #1a1a1a;
@@ -696,7 +700,16 @@ scripts: |
                 dayEvents.forEach(event => {
                     const eventDiv = document.createElement('div');
                     eventDiv.className = 'calendar-event';
-                    eventDiv.textContent = event.title;
+                    
+                    // Truncate title if too long (max 40 characters)
+                    const maxLength = 40;
+                    const truncatedTitle = event.title.length > maxLength 
+                        ? event.title.substring(0, maxLength) + '…'
+                        : event.title;
+                    
+                    eventDiv.textContent = truncatedTitle;
+                    eventDiv.title = event.title; // Full title in tooltip
+                    
                     eventDiv.onclick = () => {
                         document.getElementById('events-list').style.display = 'block';
                         document.getElementById('calendar-view').style.display = 'none';
