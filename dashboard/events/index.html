@@ -91,7 +91,8 @@ styles: |
     </style>
 scripts: |
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/linkify-html@4.1.1/dist/linkify-html.umd.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/linkifyjs@4.3.2/dist/linkify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/linkify-html@4.3.2/dist/linkify-html.min.js"></script>
 ---
 
 <style>
@@ -361,6 +362,9 @@ scripts: |
 
 <!-- Flatpickr JS -->
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<!-- Linkify libraries for clickable URLs -->
+<script src="https://cdn.jsdelivr.net/npm/linkifyjs@4.3.2/dist/linkify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/linkify-html@4.3.2/dist/linkify-html.min.js"></script>
 
 <script>
     (async function() {
@@ -574,13 +578,25 @@ scripts: |
                             })()}
                             ${event.description ? `<p>${(() => {
                                 // Use linkify-html to convert URLs to clickable links and truncate long URLs
-                                if (typeof linkifyHtml !== 'undefined') {
-                                    return linkifyHtml(event.description, {
-                                        truncate: 50, // Truncate displayed text to 50 characters
-                                        target: '_blank', // Open links in new tab
-                                        rel: 'noopener noreferrer', // Security best practice
-                                        className: 'event-link' // Add class for styling
-                                    });
+                                try {
+                                    if (typeof linkifyHtml !== 'undefined') {
+                                        return linkifyHtml(event.description, {
+                                            truncate: 50, // Truncate displayed text to 50 characters
+                                            target: '_blank', // Open links in new tab
+                                            rel: 'noopener noreferrer', // Security best practice
+                                            className: 'event-link' // Add class for styling
+                                        });
+                                    } else if (typeof linkify !== 'undefined' && typeof linkifyHtml !== 'undefined') {
+                                        // Alternative check
+                                        return linkifyHtml(event.description, {
+                                            truncate: 50,
+                                            target: '_blank',
+                                            rel: 'noopener noreferrer',
+                                            className: 'event-link'
+                                        });
+                                    }
+                                } catch (e) {
+                                    console.error('Linkify error:', e);
                                 }
                                 // Fallback if library not loaded
                                 return event.description;
