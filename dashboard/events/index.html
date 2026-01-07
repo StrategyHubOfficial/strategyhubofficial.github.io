@@ -67,6 +67,13 @@ styles: |
         }
         .flatpickr-time input {
             color: var(--text-primary) !important;
+            background: var(--bg-darker) !important;
+        }
+        .flatpickr-time input:focus {
+            background: var(--bg-darker) !important;
+            color: var(--text-primary) !important;
+            outline: none;
+            border: 1px solid var(--bitcoin-orange) !important;
         }
         .flatpickr-time .flatpickr-time-separator {
             color: var(--text-primary) !important;
@@ -682,6 +689,13 @@ scripts: |
                 modal.style.display = 'flex';
                 document.getElementById('create-event-form').reset();
                 
+                // Reset end time picker default date
+                const endTimeInput = document.getElementById('event-end-time');
+                if (endTimeInput._flatpickr) {
+                    endTimeInput._flatpickr.set('defaultDate', null);
+                    endTimeInput._flatpickr.set('minDate', 'today');
+                }
+                
                 // Initialize datetime pickers when modal opens
                 setTimeout(() => {
                     initEventDateTimePickers();
@@ -704,25 +718,38 @@ scripts: |
                 }
 
                 // Initialize Flatpickr for start time
-                flatpickr('#event-start-time', {
+                const startTimePicker = flatpickr('#event-start-time', {
                     enableTime: true,
                     dateFormat: 'Y-m-d\\TH:i',
                     time_24hr: true,
                     minDate: 'today',
                     allowInput: true, // Allow manual input
                     clickOpens: true,
-                    minuteIncrement: 15
+                    minuteIncrement: 15,
+                    onChange: function(selectedDates, dateStr, instance) {
+                        // When start time changes, update end time picker's default date
+                        if (selectedDates.length > 0) {
+                            const endTimePicker = document.getElementById('event-end-time')._flatpickr;
+                            if (endTimePicker) {
+                                // Set default date to start date, but don't set the value
+                                endTimePicker.set('defaultDate', selectedDates[0]);
+                                endTimePicker.set('minDate', selectedDates[0]);
+                            }
+                        }
+                    }
                 });
 
                 // Initialize Flatpickr for end time
-                flatpickr('#event-end-time', {
+                const endTimePicker = flatpickr('#event-end-time', {
                     enableTime: true,
                     dateFormat: 'Y-m-d\\TH:i',
                     time_24hr: true,
                     minDate: 'today',
                     allowInput: true, // Allow manual input
                     clickOpens: true,
-                    minuteIncrement: 15
+                    minuteIncrement: 15,
+                    // Default date will be set when start time is selected
+                    defaultDate: null
                 });
             }
         }
