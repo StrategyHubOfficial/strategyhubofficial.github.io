@@ -143,10 +143,65 @@ title: Invite Users
 <div class="invites-container">
     <div class="invites-header">
         <h1>Invite Users</h1>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-secondary" onclick="toggleBulkInvite()" id="toggle-bulk-btn">Bulk Invite</button>
+        </div>
+    </div>
+
+    <!-- Bulk Invite Form -->
+    <div class="invite-form" id="bulk-invite-form" style="display: none;">
+        <h2 style="margin-bottom: 1.5rem;">Bulk Invite Users</h2>
+        <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(247, 147, 26, 0.1); border-radius: 8px; border: 1px solid rgba(247, 147, 26, 0.2);">
+            <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                <strong>Format:</strong> Paste emails, one per line, or comma-separated. Optionally include name, website, and company in CSV format:<br>
+                <code style="background: var(--bg-darker); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">email@example.com,Name,Website,Company</code>
+            </p>
+        </div>
+        <form id="bulk-invite-form-element">
+            <div class="form-group">
+                <label for="bulk-emails">Email Addresses *</label>
+                <textarea 
+                    id="bulk-emails" 
+                    name="bulkEmails" 
+                    required 
+                    placeholder="user1@example.com&#10;user2@example.com&#10;user3@example.com"
+                    style="width: 100%; min-height: 200px; padding: 0.875rem; background: var(--bg-darker); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 1rem; font-family: monospace; resize: vertical;"
+                ></textarea>
+                <small style="color: var(--text-secondary); font-size: 0.85rem;">One email per line, or comma-separated. CSV format supported.</small>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bulk-expires-days">Expires In (days)</label>
+                    <input type="number" id="bulk-expires-days" name="expiresInDays" value="7" min="1" max="30">
+                </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; padding-top: 1.75rem;">
+                    <input type="checkbox" id="bulk-skip-existing" style="width: auto; margin: 0;">
+                    <label for="bulk-skip-existing" style="margin: 0; cursor: pointer;">Skip existing users/invites</label>
+                </div>
+            </div>
+            <div id="bulk-progress" style="display: none; margin: 1rem 0;">
+                <div style="background: var(--bg-darker); border-radius: 8px; padding: 1rem; margin-bottom: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-primary); font-weight: 600;">Progress</span>
+                        <span id="bulk-progress-text" style="color: var(--text-secondary);">0 / 0</span>
+                    </div>
+                    <div style="background: var(--bg-card); height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div id="bulk-progress-bar" style="background: var(--bitcoin-orange); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+                <div id="bulk-results" style="max-height: 200px; overflow-y: auto; font-size: 0.85rem;">
+                    <!-- Results will appear here -->
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn" id="bulk-submit-btn">Send Invitations</button>
+                <button type="button" class="btn btn-secondary" onclick="toggleBulkInvite()">Cancel</button>
+            </div>
+        </form>
     </div>
 
     <div class="invite-form">
-        <h2 style="margin-bottom: 1.5rem;">Send Invitation</h2>
+        <h2 style="margin-bottom: 1.5rem;">Send Single Invitation</h2>
         <form id="invite-form">
             <div class="form-group">
                 <label for="invite-email">Email Address *</label>
@@ -333,6 +388,184 @@ title: Invite Users
                 return this.request(`/api/invites/${inviteId}`, { method: 'DELETE' });
             };
         }
+
+        // Bulk invite functionality
+        function toggleBulkInvite() {
+            const bulkForm = document.getElementById('bulk-invite-form');
+            const singleForm = document.querySelector('.invite-form:not(#bulk-invite-form)');
+            const toggleBtn = document.getElementById('toggle-bulk-btn');
+            
+            if (bulkForm.style.display === 'none') {
+                bulkForm.style.display = 'block';
+                singleForm.style.display = 'none';
+                toggleBtn.textContent = 'Single Invite';
+            } else {
+                bulkForm.style.display = 'none';
+                singleForm.style.display = 'block';
+                toggleBtn.textContent = 'Bulk Invite';
+            }
+        }
+
+        window.toggleBulkInvite = toggleBulkInvite;
+
+        // Parse bulk emails from text input
+        function parseBulkEmails(text) {
+            const lines = text.split('\n').filter(line => line.trim());
+            const emails = [];
+            
+            for (const line of lines) {
+                // Check if it's CSV format (contains commas)
+                if (line.includes(',')) {
+                    const parts = line.split(',').map(p => p.trim());
+                    const email = parts[0];
+                    if (email) {
+                        emails.push({
+                            email: email,
+                            name: parts[1] || undefined,
+                            website: parts[2] || undefined,
+                            company: parts[3] || undefined
+                        });
+                    }
+                } else {
+                    // Single email per line
+                    const email = line.trim();
+                    if (email) {
+                        emails.push({ email: email });
+                    }
+                }
+            }
+            
+            return emails;
+        }
+
+        // Validate email format
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
+            return emailRegex.test(email);
+        }
+
+        // Bulk invite form submission
+        document.getElementById('bulk-invite-form-element').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const textarea = document.getElementById('bulk-emails');
+            const expiresInDays = parseInt(document.getElementById('bulk-expires-days').value) || 7;
+            const skipExisting = document.getElementById('bulk-skip-existing').checked;
+            const progressDiv = document.getElementById('bulk-progress');
+            const progressBar = document.getElementById('bulk-progress-bar');
+            const progressText = document.getElementById('bulk-progress-text');
+            const resultsDiv = document.getElementById('bulk-results');
+            const submitBtn = document.getElementById('bulk-submit-btn');
+            
+            const emails = parseBulkEmails(textarea.value);
+            
+            if (emails.length === 0) {
+                toast.error('Please enter at least one email address');
+                return;
+            }
+            
+            // Validate all emails
+            const invalidEmails = emails.filter(e => !isValidEmail(e.email));
+            if (invalidEmails.length > 0) {
+                toast.error(`Invalid email format: ${invalidEmails.map(e => e.email).join(', ')}`);
+                return;
+            }
+            
+            // Show progress
+            progressDiv.style.display = 'block';
+            resultsDiv.innerHTML = '';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Sending...';
+            
+            let successCount = 0;
+            let errorCount = 0;
+            const errors = [];
+            
+            // Process emails one by one
+            for (let i = 0; i < emails.length; i++) {
+                const emailData = emails[i];
+                const progress = ((i + 1) / emails.length) * 100;
+                
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${i + 1} / ${emails.length}`;
+                
+                try {
+                    const prefillData = {};
+                    if (emailData.name) prefillData.name = emailData.name;
+                    if (emailData.website) prefillData.website = emailData.website;
+                    if (emailData.company) prefillData.company = emailData.company;
+                    
+                    const response = await api.post('/api/invites', {
+                        email: emailData.email,
+                        expiresInDays: expiresInDays,
+                        prefillData: Object.keys(prefillData).length > 0 ? prefillData : undefined
+                    });
+                    
+                    if (response.success) {
+                        successCount++;
+                        const resultItem = document.createElement('div');
+                        resultItem.style.cssText = 'padding: 0.5rem; margin-bottom: 0.25rem; background: rgba(0, 184, 148, 0.1); border-radius: 4px; color: #00b894;';
+                        resultItem.textContent = `✓ ${emailData.email}`;
+                        resultsDiv.appendChild(resultItem);
+                    } else {
+                        errorCount++;
+                        const errorMsg = response.error || 'Unknown error';
+                        errors.push({ email: emailData.email, error: errorMsg });
+                        
+                        const resultItem = document.createElement('div');
+                        resultItem.style.cssText = 'padding: 0.5rem; margin-bottom: 0.25rem; background: rgba(214, 48, 49, 0.1); border-radius: 4px; color: #d63031;';
+                        resultItem.textContent = `✗ ${emailData.email}: ${errorMsg}`;
+                        resultsDiv.appendChild(resultItem);
+                    }
+                } catch (error) {
+                    errorCount++;
+                    const errorMsg = error.message || 'Network error';
+                    errors.push({ email: emailData.email, error: errorMsg });
+                    
+                    const resultItem = document.createElement('div');
+                    resultItem.style.cssText = 'padding: 0.5rem; margin-bottom: 0.25rem; background: rgba(214, 48, 49, 0.1); border-radius: 4px; color: #d63031;';
+                    resultItem.textContent = `✗ ${emailData.email}: ${errorMsg}`;
+                    resultsDiv.appendChild(resultItem);
+                    
+                    // If skip existing is enabled and error is about existing user/invite, continue
+                    if (skipExisting && (errorMsg.includes('already exists') || errorMsg.includes('pending invite'))) {
+                        // This is expected, don't count as error
+                        errorCount--;
+                        successCount++;
+                        resultItem.textContent = `⊘ ${emailData.email}: Skipped (already exists)`;
+                        resultItem.style.cssText = 'padding: 0.5rem; margin-bottom: 0.25rem; background: rgba(251, 191, 36, 0.1); border-radius: 4px; color: #fbbf24;';
+                    }
+                }
+                
+                // Small delay to avoid rate limiting
+                if (i < emails.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+            
+            // Update progress bar to 100%
+            progressBar.style.width = '100%';
+            progressText.textContent = `Complete: ${successCount} sent, ${errorCount} errors`;
+            
+            // Show summary
+            if (successCount > 0) {
+                toast.success(`Successfully sent ${successCount} invitation${successCount !== 1 ? 's' : ''}`);
+            }
+            if (errorCount > 0 && !skipExisting) {
+                toast.error(`${errorCount} invitation${errorCount !== 1 ? 's' : ''} failed`);
+            }
+            
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send Invitations';
+            
+            // Reload invites list
+            await loadInvites();
+            
+            // Clear form if all succeeded
+            if (errorCount === 0) {
+                textarea.value = '';
+            }
+        });
 
         // Initialize
         await loadInvites();

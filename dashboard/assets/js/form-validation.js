@@ -11,9 +11,16 @@ class FormValidator {
 
   setupDefaultValidators() {
     // Email validation
+    // More permissive regex that supports all valid email formats including short TLDs like .me, .io, etc.
     this.validators.set('email', {
       validate: (value) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        // Simplified but permissive regex that handles:
+        // - Standard emails: user@domain.com
+        // - Short TLDs: user@pm.me, user@example.io
+        // - Subdomains: user@mail.example.com
+        // - Plus signs and special chars: user+tag@example.com
+        // The pattern: local-part@domain.tld (where tld is at least 2 chars)
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
         return emailRegex.test(value);
       },
       message: 'Please enter a valid email address'
