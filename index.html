@@ -179,6 +179,7 @@
             background: linear-gradient(135deg, rgba(247, 147, 26, 0.05) 0%, transparent 50%);
             opacity: 0;
             transition: opacity 0.4s ease;
+            pointer-events: none;
         }
         
         .card:hover::before {
@@ -444,6 +445,21 @@
             
             .hero .tagline {
                 font-size: 1.2rem;
+            }
+            
+            /* Solid white on mobile - gradient text often fails on mobile WebKit */
+            .hero .tagline .location-link {
+                color: #ffffff !important;
+                -webkit-text-fill-color: #ffffff !important;
+                background: none !important;
+                background-clip: unset !important;
+                -webkit-background-clip: unset !important;
+            }
+            
+            .hero .tagline .location-link:hover {
+                color: #f0f0f0 !important;
+                -webkit-text-fill-color: #f0f0f0 !important;
+                background: none !important;
             }
             
             .hero .mission {
@@ -1016,19 +1032,21 @@
                             ? '<span style="display: inline-block; background: rgba(247, 147, 26, 0.2); color: #f7931a; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1rem;">Looking for Collaboration</span>'
                             : '';
                         const logo = project.logoUrl ? `<div class="card-logo"><img src="${project.logoUrl}" alt="${project.name}" /></div>` : '';
-                        const websiteLink = project.website ? `<p style="margin-top: 0.5rem;"><a href="${project.website}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a></p>` : '';
-                        const socialIcons = Object.keys(socialLinks).length > 0 ? `<div style="margin-top: 0.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">${Object.entries(socialLinks).map(([k, v]) => {
-                            const labels = { x: 'X', linkedin: 'LinkedIn', github: 'GitHub', youtube: 'YouTube', telegram: 'Telegram', substack: 'Substack', luma: 'Luma', meetup: 'Meetup', spotify: 'Spotify' };
-                            return `<a href="${v}" target="_blank" rel="noopener noreferrer" style="color: #b0b0b0; font-size: 0.85rem;">${labels[k] || k}</a>`;
-                        }).join('')}</div>` : '';
+                        const linksContent = [
+                            project.website ? `<a href="${project.website}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a>` : '',
+                            Object.keys(socialLinks).length > 0 ? Object.entries(socialLinks).map(([k, v]) => {
+                                const labels = { x: 'X', linkedin: 'LinkedIn', github: 'GitHub', youtube: 'YouTube', telegram: 'Telegram', substack: 'Substack', luma: 'Luma', meetup: 'Meetup', spotify: 'Spotify' };
+                                return `<a href="${v}" target="_blank" rel="noopener noreferrer" style="color: #b0b0b0; font-size: 0.85rem; margin-right: 0.75rem;">${labels[k] || k}</a>`;
+                            }).join('') : ''
+                        ].filter(Boolean).join(' ');
+                        const linksBlock = linksContent ? `<p style="margin-top: 0.5rem;">${linksContent}</p>` : '';
                         
                         return `
                             <div class="card">
                                 ${logo}
                                 <h3>${project.name}</h3>
                                 <p class="card-description">${project.description}</p>
-                                ${websiteLink}
-                                ${socialIcons}
+                                ${linksBlock}
                                 ${project.githubRepo ? `<p style="margin-top: 0.5rem;"><a href="https://github.com/${project.githubRepo}" target="_blank" style="color: #f7931a;">🔗 ${project.githubRepo}</a></p>` : ''}
                                 ${skills.length > 0 ? `<div style="margin-top: 1rem;"><strong>Skills Needed:</strong> ${skills.map(s => `<span style="background: rgba(247, 147, 26, 0.15); padding: 0.25rem 0.5rem; border-radius: 8px; margin-right: 0.5rem; font-size: 0.9rem;">${s}</span>`).join('')}</div>` : ''}
                                 ${tags.length > 0 ? `<div style="margin-top: 0.5rem;"><strong>Tags:</strong> ${tags.map(t => `<span style="color: #b0b0b0; font-size: 0.9rem;">${t}</span>`).join(', ')}</div>` : ''}
