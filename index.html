@@ -223,6 +223,26 @@
             z-index: 2;
         }
         
+        .card .card-logo {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        .card .card-logo img {
+            width: 100%;
+            height: auto;
+            max-height: 72px;
+            object-fit: contain;
+            object-position: center;
+        }
+        
+        .card .card-description {
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
         .about {
             background: #111111;
             padding: 6rem 0;
@@ -1001,7 +1021,7 @@
                         const collaborationBadge = project.lookingForCollaboration 
                             ? '<span style="display: inline-block; background: rgba(247, 147, 26, 0.2); color: #f7931a; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1rem;">Looking for Collaboration</span>'
                             : '';
-                        const logo = project.logoUrl ? `<div style="margin-bottom: 1rem;"><img src="${project.logoUrl}" alt="${project.name}" style="max-height: 48px; max-width: 160px; object-fit: contain;" /></div>` : '';
+                        const logo = project.logoUrl ? `<div class="card-logo"><img src="${project.logoUrl}" alt="${project.name}" /></div>` : '';
                         const websiteLink = project.website ? `<p style="margin-top: 0.5rem;"><a href="${project.website}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a></p>` : '';
                         const socialIcons = Object.keys(socialLinks).length > 0 ? `<div style="margin-top: 0.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">${Object.entries(socialLinks).map(([k, v]) => {
                             const labels = { x: 'X', linkedin: 'LinkedIn', github: 'GitHub', youtube: 'YouTube', telegram: 'Telegram', substack: 'Substack', luma: 'Luma', meetup: 'Meetup', spotify: 'Spotify' };
@@ -1012,7 +1032,7 @@
                             <div class="card">
                                 ${logo}
                                 <h3>${project.name}</h3>
-                                <p>${project.description}</p>
+                                <p class="card-description">${project.description}</p>
                                 ${websiteLink}
                                 ${socialIcons}
                                 ${project.githubRepo ? `<p style="margin-top: 0.5rem;"><a href="https://github.com/${project.githubRepo}" target="_blank" style="color: #f7931a;">🔗 ${project.githubRepo}</a></p>` : ''}
