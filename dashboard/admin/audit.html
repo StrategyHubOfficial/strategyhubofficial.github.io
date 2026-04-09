@@ -88,11 +88,27 @@ title: Audit Logs
 </div>
 
 <script>
-const api = new HubAPI();
-let currentPage = 0;
-const pageSize = 50;
-let totalLogs = 0;
-let currentFilters = {};
+(function () {
+async function initAuditPage() {
+    while (typeof api === 'undefined') {
+        await new Promise(function (r) { setTimeout(r, 50); });
+    }
+
+    let currentPage = 0;
+    const pageSize = 50;
+    let totalLogs = 0;
+    let currentFilters = {};
+
+    function auditQueryString(filters) {
+        const p = new URLSearchParams();
+        Object.keys(filters).forEach(function (k) {
+            const v = filters[k];
+            if (v !== undefined && v !== null && v !== '') {
+                p.set(k, String(v));
+            }
+        });
+        return p.toString();
+    }
 
 async function loadLogs() {
     try {
@@ -102,7 +118,7 @@ async function loadLogs() {
             offset: currentPage * pageSize
         };
 
-        const response = await api.getAuditLogs(filters);
+        const response = await api.get('/api/audit?' + auditQueryString(filters));
         if (response.success) {
             totalLogs = response.data.pagination.total;
             renderLogs(response.data.logs);
@@ -198,9 +214,11 @@ function clearFilters() {
 
 async function exportAllData() {
     try {
-        const response = await fetch('https://dashboard.securesovereigns.workers.dev/api/admin/export', {
+        const token = localStorage.getItem('hub_token');
+        const baseURL = api.baseURL || (window.HUB_CONFIG && window.HUB_CONFIG.apiBaseUrl) || '';
+        const response = await fetch(baseURL + '/api/admin/export', {
             headers: {
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': 'Bearer ' + token
             }
         });
 
@@ -234,7 +252,7 @@ function exportLogs() {
     // Simple CSV export
     const filters = { ...currentFilters, limit: 10000, offset: 0 };
     
-    api.getAuditLogs(filters).then(response => {
+    api.get('/api/audit?' + auditQueryString(filters)).then(function (response) {
         if (response.success) {
             const logs = response.data.logs;
             const headers = ['Timestamp', 'User Email', 'User ID', 'Action', 'Resource Type', 'Resource ID', 'Details', 'IP Address'];
@@ -262,7 +280,7 @@ function exportLogs() {
             a.click();
             window.URL.revokeObjectURL(url);
         }
-    }).catch(error => {
+    }).catch(function (error) {
         showError('Failed to export logs: ' + error.message);
     });
 }
@@ -282,9 +300,19 @@ function showError(message) {
     }, 5000);
 }
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    loadLogs();
-});
+    window.exportLogs = exportLogs;
+    window.exportAllData = exportAllData;
+    window.applyFilters = applyFilters;
+    window.clearFilters = clearFilters;
+    window.loadPage = loadPage;
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { loadLogs(); });
+    } else {
+        loadLogs();
+    }
+}
+initAuditPage();
+})();
 </script>
 

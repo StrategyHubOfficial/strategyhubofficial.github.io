@@ -345,6 +345,11 @@ styles: |
 </div>
 
 <script>
+(async function initAnnouncementsPage() {
+    while (typeof auth === 'undefined' || typeof api === 'undefined' || typeof toast === 'undefined') {
+        await new Promise(function (r) { setTimeout(r, 50); });
+    }
+
     let announcements = [];
     let editingId = null;
 
@@ -514,9 +519,12 @@ styles: |
         }
     });
 
-    // Initialize
-    (async () => {
-        await auth.requireAuth();
-        await loadAnnouncements();
-    })();
+    window.openCreateModal = openCreateModal;
+    window.closeModal = closeModal;
+    window.editAnnouncement = editAnnouncement;
+    window.deleteAnnouncement = deleteAnnouncement;
+
+    await auth.requireAuth();
+    await loadAnnouncements();
+})();
 </script>
