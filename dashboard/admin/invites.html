@@ -38,7 +38,8 @@ title: Invite Users
     font-weight: 500;
 }
 
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 0.875rem;
     background: var(--bg-darker);
@@ -48,7 +49,13 @@ title: Invite Users
     font-size: 1rem;
 }
 
-.form-group input:focus {
+.form-group select {
+    cursor: pointer;
+    appearance: auto;
+}
+
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: var(--bitcoin-orange);
     box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.1);
@@ -153,8 +160,8 @@ title: Invite Users
         <h2 style="margin-bottom: 1.5rem;">Bulk Invite Users</h2>
         <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(247, 147, 26, 0.1); border-radius: 8px; border: 1px solid rgba(247, 147, 26, 0.2);">
             <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
-                <strong>Format:</strong> Paste emails, one per line, or comma-separated. Optionally include name, website, and company in CSV format:<br>
-                <code style="background: var(--bg-darker); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">email@example.com,Name,Website,Company</code>
+                <strong>Format:</strong> Paste emails, one per line, or comma-separated. Optionally include name and company (hub project name, <code>Strategy</code>, or <code>N/A</code>) in CSV format:<br>
+                <code style="background: var(--bg-darker); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.85rem;">email@example.com,Name,Company</code>
             </p>
         </div>
         <form id="bulk-invite-form-element">
@@ -217,15 +224,12 @@ title: Invite Users
                     <input type="number" id="expires-days" name="expiresInDays" value="7" min="1" max="30">
                 </div>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="prefill-website">Website</label>
-                    <input type="url" id="prefill-website" name="prefillWebsite" placeholder="Optional: from hub roster">
-                </div>
-                <div class="form-group">
-                    <label for="prefill-company">Company</label>
-                    <input type="text" id="prefill-company" name="prefillCompany" placeholder="Optional: from hub roster">
-                </div>
+            <div class="form-group">
+                <label for="prefill-company">Company / organization</label>
+                <select id="prefill-company" name="prefillCompany" aria-describedby="prefill-company-hint">
+                    <option value="">Loading hub projects…</option>
+                </select>
+                <small id="prefill-company-hint" style="display: block; margin-top: 0.35rem; color: var(--text-secondary); font-size: 0.85rem;">Hub portfolio projects plus Strategy. Choose N/A if not applicable.</small>
             </div>
             <button type="submit" class="btn">Send Invitation</button>
         </form>
@@ -258,6 +262,39 @@ title: Invite Users
             toast.error('Admin access required');
             window.location.href = '/dashboard/';
             return;
+        }
+
+        function populateCompanySelect(projects) {
+            const sel = document.getElementById('prefill-company');
+            sel.innerHTML = '';
+            const na = document.createElement('option');
+            na.value = '';
+            na.textContent = 'N/A';
+            sel.appendChild(na);
+            const strategy = document.createElement('option');
+            strategy.value = 'Strategy';
+            strategy.textContent = 'Strategy';
+            sel.appendChild(strategy);
+            for (const p of projects) {
+                if (!p || !p.name) continue;
+                const opt = document.createElement('option');
+                opt.value = p.name;
+                opt.textContent = p.name;
+                sel.appendChild(opt);
+            }
+        }
+
+        async function loadHubProjectsForInvites() {
+            try {
+                const res = await fetch('/projects/projects.json');
+                if (!res.ok) throw new Error('Failed to fetch projects');
+                const json = await res.json();
+                const list = json && json.success && Array.isArray(json.data) ? json.data : [];
+                populateCompanySelect(list);
+            } catch (e) {
+                console.warn('Could not load hub projects for invites:', e);
+                populateCompanySelect([]);
+            }
         }
 
         async function loadInvites() {
@@ -341,12 +378,10 @@ title: Invite Users
             const email = document.getElementById('invite-email').value.trim();
             const expiresInDays = parseInt(document.getElementById('expires-days').value) || 7;
             const prefillName = document.getElementById('prefill-name').value.trim();
-            const prefillWebsite = document.getElementById('prefill-website').value.trim();
             const prefillCompany = document.getElementById('prefill-company').value.trim();
 
             const prefillData = {};
             if (prefillName) {prefillData.name = prefillName;}
-            if (prefillWebsite) {prefillData.website = prefillWebsite;}
             if (prefillCompany) {prefillData.company = prefillCompany;}
 
             try {
@@ -415,15 +450,21 @@ title: Invite Users
             
             for (const line of lines) {
                 // Check if it's CSV format (contains commas)
-                if (line.includes(',')) {
+                    if (line.includes(',')) {
                     const parts = line.split(',').map(p => p.trim());
                     const email = parts[0];
                     if (email) {
+                        let rawCompany;
+                        if (parts.length >= 4) {
+                            rawCompany = parts[3];
+                        } else if (parts.length >= 3) {
+                            rawCompany = parts[2];
+                        }
+                        const company = rawCompany && /^n\/a$/i.test(rawCompany) ? undefined : rawCompany;
                         emails.push({
                             email: email,
                             name: parts[1] || undefined,
-                            website: parts[2] || undefined,
-                            company: parts[3] || undefined
+                            company: company || undefined
                         });
                     }
                 } else {
@@ -492,7 +533,6 @@ title: Invite Users
                 try {
                     const prefillData = {};
                     if (emailData.name) prefillData.name = emailData.name;
-                    if (emailData.website) prefillData.website = emailData.website;
                     if (emailData.company) prefillData.company = emailData.company;
                     
                     const response = await api.post('/api/invites', {
@@ -568,6 +608,7 @@ title: Invite Users
         });
 
         // Initialize
+        await loadHubProjectsForInvites();
         await loadInvites();
     })();
 </script>
