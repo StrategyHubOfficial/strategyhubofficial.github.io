@@ -245,7 +245,8 @@
             gap: 0.5rem 0.75rem;
         }
         
-        .portfolio-social-link {
+        .portfolio-social-link,
+        .portfolio-social-link:visited {
             color: #b0b0b0;
             font-size: 1.15rem;
             display: inline-flex;
@@ -253,10 +254,13 @@
             justify-content: center;
             line-height: 1;
             transition: color 0.15s ease;
+            text-decoration: none;
         }
         
-        .portfolio-social-link:hover {
+        .portfolio-social-link:hover,
+        .portfolio-social-link:focus {
             color: #f7931a;
+            text-decoration: none;
         }
         
         
