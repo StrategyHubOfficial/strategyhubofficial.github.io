@@ -173,6 +173,21 @@ scripts: |
             font-size: 0.85rem;
             margin-top: 0.5rem;
         }
+        /* Native multi-select: explicit colors so options aren’t invisible on dark backgrounds */
+        #equipment {
+            width: 100%;
+            min-height: 9rem;
+            padding: 0.5rem;
+            color: var(--text-primary);
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        #equipment option {
+            color: var(--text-primary);
+            background: var(--bg-card);
+            padding: 0.35rem 0.5rem;
+        }
 </style>
 
 <div class="container">
@@ -190,9 +205,13 @@ scripts: |
                     <input type="datetime-local" id="end-time" required>
                 </div>
                 <div class="form-group">
-                    <label>Equipment Needed (optional):</label>
-                    <select id="equipment" multiple>
-                        <option value="">Select equipment...</option>
+                    <label>Equipment needed (optional):</label>
+                    <small style="display: block; color: var(--text-secondary, #888); margin-bottom: 0.5rem;">Hold Ctrl/Cmd (or long-press on mobile) to select multiple.</small>
+                    <select id="equipment" multiple size="5" aria-label="Equipment needed">
+                        <option value="podtrak-p4">Podtrak P4 (audio recording)</option>
+                        <option value="sony-a6400">Sony a6400 Camera (video recording)</option>
+                        <option value="teleprompter">Teleprompter</option>
+                        <option value="live-broadcast">Live Broadcast / Remote Meeting Setup</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -343,9 +362,14 @@ scripts: |
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script>
-    (async function() {
-        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
-            setTimeout(arguments.callee, 50);
+    (async function initStudioBookingPage() {
+        let depAttempts = 0;
+        while ((typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') && depAttempts < 120) {
+            await new Promise((r) => setTimeout(r, 50));
+            depAttempts++;
+        }
+        if (typeof auth === 'undefined' || typeof api === 'undefined') {
+            console.error('Studio booking: auth/api not loaded');
             return;
         }
         let editingBookingId = null;
@@ -369,56 +393,33 @@ scripts: |
             }
         }
 
-        async function loadEquipment() {
-            try {
-                const response = await api.get('/api/equipment');
-                if (response.success && response.data) {
-                    // Equipment endpoint returns { all: [...], grouped: {...} }
-                    const equipment = response.data.all || response.data || [];
-                    if (!Array.isArray(equipment)) {
-                        console.error('Equipment data is not an array:', equipment);
-                        return;
-                    }
-                    const select = document.getElementById('equipment');
-                    
-                    // Separate studio default equipment from optional equipment
-                    const studioDefaults = equipment.filter(item => item.studioParent && (item.studioParent === 'default' || item.studioParent === 'studio'));
-                    const optionalEquipment = equipment.filter(item => 
-                        (item.type === 'borrowable' || item.category === 'studio') && 
-                        !item.studioParent
-                    );
-                    
-                    // Show studio defaults as a disabled option group
-                    if (studioDefaults.length > 0) {
-                        const defaultGroup = document.createElement('optgroup');
-                        defaultGroup.label = 'Studio Default Equipment (Auto-included)';
-                        studioDefaults.forEach(item => {
-                            const option = document.createElement('option');
-                            option.value = item.id;
-                            option.textContent = `✓ ${item.name}`;
-                            option.disabled = true;
-                            option.style.color = '#4ade80';
-                            defaultGroup.appendChild(option);
-                        });
-                        select.appendChild(defaultGroup);
-                    }
-                    
-                    // Add optional equipment
-                    if (optionalEquipment.length > 0) {
-                        const optionalGroup = document.createElement('optgroup');
-                        optionalGroup.label = 'Additional Equipment (Optional)';
-                        optionalEquipment.forEach(item => {
-                            const option = document.createElement('option');
-                            option.value = item.id;
-                            option.textContent = item.name;
-                            optionalGroup.appendChild(option);
-                        });
-                        select.appendChild(optionalGroup);
-                    }
-                }
-            } catch (error) {
-                console.error('Error loading equipment:', error);
-            }
+        /** Studio booking equipment options (stored by id on the booking; labels for display). */
+        const STUDIO_BOOKING_EQUIPMENT = [
+            { id: 'podtrak-p4', label: 'Podtrak P4 (audio recording)' },
+            { id: 'sony-a6400', label: 'Sony a6400 Camera (video recording)' },
+            { id: 'teleprompter', label: 'Teleprompter' },
+            { id: 'live-broadcast', label: 'Live Broadcast / Remote Meeting Setup' }
+        ];
+
+        const studioEquipmentLabelById = Object.fromEntries(
+            STUDIO_BOOKING_EQUIPMENT.map((e) => [e.id, e.label])
+        );
+
+        function formatBookingEquipment(ids) {
+            if (!ids || !ids.length) return '';
+            return ids.map((id) => studioEquipmentLabelById[id] || id).join(', ');
+        }
+
+        function loadEquipment() {
+            const select = document.getElementById('equipment');
+            if (!select) return;
+            select.innerHTML = '';
+            STUDIO_BOOKING_EQUIPMENT.forEach(({ id, label }) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = label;
+                select.appendChild(option);
+            });
         }
 
         function renderBookings(bookings) {
@@ -446,7 +447,7 @@ scripts: |
                             <span class="booking-status status ${statusClass}">${booking.status}</span>
                         </div>
                         ${booking.equipment && booking.equipment.length > 0 
-                            ? `<p><strong>Equipment:</strong> ${booking.equipment.join(', ')}</p>`
+                            ? `<p><strong>Equipment:</strong> ${formatBookingEquipment(booking.equipment)}</p>`
                             : ''
                         }
                         ${booking.notes ? `<p>${booking.notes}</p>` : ''}
@@ -635,15 +636,15 @@ scripts: |
             }
         }
 
-        // Initialize
+        // Initialize: fill equipment first (sync), then auth — don’t block the list on slow booking/event APIs
         (async () => {
-            await auth.requireAuth();
+            loadEquipment();
+            const ok = await auth.requireAuth();
+            if (!ok) return;
             document.getElementById('loading').style.display = 'none';
             await loadBookings();
             await loadEvents();
-            await loadEquipment();
-            
-            // Initialize datetime pickers after a short delay to ensure flatpickr is loaded
+
             setTimeout(() => {
                 initDateTimePickers();
             }, 100);

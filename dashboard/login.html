@@ -255,7 +255,19 @@
                 const result = await auth.login(email, password, rememberMe);
                 
                 if (result.success) {
-                    // Don't show toast here - just redirect (toast might be shown elsewhere)
+                    if (result.requires2FA && result.userId && result.tempToken) {
+                        try {
+                            sessionStorage.setItem('hub_2fa', JSON.stringify({
+                                userId: result.userId,
+                                tempToken: result.tempToken,
+                                rememberMe: !!result.rememberMe
+                            }));
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        window.location.href = '/dashboard/login-2fa.html';
+                        return;
+                    }
                     setTimeout(() => {
                         window.location.href = '/dashboard/';
                     }, 100);

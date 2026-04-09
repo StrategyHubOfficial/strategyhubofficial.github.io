@@ -207,16 +207,21 @@ title: User Management
 </div>
 
 <script>
-    (async function() {
-        if (typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') {
-            setTimeout(arguments.callee, 50);
+    (async function initUsersPage() {
+        let attempts = 0;
+        while ((typeof auth === 'undefined' || typeof toast === 'undefined' || typeof api === 'undefined') && attempts < 100) {
+            await new Promise(r => setTimeout(r, 50));
+            attempts++;
+        }
+        if (typeof auth === 'undefined' || typeof api === 'undefined') {
+            console.error('Users page: auth/api not loaded');
             return;
         }
 
-        await auth.requireAuth();
+        const ok = await auth.requireAuth();
+        if (!ok) return;
 
-        const currentUser = auth.getCurrentUser();
-        if (!currentUser || currentUser.role !== 'admin') {
+        if (!auth.isAdmin()) {
             window.location.href = '/dashboard/';
             return;
         }

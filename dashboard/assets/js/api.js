@@ -7,14 +7,41 @@ class HubAPI {
     this.baseURL = baseURL || (window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev');
   }
 
+  /**
+   * Do not send stored JWT on public auth endpoints — a stale token can break login
+   * or confuse intermediaries.
+   */
+  shouldSendAuthToken(normalizedEndpoint) {
+    const path = normalizedEndpoint.split('?')[0];
+    const publicPrefixes = [
+      '/api/auth/login',
+      '/api/auth/github',
+      '/api/auth/forgot-password',
+      '/api/auth/reset-password',
+      '/api/auth/2fa/verify-login',
+      '/api/bootstrap/',
+    ];
+    for (const p of publicPrefixes) {
+      if (path === p || path.startsWith(p)) return false;
+    }
+    if (path === '/api/invites/register' || path.startsWith('/api/invites/verify/')) return false;
+    return true;
+  }
+
+  isLoginLikePage() {
+    const p = window.location.pathname || '';
+    return /login\.html$/.test(p) || /login-2fa\.html$/.test(p) ||
+      /forgot-password\.html$/.test(p) || /reset-password\.html$/.test(p) || /register\.html$/.test(p);
+  }
+
   async request(endpoint, options = {}) {
     // Ensure endpoint starts with /api
     const normalizedEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
     const url = `${this.baseURL}${normalizedEndpoint}`;
     
-    // Get auth token from localStorage if available
     const token = localStorage.getItem('hub_token');
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const sendAuth = this.shouldSendAuthToken(normalizedEndpoint) && token;
+    const authHeaders = sendAuth ? { 'Authorization': `Bearer ${token}` } : {};
     
     const config = {
       ...options,
@@ -40,14 +67,18 @@ class HubAPI {
       const data = await response.json();
       
       if (!response.ok) {
-        // If unauthorized, clear token and redirect to login
         if (response.status === 401) {
-          localStorage.removeItem('hub_token');
-          if (window.location.pathname !== '/dashboard/login.html') {
-            window.location.href = '/dashboard/login.html';
+          const isPublicAuthCall = !this.shouldSendAuthToken(normalizedEndpoint);
+          if (!isPublicAuthCall) {
+            localStorage.removeItem('hub_token');
+            if (!this.isLoginLikePage()) {
+              window.location.href = '/dashboard/login.html';
+            }
           }
         }
-        throw new Error(data.error || `HTTP ${response.status}`);
+        const err = new Error(data.error || data.message || `HTTP ${response.status}`);
+        err.status = response.status;
+        throw err;
       }
       
       return data;
@@ -67,6 +98,13 @@ class HubAPI {
     return this.request('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password, rememberMe })
+    });
+  }
+
+  async verify2FALogin(userId, code, tempToken) {
+    return this.request('/api/auth/2fa/verify-login', {
+      method: 'POST',
+      body: JSON.stringify({ userId, code, tempToken })
     });
   }
 

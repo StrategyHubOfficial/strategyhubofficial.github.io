@@ -37,33 +37,35 @@
     <script src="{{ asset_path }}assets/js/error-states.js"></script>
     
     <script>
-        // Show admin menu if user is admin
+        // Show admin menu if user is admin (do not call requireAuth here — protected-route.js
+        // already verifies the session; a second requireAuth doubled /api/auth/me traffic and
+        // contributed to spurious redirects on refresh.)
         (async function showAdminMenu() {
-            // Wait for auth to be available
+            const path = window.location.pathname || '';
+            if (/login\.html$|login-2fa\.html$|forgot-password\.html$|register\.html$|reset-password\.html$/i.test(path)) {
+                return;
+            }
             let attempts = 0;
             while (typeof auth === 'undefined' && attempts < 50) {
                 await new Promise(resolve => setTimeout(resolve, 100));
                 attempts++;
             }
-            
             if (typeof auth === 'undefined') {
-                console.warn('Auth not available for admin menu check');
                 return;
             }
-            
+            attempts = 0;
+            while (typeof window.currentUser === 'undefined' && attempts < 80) {
+                await new Promise((r) => setTimeout(r, 50));
+                attempts++;
+            }
             try {
-                // Wait for auth to be initialized
-                await auth.requireAuth();
-                const user = auth.getCurrentUser();
-                if (user && user.role === 'admin') {
+                if (auth.isAdmin()) {
                     const adminMenu = document.getElementById('admin-menu');
                     if (adminMenu) {
-                        // Remove Bootstrap's d-none class to show the menu
                         adminMenu.classList.remove('d-none');
                     }
                 }
             } catch (error) {
-                // Not authenticated or error - menu stays hidden
                 console.debug('Admin menu check:', error.message || error);
             }
         })();

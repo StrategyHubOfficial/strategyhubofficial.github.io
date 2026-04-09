@@ -67,31 +67,37 @@ title: Financial Dashboard
         color: var(--text-primary);
     }
 
-    .table {
+    /* Avoid Bootstrap's `.table` — it forces light --bs-table-bg / --bs-table-color */
+    .financial-table {
         width: 100%;
         border-collapse: collapse;
+        color: var(--text-primary);
+        background: transparent;
     }
 
-    .table th,
-    .table td {
-        padding: 0.75rem;
+    .financial-table th,
+    .financial-table td {
+        padding: 0.75rem 1rem;
         text-align: left;
         border-bottom: 1px solid var(--border-color);
-    }
-
-    .table th {
-        color: var(--text-secondary);
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-    }
-
-    .table td {
+        background: transparent;
         color: var(--text-primary);
     }
 
-    .table tr:hover {
+    .financial-table th {
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .financial-table tbody tr:hover td {
         background: var(--bg-darker);
+    }
+
+    .financial-table tbody tr:last-child td {
+        border-bottom: none;
     }
 
     .badge {
@@ -183,7 +189,7 @@ title: Financial Dashboard
     <!-- Top Projects -->
     <div class="section">
         <h2>Top Projects by Donations</h2>
-        <table class="table">
+        <table class="financial-table">
             <thead>
                 <tr>
                     <th>Project</th>
@@ -219,7 +225,7 @@ title: Financial Dashboard
                 </select>
             </div>
         </div>
-        <table class="table">
+        <table class="financial-table">
             <thead>
                 <tr>
                     <th>Date</th>

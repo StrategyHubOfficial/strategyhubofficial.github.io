@@ -14,14 +14,16 @@ class FormValidator {
     // More permissive regex that supports all valid email formats including short TLDs like .me, .io, etc.
     this.validators.set('email', {
       validate: (value) => {
+        // Trim so blur/tab after paste or trailing space doesn't falsely fail
+        const v = typeof value === 'string' ? value.trim() : '';
+        if (!v) return false;
         // Simplified but permissive regex that handles:
         // - Standard emails: user@domain.com
         // - Short TLDs: user@pm.me, user@example.io
         // - Subdomains: user@mail.example.com
         // - Plus signs and special chars: user+tag@example.com
-        // The pattern: local-part@domain.tld (where tld is at least 2 chars)
         const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
-        return emailRegex.test(value);
+        return emailRegex.test(v);
       },
       message: 'Please enter a valid email address'
     });
@@ -89,8 +91,7 @@ class FormValidator {
     // Remove existing validation UI and listeners
     this.clearValidation(input);
 
-    // Create debounced validator
-    const debouncedValidate = this.debounce(() => {
+    const runValidation = () => {
       const value = input.value;
       let isValid = true;
       let errorMessage = '';
@@ -104,29 +105,31 @@ class FormValidator {
         const ruleValid = validator.validate(value, rule.value);
         if (!ruleValid) {
           isValid = false;
-          errorMessage = typeof validator.message === 'function' 
-            ? validator.message(rule.value) 
+          errorMessage = typeof validator.message === 'function'
+            ? validator.message(rule.value)
             : validator.message;
           break;
         }
       }
 
       this.showValidation(input, isValid, errorMessage);
-    }, 300);
+    };
+
+    // Debounce only while typing; blur should validate immediately (tab out / leave field)
+    const debouncedValidate = this.debounce(runValidation, 300);
 
     // Store handlers for cleanup
     input._validationHandlers = {
       input: debouncedValidate,
-      blur: debouncedValidate
+      blur: runValidation
     };
 
-    // Validate on input
     input.addEventListener('input', debouncedValidate);
-    input.addEventListener('blur', debouncedValidate);
+    input.addEventListener('blur', runValidation);
 
-    // Initial validation if field has value
+    // Initial validation if field has value (e.g. browser autofill)
     if (input.value) {
-      debouncedValidate();
+      runValidation();
     }
   }
 
@@ -134,7 +137,8 @@ class FormValidator {
    * Show validation feedback
    */
   showValidation(input, isValid, message) {
-    this.clearValidation(input);
+    // Only clear UI — do not remove input/blur listeners (see clearValidation)
+    this.clearValidationUI(input);
 
     // Add visual indicator
     if (isValid) {
@@ -207,28 +211,34 @@ class FormValidator {
   }
 
   /**
-   * Clear validation UI
+   * Clear validation visuals only (icons, messages, classes).
+   * Used on every validation tick; does not remove input/blur listeners.
    */
-  clearValidation(input) {
+  clearValidationUI(input) {
     input.classList.remove('valid', 'invalid');
-    // Reset padding if we added it
     if (input.style.paddingRight === '2.5rem') {
       input.style.paddingRight = '';
     }
-    
-    // Remove event listeners
+
+    const wrapper = this.getWrapper(input) || input.parentElement;
+    const icon = wrapper.querySelector('.validation-icon');
+    if (icon) icon.remove();
+
+    const errorMsg = wrapper.querySelector('.validation-error');
+    if (errorMsg) errorMsg.remove();
+  }
+
+  /**
+   * Full teardown: UI + event listeners (e.g. when re-binding a field).
+   */
+  clearValidation(input) {
+    this.clearValidationUI(input);
+
     if (input._validationHandlers) {
       input.removeEventListener('input', input._validationHandlers.input);
       input.removeEventListener('blur', input._validationHandlers.blur);
       delete input._validationHandlers;
     }
-    
-    const wrapper = this.getWrapper(input) || input.parentElement;
-    const icon = wrapper.querySelector('.validation-icon');
-    if (icon) icon.remove();
-    
-    const errorMsg = wrapper.querySelector('.validation-error');
-    if (errorMsg) errorMsg.remove();
   }
 
   /**
@@ -333,9 +343,10 @@ class FormValidator {
 
     // Validate on submit (store handler for cleanup)
     const submitHandler = (e) => {
+      e.preventDefault();
       try {
         if (!this.validateForm(form)) {
-          e.preventDefault();
+          e.stopImmediatePropagation();
           const firstInvalid = form.querySelector('.invalid');
           if (firstInvalid) {
             try {
@@ -348,6 +359,7 @@ class FormValidator {
           if (typeof toast !== 'undefined' && toast) {
             toast.error('Please fix the errors in the form');
           }
+          return;
         }
       } catch (error) {
         console.error('Form validation error:', error);

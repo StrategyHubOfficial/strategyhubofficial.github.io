@@ -48,36 +48,64 @@ class AuthManager {
   }
 
   /**
-   * Verify token and get current user
+   * Verify token and get current user.
+   * Single-flight: concurrent callers share one /api/auth/me request (avoids refresh storms).
    */
   async checkAuth() {
     if (!this.isAuthenticated()) {
       return false;
     }
 
-    try {
-      const response = await this.api.getCurrentUser();
-      if (response.success && response.data) {
-        this.currentUser = response.data;
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      this.clearToken();
-      return false;
+    if (this._checkAuthPromise) {
+      return this._checkAuthPromise;
     }
+
+    this._checkAuthPromise = (async () => {
+      try {
+        const response = await this.api.getCurrentUser();
+        if (response.success && response.data) {
+          this.currentUser = response.data;
+          return true;
+        }
+        return false;
+      } catch (error) {
+        // 401: api.request clears token + may redirect. 404: user removed from server.
+        if (error.status === 404) {
+          this.clearToken();
+        }
+        console.error('Auth check failed:', error);
+        return false;
+      } finally {
+        this._checkAuthPromise = null;
+      }
+    })();
+
+    return this._checkAuthPromise;
   }
 
   /**
    * Require authentication, redirect to login if not authenticated
    */
   async requireAuth() {
-    const isAuthenticated = await this.checkAuth();
-    if (!isAuthenticated) {
+    let ok = await this.checkAuth();
+    if (ok) {
+      return true;
+    }
+    // One retry: multiple parallel checkAuth calls used to N-tuple /api/auth/me; transient
+    // failures or rate limits should not immediately boot the user when the token is still valid.
+    if (this.getToken()) {
+      await new Promise((r) => setTimeout(r, 400));
+      ok = await this.checkAuth();
+    }
+    if (ok) {
+      return true;
+    }
+    if (!this.getToken()) {
       window.location.href = '/dashboard/login.html';
       return false;
     }
+    // Token still present but verification failed without 401 (e.g. network/429). Let the page load.
+    console.warn('Session could not be verified (temporary). Keeping local token; retry on next action.');
     return true;
   }
 
@@ -139,7 +167,10 @@ class AuthManager {
    * Check if user is admin
    */
   isAdmin() {
-    return this.currentUser?.role === 'admin';
+    const u = this.currentUser;
+    if (!u) return false;
+    if (u.role === 'admin') return true;
+    return Array.isArray(u.roles) && u.roles.includes('admin');
   }
 
   /**
