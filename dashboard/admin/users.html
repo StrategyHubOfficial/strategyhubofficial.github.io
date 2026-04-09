@@ -213,10 +213,11 @@ title: User Management
             return;
         }
 
-        // Check admin access
+        await auth.requireAuth();
+
         const currentUser = auth.getCurrentUser();
         if (!currentUser || currentUser.role !== 'admin') {
-            window.location.href = '/dashboard';
+            window.location.href = '/dashboard/';
             return;
         }
 
@@ -642,8 +643,7 @@ title: User Management
         window.bulkDeactivateUsers = bulkDeactivateUsers;
         window.bulkDeleteUsers = bulkDeleteUsers;
 
-        // Initialize
-        await auth.requireAuth();
+        // Initialize (requireAuth already ran above)
         await loadRoles();
         await loadUsers();
     })();
