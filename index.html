@@ -1032,14 +1032,16 @@
                             ? '<span style="display: inline-block; background: rgba(247, 147, 26, 0.2); color: #f7931a; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1rem;">Looking for Collaboration</span>'
                             : '';
                         const logo = project.logoUrl ? `<div class="card-logo"><img src="${project.logoUrl}" alt="${project.name}" /></div>` : '';
-                        const linksContent = [
-                            project.website ? `<a href="${project.website}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a>` : '',
-                            Object.keys(socialLinks).length > 0 ? Object.entries(socialLinks).map(([k, v]) => {
-                                const labels = { x: 'X', linkedin: 'LinkedIn', github: 'GitHub', youtube: 'YouTube', telegram: 'Telegram', substack: 'Substack', luma: 'Luma', meetup: 'Meetup', spotify: 'Spotify' };
-                                return `<a href="${v}" target="_blank" rel="noopener noreferrer" style="color: #b0b0b0; font-size: 0.85rem; margin-right: 0.75rem;">${labels[k] || k}</a>`;
-                            }).join('') : ''
-                        ].filter(Boolean).join(' ');
-                        const linksBlock = linksContent ? `<p style="margin-top: 0.5rem;">${linksContent}</p>` : '';
+                        const labels = { x: 'X', twitter: 'X', linkedin: 'LinkedIn', github: 'GitHub', youtube: 'YouTube', telegram: 'Telegram', substack: 'Substack', luma: 'Luma', meetup: 'Meetup', spotify: 'Spotify' };
+                        const websiteLine = project.website
+                            ? `<p style="margin-top: 0.5rem;"><a href="${project.website}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a></p>`
+                            : '';
+                        const socialLine = Object.keys(socialLinks).length > 0
+                            ? `<p style="margin-top: ${project.website ? '0.75' : '0.5'}rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;">${Object.entries(socialLinks).map(([k, v]) =>
+                                `<a href="${v}" target="_blank" rel="noopener noreferrer" style="color: #b0b0b0; font-size: 0.85rem;">${labels[k] || k}</a>`
+                            ).join('')}</p>`
+                            : '';
+                        const linksBlock = websiteLine + socialLine;
                         
                         return `
                             <div class="card">
