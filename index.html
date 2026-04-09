@@ -15,6 +15,7 @@
     <meta name="twitter:description" content="A Bitcoin innovation hub providing resources and community support for developers and builders.">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https://dashboard.securesovereigns.workers.dev https://*.tile.openstreetmap.org https://*.openstreetmap.org https://router.project-osrm.org https://raw.githubusercontent.com;">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link rel="manifest" href="/dashboard/manifest.json">
     <meta name="theme-color" content="#f7931a">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -235,6 +236,27 @@
             max-height: 72px;
             object-fit: contain;
             object-position: center;
+        }
+        
+        .portfolio-social-line {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.5rem 0.75rem;
+        }
+        
+        .portfolio-social-link {
+            color: #b0b0b0;
+            font-size: 1.15rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: color 0.15s ease;
+        }
+        
+        .portfolio-social-link:hover {
+            color: #f7931a;
         }
         
         
@@ -1033,13 +1055,31 @@
                             : '';
                         const logo = project.logoUrl ? `<div class="card-logo"><img src="${project.logoUrl}" alt="${project.name}" /></div>` : '';
                         const labels = { x: 'X', twitter: 'X', linkedin: 'LinkedIn', github: 'GitHub', youtube: 'YouTube', telegram: 'Telegram', substack: 'Substack', luma: 'Luma', meetup: 'Meetup', spotify: 'Spotify', facebook: 'Facebook', instagram: 'Instagram' };
+                        const socialIconClass = {
+                            x: 'fa-brands fa-x-twitter',
+                            twitter: 'fa-brands fa-x-twitter',
+                            linkedin: 'fa-brands fa-linkedin-in',
+                            github: 'fa-brands fa-github',
+                            youtube: 'fa-brands fa-youtube',
+                            telegram: 'fa-brands fa-telegram',
+                            substack: 'fa-brands fa-substack',
+                            luma: 'fa-solid fa-calendar-days',
+                            meetup: 'fa-brands fa-meetup',
+                            spotify: 'fa-brands fa-spotify',
+                            facebook: 'fa-brands fa-facebook-f',
+                            instagram: 'fa-brands fa-instagram'
+                        };
+                        const escapeAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                         const websiteLine = project.website
                             ? `<p style="margin-top: 0.5rem;"><a href="${project.website}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a></p>`
                             : '';
                         const socialLine = Object.keys(socialLinks).length > 0
-                            ? `<p style="margin-top: ${project.website ? '0.75' : '0.5'}rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem;">${Object.entries(socialLinks).map(([k, v]) =>
-                                `<a href="${v}" target="_blank" rel="noopener noreferrer" style="color: #b0b0b0; font-size: 0.85rem;">${labels[k] || k}</a>`
-                            ).join('')}</p>`
+                            ? `<p class="portfolio-social-line" style="margin-top: ${project.website ? '0.75' : '0.5'}rem;">${Object.entries(socialLinks).map(([k, v]) => {
+                                const labelText = labels[k] || k;
+                                const iconClass = socialIconClass[k] || 'fa-solid fa-link';
+                                const t = escapeAttr(labelText);
+                                return `<a href="${v}" target="_blank" rel="noopener noreferrer" class="portfolio-social-link" title="${t}" aria-label="${t}"><i class="${iconClass}" aria-hidden="true"></i></a>`;
+                            }).join('')}</p>`
                             : '';
                         const linksBlock = websiteLine + socialLine;
                         
