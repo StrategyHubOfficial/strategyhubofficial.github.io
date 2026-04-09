@@ -206,13 +206,9 @@ scripts: |
                 </div>
                 <div class="form-group">
                     <label>Equipment needed (optional):</label>
-                    <small style="display: block; color: var(--text-secondary, #888); margin-bottom: 0.5rem;">Hold Ctrl/Cmd (or long-press on mobile) to select multiple.</small>
-                    <select id="equipment" multiple size="5" aria-label="Equipment needed">
-                        <option value="podtrak-p4">Podtrak P4 (audio recording)</option>
-                        <option value="sony-a6400">Sony a6400 Camera (video recording)</option>
-                        <option value="teleprompter">Teleprompter</option>
-                        <option value="live-broadcast">Live Broadcast / Remote Meeting Setup</option>
-                    </select>
+                    <small style="display: block; color: var(--text-secondary, #888); margin-bottom: 0.5rem;">Loaded from the equipment catalog. Hold Ctrl/Cmd to select multiple.</small>
+                    <p id="equipment-catalog-hint" style="display: none; color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 0.5rem 0;"></p>
+                    <select id="equipment" multiple size="5" aria-label="Equipment needed"></select>
                 </div>
                 <div class="form-group">
                     <label class="checkbox-group">
@@ -393,33 +389,109 @@ scripts: |
             }
         }
 
-        /** Studio booking equipment options (stored by id on the booking; labels for display). */
-        const STUDIO_BOOKING_EQUIPMENT = [
-            { id: 'podtrak-p4', label: 'Podtrak P4 (audio recording)' },
-            { id: 'sony-a6400', label: 'Sony a6400 Camera (video recording)' },
-            { id: 'teleprompter', label: 'Teleprompter' },
-            { id: 'live-broadcast', label: 'Live Broadcast / Remote Meeting Setup' }
-        ];
-
-        const studioEquipmentLabelById = Object.fromEntries(
-            STUDIO_BOOKING_EQUIPMENT.map((e) => [e.id, e.label])
-        );
+        /** id → display name from last /api/equipment load (for booking cards). */
+        let equipmentById = {};
 
         function formatBookingEquipment(ids) {
             if (!ids || !ids.length) return '';
-            return ids.map((id) => studioEquipmentLabelById[id] || id).join(', ');
+            return ids.map((id) => equipmentById[id] || id).join(', ');
         }
 
-        function loadEquipment() {
+        async function loadEquipment() {
             const select = document.getElementById('equipment');
+            const hint = document.getElementById('equipment-catalog-hint');
             if (!select) return;
+
             select.innerHTML = '';
-            STUDIO_BOOKING_EQUIPMENT.forEach(({ id, label }) => {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = label;
-                select.appendChild(option);
-            });
+            equipmentById = {};
+            if (hint) {
+                hint.style.display = 'none';
+                hint.textContent = '';
+            }
+
+            try {
+                const response = await api.get('/api/equipment');
+                if (!response.success || !response.data) {
+                    if (hint) {
+                        hint.textContent = 'Could not load the equipment catalog. Try refreshing the page.';
+                        hint.style.display = 'block';
+                    }
+                    return;
+                }
+
+                const equipment = response.data.all || response.data || [];
+                if (!Array.isArray(equipment)) {
+                    console.error('Equipment data is not an array:', equipment);
+                    return;
+                }
+
+                equipment.forEach((item) => {
+                    if (item && item.id) {
+                        equipmentById[item.id] = item.name || item.id;
+                    }
+                });
+
+                const studioDefaults = equipment.filter(
+                    (item) => item.studioParent && (item.studioParent === 'default' || item.studioParent === 'studio')
+                );
+                const optionalEquipment = equipment.filter((item) => {
+                    const cat = (item.category || '').toLowerCase();
+                    return (item.type === 'borrowable' || cat === 'studio') && !item.studioParent;
+                });
+
+                if (studioDefaults.length > 0) {
+                    const defaultGroup = document.createElement('optgroup');
+                    defaultGroup.label = 'Included with studio (auto; shown for reference)';
+                    studioDefaults.forEach((item) => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = `✓ ${item.name}`;
+                        option.disabled = true;
+                        defaultGroup.appendChild(option);
+                    });
+                    select.appendChild(defaultGroup);
+                }
+
+                if (optionalEquipment.length > 0) {
+                    const optionalGroup = document.createElement('optgroup');
+                    optionalGroup.label = 'Additional equipment (optional)';
+                    optionalEquipment.forEach((item) => {
+                        const option = document.createElement('option');
+                        option.value = item.id;
+                        option.textContent = item.name;
+                        optionalGroup.appendChild(option);
+                    });
+                    select.appendChild(optionalGroup);
+                }
+
+                const hasSelectable = optionalEquipment.length > 0;
+                const hasDefaultsOnly = studioDefaults.length > 0 && !hasSelectable;
+                if (!hasSelectable && !hasDefaultsOnly && equipment.length === 0) {
+                    if (hint) {
+                        hint.textContent =
+                            'The equipment catalog is empty. Add items under Resources → Equipment (use type “borrowable” or category “Studio”, and optionally mark studio defaults).';
+                        hint.style.display = 'block';
+                    }
+                } else if (!hasSelectable && hasDefaultsOnly) {
+                    if (hint) {
+                        hint.textContent =
+                            'Only default studio gear is configured. Add optional borrowable or Studio-category items in Resources → Equipment to let members request extras.';
+                        hint.style.display = 'block';
+                    }
+                } else if (!hasSelectable && equipment.length > 0) {
+                    if (hint) {
+                        hint.textContent =
+                            'No optional studio equipment matches the filter (borrowable or category Studio, not marked as studio default). Adjust items in Resources → Equipment.';
+                        hint.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading equipment:', error);
+                if (hint) {
+                    hint.textContent = 'Could not load the equipment catalog. Try refreshing the page.';
+                    hint.style.display = 'block';
+                }
+            }
         }
 
         function renderBookings(bookings) {
@@ -636,14 +708,12 @@ scripts: |
             }
         }
 
-        // Initialize: fill equipment first (sync), then auth — don’t block the list on slow booking/event APIs
         (async () => {
-            loadEquipment();
             const ok = await auth.requireAuth();
             if (!ok) return;
+            await loadEquipment();
             document.getElementById('loading').style.display = 'none';
-            await loadBookings();
-            await loadEvents();
+            await Promise.all([loadBookings(), loadEvents()]);
 
             setTimeout(() => {
                 initDateTimePickers();
