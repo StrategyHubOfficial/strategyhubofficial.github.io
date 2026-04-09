@@ -439,6 +439,24 @@ title: Projects
             }
         }
 
+        async function deleteProject(id) {
+            if (!confirm('Are you sure you want to delete this project? This cannot be undone.')) {
+                return;
+            }
+            try {
+                const response = await api.deleteProject(id);
+                if (response.success) {
+                    toast.success('Project deleted');
+                    await loadProjects();
+                } else {
+                    toast.error(response.error || 'Failed to delete project');
+                }
+            } catch (error) {
+                console.error('Error deleting project:', error);
+                toast.error('Error deleting project');
+            }
+        }
+
         // Expose to global scope for onclick handlers
         window.viewProject = viewProject;
         window.editProject = editProject;
