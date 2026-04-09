@@ -141,7 +141,7 @@ title: StrategyHub Dashboard
                     try {
                         const [bookingsRes, eventsRes, projectsRes, equipmentRes] = await Promise.allSettled([
                             api.get('/api/studio/bookings'),
-                            api.get('/api/events'),
+                            api.get('/api/events?futureOnly=true'),
                             api.get('/api/projects'),
                             api.get('/api/equipment')
                         ]);

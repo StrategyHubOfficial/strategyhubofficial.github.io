@@ -411,7 +411,9 @@ scripts: |
             try {
                 // Admins can see pending events, regular users only see approved
                 const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
-                const url = isAdmin ? '/api/events?includePending=true' : '/api/events';
+                const url = isAdmin
+                    ? '/api/events?includePending=true&futureOnly=true'
+                    : '/api/events?futureOnly=true';
                 const response = await api.get(url);
                 if (response.success && response.data) {
                     // Handle paginated response structure: { data: [...], pagination: {...} }
@@ -1077,3 +1079,12 @@ scripts: |
             await loadSubscriptions();
         })();
     })();</script>
+    })();</script>
+
+
+
+
+
+
+
+
