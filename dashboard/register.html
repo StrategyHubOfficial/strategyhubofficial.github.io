@@ -231,7 +231,7 @@
 
         async function verifyInvite(token) {
             try {
-                const response = await fetch(`https://dashboard.securesovereigns.workers.dev/api/invites/verify/${token}`);
+                const response = await fetch(`${api.baseURL}/api/invites/verify/${token}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -348,7 +348,7 @@
             });
 
             try {
-                const response = await fetch('https://dashboard.securesovereigns.workers.dev/api/invites/register', {
+                const response = await fetch(`${api.baseURL}/api/invites/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

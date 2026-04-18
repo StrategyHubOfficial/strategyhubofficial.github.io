@@ -705,7 +705,7 @@
         // Load public announcements
         (async () => {
             try {
-                const response = await fetch('https://dashboard.securesovereigns.workers.dev/api/announcements?visibility=public&status=published');
+                const response = await fetch(`${window.getHubApiBaseUrl()}/api/announcements?visibility=public&status=published`);
                 const data = await response.json();
                 
                 if (data.success && data.data && data.data.announcements && data.data.announcements.length > 0) {

@@ -1,0 +1,182 @@
+---
+layout: default
+title: Podcast guest requests
+styles: |
+    <style>
+        .queue-wrap { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+        .queue-header { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; margin-bottom: 1.5rem; }
+        .queue-header h1 { margin: 0; flex: 1; min-width: 200px; }
+        .queue-filters label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.25rem; }
+        .queue-filters input { padding: 0.5rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-darker); color: var(--text-primary); min-width: 220px; }
+        .queue-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .queue-card-meta { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+        .queue-card-body { color: var(--text-primary); white-space: pre-wrap; word-break: break-word; margin: 0.75rem 0; }
+        .queue-actions { margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-dismiss { background: var(--text-secondary); color: var(--bg-darker); border: none; padding: 0.4rem 0.85rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-dismiss:hover { filter: brightness(1.1); }
+        .btn-accept { background: #1a7f37; color: #fff; border: none; padding: 0.4rem 0.85rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-accept:hover { filter: brightness(1.08); }
+        .btn-reject { background: #8b2942; color: #fff; border: none; padding: 0.4rem 0.85rem; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-reject:hover { filter: brightness(1.08); }
+        .empty-state { text-align: center; padding: 3rem; color: var(--text-secondary); }
+        .badge-slug { background: rgba(247, 147, 26, 0.2); color: var(--bitcoin-orange); padding: 0.2rem 0.6rem; border-radius: 6px; font-size: 0.85rem; }
+        .badge-status { padding: 0.2rem 0.55rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+        .badge-status.pending { background: rgba(200, 180, 80, 0.25); color: #d4c060; }
+        .badge-status.accepted { background: rgba(40, 120, 70, 0.35); color: #6fcf8a; }
+        .badge-status.rejected { background: rgba(120, 80, 90, 0.35); color: #c9a0a8; }
+    </style>
+---
+
+<div class="queue-wrap">
+    <div class="queue-header">
+        <h1>Podcast guest requests</h1>
+        <div class="queue-filters">
+            <label for="filter-slug">Filter by show slug (optional)</label>
+            <input type="text" id="filter-slug" placeholder="e.g. bitcoin-district" autocomplete="off">
+        </div>
+        <button type="button" class="btn btn-secondary" id="btn-refresh">Refresh</button>
+    </div>
+    <p class="text-secondary small mb-3">Requires permission <code>studio.view.all</code>. <strong>Accept</strong> adds a confirmed studio booking for your account and blocks the slot. <strong>Reject</strong> declines without booking. <strong>Remove from queue</strong> deletes the row only (use after handling or to clear old entries).</p>
+    <div id="queue-container">
+        <div class="empty-state">Loading…</div>
+    </div>
+</div>
+
+<script>
+(function () {
+    async function waitDeps() {
+        var n = 0;
+        while ((typeof auth === 'undefined' || typeof api === 'undefined' || typeof toast === 'undefined') && n < 120) {
+            await new Promise(function (r) { setTimeout(r, 50); });
+            n++;
+        }
+    }
+
+    function escapeHtml(text) {
+        if (text == null) return '';
+        var div = document.createElement('div');
+        div.textContent = String(text);
+        return div.innerHTML;
+    }
+
+    var rows = [];
+
+    async function loadQueue() {
+        var slug = document.getElementById('filter-slug').value.trim();
+        var path = '/api/studio/podcast-guest-requests';
+        if (slug) path += '?podcastSlug=' + encodeURIComponent(slug);
+        var response = await api.get(path);
+        if (!response.success) {
+            toast.error(response.error || 'Failed to load queue');
+            return;
+        }
+        rows = Array.isArray(response.data) ? response.data : [];
+        render();
+    }
+
+    function render() {
+        var el = document.getElementById('queue-container');
+        if (!rows.length) {
+            el.innerHTML = '<div class="empty-state">No requests in the queue.</div>';
+            return;
+        }
+        el.innerHTML = rows.map(function (r) {
+            var start = new Date(r.startTime).toLocaleString();
+            var end = new Date(r.endTime).toLocaleString();
+            var created = new Date(r.createdAt).toLocaleString();
+            var st = r.status === 'accepted' || r.status === 'rejected' ? r.status : 'pending';
+            var badgeClass = 'badge-status ' + st;
+            var bookingLine = '';
+            if (st === 'accepted' && r.bookingId) {
+                bookingLine = '<div class="queue-card-meta" style="margin-top:0.35rem"><span><strong>Booking:</strong> <code>' + escapeHtml(r.bookingId) + '</code> (see Studio calendar)</span></div>';
+            }
+            var pendingActions = st === 'pending'
+                ? '<button type="button" class="btn-accept resolve-btn" data-id="' + escapeHtml(r.id) + '" data-action="accept">Accept</button>' +
+                  '<button type="button" class="btn-reject resolve-btn" data-id="' + escapeHtml(r.id) + '" data-action="reject">Reject</button>'
+                : '';
+            return (
+                '<div class="queue-card" data-req-id="' + escapeHtml(r.id) + '">' +
+                '<div class="queue-card-meta">' +
+                '<span class="badge-slug">' + escapeHtml(r.podcastSlug) + '</span>' +
+                '<span class="' + badgeClass + '">' + escapeHtml(st) + '</span>' +
+                '<span>Submitted ' + escapeHtml(created) + '</span>' +
+                '<span>ID <code style="font-size:0.85em">' + escapeHtml(r.id) + '</code></span>' +
+                '</div>' +
+                '<div><strong>' + escapeHtml(r.guestEmail) + '</strong>' +
+                (r.guestName ? ' · ' + escapeHtml(r.guestName) : '') + '</div>' +
+                '<div class="queue-card-meta" style="margin-top:0.5rem">' +
+                '<span><strong>Start:</strong> ' + escapeHtml(start) + '</span>' +
+                '<span><strong>End:</strong> ' + escapeHtml(end) + '</span>' +
+                '</div>' +
+                bookingLine +
+                '<div class="queue-card-body">' + escapeHtml(r.message) + '</div>' +
+                '<div class="queue-actions">' +
+                pendingActions +
+                '<a class="btn btn-small" href="mailto:' + encodeURI(r.guestEmail) + '">Email guest</a>' +
+                '<button type="button" class="btn-dismiss dismiss-btn" data-id="' + escapeHtml(r.id) + '">Remove from queue</button>' +
+                '</div></div>'
+            );
+        }).join('');
+
+        el.querySelectorAll('.dismiss-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                dismissRequest(btn.getAttribute('data-id'));
+            });
+        });
+        el.querySelectorAll('.resolve-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                resolveRequest(btn.getAttribute('data-id'), btn.getAttribute('data-action'));
+            });
+        });
+    }
+
+    async function resolveRequest(id, action) {
+        if (!id || !action) return;
+        var label = action === 'accept' ? 'Accept this request and create a studio booking on your account?' : 'Reject this guest request?';
+        if (!confirm(label)) return;
+        try {
+            var response = await api.resolvePodcastGuestRequest(id, action);
+            if (response.success) {
+                toast.success(action === 'accept' ? 'Accepted — booking created' : 'Request rejected');
+                await loadQueue();
+            } else {
+                toast.error(response.error || 'Failed');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error(e.message || 'Failed');
+        }
+    }
+
+    async function dismissRequest(id) {
+        if (!id || !confirm('Remove this request from the queue?')) return;
+        try {
+            var response = await api.delete('/api/studio/podcast-guest-requests/' + encodeURIComponent(id));
+            if (response.success) {
+                toast.success('Removed from queue');
+                await loadQueue();
+            } else {
+                toast.error(response.error || 'Failed to remove');
+            }
+        } catch (e) {
+            console.error(e);
+            toast.error(e.message || 'Failed to remove');
+        }
+    }
+
+    (async function init() {
+        await waitDeps();
+        var ok = await auth.requireAuth();
+        if (!ok) return;
+        document.getElementById('btn-refresh').addEventListener('click', loadQueue);
+        document.getElementById('filter-slug').addEventListener('change', loadQueue);
+        await loadQueue();
+    })();
+})();
+</script>

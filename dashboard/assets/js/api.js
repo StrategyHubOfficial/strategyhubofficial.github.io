@@ -4,7 +4,11 @@
 
 class HubAPI {
   constructor(baseURL) {
-    this.baseURL = baseURL || (window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev');
+    this.baseURL =
+      baseURL ||
+      (typeof window !== 'undefined' && typeof window.getHubApiBaseUrl === 'function'
+        ? window.getHubApiBaseUrl()
+        : window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev');
   }
 
   /**
@@ -135,6 +139,42 @@ class HubAPI {
 
   async getBookings(userId) {
     return this.request(`/api/studio/bookings${userId ? `?user=${userId}` : ''}`);
+  }
+
+  /** Admin: podcast guest request queue (requires studio.view.all) */
+  getPodcastGuestRequests(podcastSlug) {
+    const q = podcastSlug ? `?podcastSlug=${encodeURIComponent(podcastSlug)}` : '';
+    return this.request(`/api/studio/podcast-guest-requests${q}`);
+  }
+
+  deletePodcastGuestRequest(id) {
+    return this.delete(`/api/studio/podcast-guest-requests/${encodeURIComponent(id)}`);
+  }
+
+  /** Admin: accept (creates booking) or reject (requires studio.view.all) */
+  resolvePodcastGuestRequest(id, action) {
+    return this.request(`/api/studio/podcast-guest-requests/${encodeURIComponent(id)}/resolve`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    });
+  }
+
+  /** Admin: merged podcast registry with notifyEmails (requires studio.view.all) */
+  getPodcastRegistry() {
+    return this.request('/api/studio/podcast-registry');
+  }
+
+  /** Admin: upsert one show (requires studio.view.all) */
+  putPodcastRegistryShow(slug, entry) {
+    return this.request(`/api/studio/podcast-registry/shows/${encodeURIComponent(slug)}`, {
+      method: 'PUT',
+      body: JSON.stringify(entry),
+    });
+  }
+
+  /** Admin: remove show from R2 file (revert built-in override or delete custom) */
+  deletePodcastRegistryShow(slug) {
+    return this.delete(`/api/studio/podcast-registry/shows/${encodeURIComponent(slug)}`);
   }
 
   // Members

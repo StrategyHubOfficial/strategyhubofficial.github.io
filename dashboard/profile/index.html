@@ -324,7 +324,7 @@ title: My Profile
             // Load avatar if exists
             if (data.avatar) {
                 const avatarPreview = document.getElementById('avatar-preview');
-                avatarPreview.src = data.avatar.startsWith('http') ? data.avatar : `https://dashboard.securesovereigns.workers.dev${data.avatar}`;
+                avatarPreview.src = data.avatar.startsWith('http') ? data.avatar : `${api.baseURL}${data.avatar}`;
                 avatarPreview.style.display = 'block';
             }
             
@@ -411,7 +411,7 @@ title: My Profile
                     const formData = new FormData();
                     formData.append('avatar', avatarFile);
                     
-                    const uploadResponse = await fetch('https://dashboard.securesovereigns.workers.dev/api/avatars/upload', {
+                    const uploadResponse = await fetch(`${api.baseURL}/api/avatars/upload`, {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${auth.getToken()}`

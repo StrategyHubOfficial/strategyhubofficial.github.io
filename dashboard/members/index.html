@@ -270,7 +270,7 @@ title: Members
                 if (socials.nostr) {socialLinks.push(`<a href="https://nostr.com/${socials.nostr}" target="_blank" style="color: var(--bitcoin-orange); text-decoration: none; margin-right: 0.75rem;">⚡ Nostr</a>`);}
 
                 const avatarUrl = member.avatar 
-                    ? (member.avatar.startsWith('http') ? member.avatar : `https://dashboard.securesovereigns.workers.dev${member.avatar}`)
+                    ? (member.avatar.startsWith('http') ? member.avatar : `${api.baseURL}${member.avatar}`)
                     : null;
                 const avatarDisplay = avatarUrl 
                     ? `<img src="${avatarUrl}" alt="${member.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`

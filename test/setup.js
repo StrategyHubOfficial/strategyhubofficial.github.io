@@ -53,7 +53,14 @@ global.window = global.window || {};
 global.window.HUB_CONFIG = {
   name: 'StrategyHub',
   apiBaseUrl: 'https://dashboard.securesovereigns.workers.dev',
+  frontendUrl: 'https://strategyhubofficial.github.io',
   sentryDsn: '',
+};
+global.window.getHubApiBaseUrl = function () {
+  return global.window.HUB_CONFIG.apiBaseUrl;
+};
+global.window.getHubFrontendBaseUrl = function () {
+  return global.window.HUB_CONFIG.frontendUrl;
 };
 
 // Mock fetch

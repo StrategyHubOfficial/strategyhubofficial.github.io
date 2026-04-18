@@ -1,0 +1,299 @@
+---
+layout: guest_public
+title: Book a podcast guest slot
+styles: |
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <style>
+        .guest-booking-form { max-width: 560px; }
+        .guest-booking-form label { font-weight: 500; margin-bottom: 0.35rem; }
+        .guest-booking-form .form-control, .guest-booking-form textarea {
+            background: #111; border-color: #333; color: #eee;
+        }
+        .guest-booking-form .form-control:focus, .guest-booking-form textarea:focus {
+            border-color: #f7931a; box-shadow: 0 0 0 0.15rem rgba(247, 147, 26, 0.25);
+        }
+        .flatpickr-calendar { background: #1a1a1a !important; color: #eee !important; border-color: #333 !important; }
+        .flatpickr-day.selected { background: #f7931a !important; border-color: #f7931a !important; }
+        #guest-status.alert-danger { background: #3f1d1d; border-color: #7f1d1d; color: #fecaca; }
+        #guest-status.alert-success { background: #14532d; border-color: #166534; color: #bbf7d0; }
+        #turnstile-widget { min-height: 65px; margin-bottom: 0.5rem; }
+    </style>
+scripts: |
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+    (function () {
+        function apiBase() {
+            return typeof window.getHubApiBaseUrl === 'function'
+                ? window.getHubApiBaseUrl()
+                : ((window.HUB_CONFIG && window.HUB_CONFIG.apiBaseUrl) || 'https://dashboard.securesovereigns.workers.dev');
+        }
+
+        function parsePodcastSlug() {
+            const q = new URLSearchParams(window.location.search).get('podcast');
+            if (q && q.trim()) return q.trim();
+            const m = window.location.pathname.match(/\/book-podcast\/([^/]+)\/?$/);
+            if (m) return decodeURIComponent(m[1]);
+            return 'bitcoin-district';
+        }
+
+        function parseLocalDateTimeToISO(raw) {
+            if (raw == null) return null;
+            const trimmed = String(raw).trim();
+            if (!trimmed) return null;
+            const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(/^(\d{4}-\d{2}-\d{2})\s+/, '$1T');
+            const re = /^(\d{4})-(\d{2})-(\d{2})T(\d{1,2}):(\d{2})(?::(\d{2}))?/;
+            const match = re.exec(normalized);
+            if (match) {
+                const y = parseInt(match[1], 10);
+                const mo = parseInt(match[2], 10) - 1;
+                const d = parseInt(match[3], 10);
+                const h = parseInt(match[4], 10);
+                const mi = parseInt(match[5], 10);
+                const sec = match[6] != null ? parseInt(match[6], 10) : 0;
+                const localDate = new Date(y, mo, d, h, mi, sec, 0);
+                if (isNaN(localDate.getTime())) return null;
+                return localDate.toISOString();
+            }
+            const fallback = new Date(trimmed);
+            return isNaN(fallback.getTime()) ? null : fallback.toISOString();
+        }
+
+        function setStatus(msg, kind) {
+            const el = document.getElementById('guest-status');
+            if (!el) return;
+            el.className = 'alert small ' + (kind === 'ok' ? 'alert-success' : kind === 'err' ? 'alert-danger' : 'alert-secondary');
+            el.textContent = msg;
+            el.hidden = !msg;
+        }
+
+        var fpStart = null;
+        var fpEnd = null;
+        var defaultSlotMinutes = 60;
+        var turnstileWidgetId = null;
+
+        function loadTurnstileScript() {
+            return new Promise(function (resolve, reject) {
+                if (window.turnstile) {
+                    resolve();
+                    return;
+                }
+                var s = document.createElement('script');
+                s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+                s.async = true;
+                s.defer = true;
+                s.onload = function () { resolve(); };
+                s.onerror = function () { reject(new Error('Turnstile script failed to load')); };
+                document.head.appendChild(s);
+            });
+        }
+
+        async function initTurnstileFromApi() {
+            try {
+                var base = apiBase();
+                var res = await fetch(base + '/api/studio/podcast-guest-config');
+                var json = await res.json().catch(function () { return null; });
+                if (!json || !json.success || !json.data || !json.data.turnstileSiteKey) {
+                    return;
+                }
+                await loadTurnstileScript();
+                var host = document.getElementById('turnstile-widget');
+                if (!host || !window.turnstile) return;
+                host.innerHTML = '';
+                turnstileWidgetId = window.turnstile.render('#turnstile-widget', {
+                    sitekey: json.data.turnstileSiteKey,
+                    theme: 'dark',
+                });
+            } catch (e) {
+                console.warn('[book-podcast] Turnstile:', e);
+            }
+        }
+
+        function applyStartToEndConstraints(start) {
+            if (!fpEnd || !start || isNaN(start.getTime())) return;
+            fpEnd.set('minDate', start);
+            var endSel = fpEnd.selectedDates[0];
+            var endIso = parseLocalDateTimeToISO(document.getElementById('end-time').value);
+            var endFromInput = endIso ? new Date(endIso) : null;
+            var endEffective = endSel;
+            if (!endEffective && endFromInput && !isNaN(endFromInput.getTime())) endEffective = endFromInput;
+            var endEmpty = !endEffective || isNaN(endEffective.getTime());
+            var endBeforeOrAtStart = !endEmpty && endEffective.getTime() <= start.getTime();
+            if (endEmpty || endBeforeOrAtStart) {
+                fpEnd.setDate(new Date(start.getTime() + defaultSlotMinutes * 60 * 1000), false);
+            }
+        }
+
+        function initPickers() {
+            if (typeof flatpickr === 'undefined') return;
+            fpStart = flatpickr('#start-time', {
+                enableTime: true,
+                dateFormat: 'Y-m-d H:i',
+                time_24hr: true,
+                minDate: 'today',
+                allowInput: true,
+                clickOpens: true,
+                minuteIncrement: 15,
+                onChange: function (selectedDates) {
+                    if (!fpEnd || !selectedDates[0]) return;
+                    applyStartToEndConstraints(selectedDates[0]);
+                }
+            });
+            var startInput = document.getElementById('start-time');
+            startInput.addEventListener('blur', function () {
+                if (!fpEnd) return;
+                var startIso = parseLocalDateTimeToISO(startInput.value);
+                if (!startIso) return;
+                applyStartToEndConstraints(new Date(startIso));
+            });
+            fpEnd = flatpickr('#end-time', {
+                enableTime: true,
+                dateFormat: 'Y-m-d H:i',
+                time_24hr: true,
+                minDate: 'today',
+                allowInput: true,
+                clickOpens: true,
+                minuteIncrement: 15,
+                onReady: function () {
+                    var s = fpStart && fpStart.selectedDates[0];
+                    if (s) fpEnd.set('minDate', s);
+                }
+            });
+        }
+
+        async function loadShowMeta(slug) {
+            var base = apiBase();
+            var res = await fetch(base + '/api/podcast-shows/' + encodeURIComponent(slug));
+            var json = await res.json().catch(function () { return null; });
+            if (!res.ok || !json || !json.success || !json.data) {
+                document.getElementById('show-title').textContent = 'Show not found';
+                document.getElementById('show-blurb').textContent = 'This podcast link is invalid or has been removed.';
+                document.getElementById('guest-form').hidden = true;
+                return false;
+            }
+            var d = json.data;
+            defaultSlotMinutes = d.defaultSlotMinutes || 60;
+            document.getElementById('show-title').textContent = d.displayName || slug;
+            document.getElementById('show-blurb').textContent = d.heroBlurb || '';
+            return true;
+        }
+
+        document.getElementById('guest-form').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            setStatus('', '');
+            var slug = parsePodcastSlug();
+            var guestEmail = document.getElementById('guest-email').value.trim();
+            var guestName = document.getElementById('guest-name').value.trim();
+            var message = document.getElementById('guest-message').value.trim();
+            var startIso = parseLocalDateTimeToISO(document.getElementById('start-time').value);
+            var endIso = parseLocalDateTimeToISO(document.getElementById('end-time').value);
+            if (!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+                setStatus('Please enter a valid email address.', 'err');
+                return;
+            }
+            if (!message) {
+                setStatus('Please describe who you are and what you want to talk about.', 'err');
+                return;
+            }
+            if (!startIso || !endIso) {
+                setStatus('Pick a valid start and end time.', 'err');
+                return;
+            }
+            if (new Date(startIso).getTime() >= new Date(endIso).getTime()) {
+                setStatus('End time must be after start time.', 'err');
+                return;
+            }
+            var base = apiBase();
+            var checkUrl = base + '/api/studio/schedule/check?start=' + encodeURIComponent(startIso) + '&end=' + encodeURIComponent(endIso);
+            var checkRes = await fetch(checkUrl);
+            var checkJson = await checkRes.json().catch(function () { return null; });
+            if (!checkRes.ok || !checkJson || !checkJson.success) {
+                setStatus((checkJson && checkJson.error) || 'Could not verify the time slot.', 'err');
+                return;
+            }
+            if (!checkJson.data || !checkJson.data.slotOpen) {
+                setStatus('That time overlaps an existing studio booking. Choose a different slot.', 'err');
+                return;
+            }
+            var body = {
+                podcastSlug: slug,
+                guestEmail: guestEmail,
+                startTime: startIso,
+                endTime: endIso,
+                message: message
+            };
+            if (guestName) body.guestName = guestName;
+            if (turnstileWidgetId !== null && window.turnstile) {
+                var tToken = window.turnstile.getResponse(turnstileWidgetId);
+                if (!tToken) {
+                    setStatus('Complete the verification below.', 'err');
+                    return;
+                }
+                body.turnstileToken = tToken;
+            }
+            var postRes = await fetch(base + '/api/studio/podcast-guest-requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            var postJson = await postRes.json().catch(function () { return null; });
+            if (postRes.status === 503) {
+                setStatus('This form is not fully configured yet (host notifications). Please contact the studio directly.', 'err');
+                return;
+            }
+            if (!postRes.ok || !postJson || !postJson.success) {
+                var err = (postJson && (postJson.error || postJson.message)) || 'Request failed.';
+                if (postRes.status === 409) err = 'That slot was just taken. Refresh and pick another time.';
+                setStatus(err, 'err');
+                return;
+            }
+            setStatus('Request sent. The hosts will email you if needed. You can close this page.', 'ok');
+            document.getElementById('guest-form').reset();
+            if (turnstileWidgetId !== null && window.turnstile) {
+                window.turnstile.reset(turnstileWidgetId);
+            }
+        });
+
+        (async function () {
+            var slug = parsePodcastSlug();
+            var ok = await loadShowMeta(slug);
+            if (ok) {
+                setTimeout(initPickers, 50);
+                initTurnstileFromApi();
+            }
+        })();
+    })();
+    </script>
+---
+
+<div class="container py-5 guest-booking-form">
+    <p class="text-secondary small mb-2">Direct link only — not listed on the main site.</p>
+    <h1 class="h2 mb-1" id="show-title">Loading…</h1>
+    <p class="text-secondary mb-4" id="show-blurb"></p>
+
+    <div id="guest-status" class="alert small" role="status" hidden></div>
+
+    <form id="guest-form">
+        <div class="mb-3">
+            <label for="guest-email" class="form-label">Your email</label>
+            <input type="email" class="form-control" id="guest-email" required autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="mb-3">
+            <label for="guest-name" class="form-label">Your name <span class="text-secondary fw-normal">(optional)</span></label>
+            <input type="text" class="form-control" id="guest-name" autocomplete="name">
+        </div>
+        <div class="mb-3">
+            <label for="start-time" class="form-label">Start</label>
+            <input type="text" class="form-control" id="start-time" required placeholder="Select date and time">
+        </div>
+        <div class="mb-3">
+            <label for="end-time" class="form-label">End</label>
+            <input type="text" class="form-control" id="end-time" required placeholder="Select date and time">
+        </div>
+        <div class="mb-3">
+            <label for="guest-message" class="form-label">About you &amp; topic</label>
+            <textarea class="form-control" id="guest-message" rows="5" required placeholder="Who you are and what you'd like to discuss…"></textarea>
+        </div>
+        <div id="turnstile-widget" class="mb-3" aria-live="polite"></div>
+        <button type="submit" class="btn btn-warning text-dark fw-semibold">Submit request</button>
+    </form>
+</div>

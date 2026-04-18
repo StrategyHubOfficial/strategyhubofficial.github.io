@@ -841,7 +841,11 @@ scripts: |
                     return;
                 }
 
-                const baseURL = (typeof api !== 'undefined' ? api.baseURL : null) || window.HUB_CONFIG?.apiBaseUrl || 'https://dashboard.securesovereigns.workers.dev';
+                const baseURL =
+                    (typeof api !== 'undefined' ? api.baseURL : null) ||
+                    (typeof window.getHubApiBaseUrl === 'function' ? window.getHubApiBaseUrl() : null) ||
+                    window.HUB_CONFIG?.apiBaseUrl ||
+                    'https://dashboard.securesovereigns.workers.dev';
                 const response = await fetch(`${baseURL}/api/events/${eventId}/ics`, {
                     headers: {
                         'Authorization': `Bearer ${token}`

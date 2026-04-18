@@ -302,7 +302,11 @@ title: Help & Documentation
             resultDiv.style.display = 'none';
             
             try {
-                const response = await fetch('https://dashboard.securesovereigns.workers.dev/api/support/contact', {
+                const apiBase =
+                    typeof window.getHubApiBaseUrl === 'function'
+                        ? window.getHubApiBaseUrl()
+                        : (window.HUB_CONFIG && window.HUB_CONFIG.apiBaseUrl) || 'https://dashboard.securesovereigns.workers.dev';
+                const response = await fetch(`${apiBase}/api/support/contact`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
