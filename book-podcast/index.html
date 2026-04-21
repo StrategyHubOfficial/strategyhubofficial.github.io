@@ -2,26 +2,102 @@
 layout: guest_public
 title: Book a podcast guest slot
 styles: |
+    <link rel="stylesheet" href="/dashboard/assets/css/main.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .guest-booking-form { max-width: 560px; }
-        .guest-booking-form label { font-weight: 500; margin-bottom: 0.35rem; }
+        .guest-booking-form label { font-weight: 500; margin-bottom: 0.35rem; color: var(--text-primary); }
         .guest-booking-form .form-control, .guest-booking-form textarea {
-            background: #111; border-color: #333; color: #eee;
+            background: var(--bg-card); border: 1px solid var(--border-color); color: var(--text-primary);
         }
         .guest-booking-form .form-control:focus, .guest-booking-form textarea:focus {
-            border-color: #f7931a; box-shadow: 0 0 0 0.15rem rgba(247, 147, 26, 0.25);
+            border-color: var(--bitcoin-orange); box-shadow: 0 0 0 0.15rem rgba(247, 147, 26, 0.25);
         }
-        .flatpickr-calendar { background: #1a1a1a !important; color: #eee !important; border-color: #333 !important; }
-        .flatpickr-day.selected { background: #f7931a !important; border-color: #f7931a !important; }
+        .flatpickr-calendar {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        .flatpickr-months { background: var(--bg-darker) !important; }
+        .flatpickr-month, .flatpickr-current-month, .flatpickr-month .flatpickr-current-month { color: var(--text-primary) !important; }
+        .flatpickr-prev-month, .flatpickr-next-month {
+            color: var(--text-primary) !important;
+            fill: var(--text-primary) !important;
+        }
+        .flatpickr-prev-month:hover, .flatpickr-next-month:hover {
+            color: var(--bitcoin-orange) !important;
+            fill: var(--bitcoin-orange) !important;
+        }
+        .flatpickr-month .flatpickr-current-month select {
+            background: var(--bg-darker) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        .flatpickr-month .flatpickr-current-month select option {
+            background: var(--bg-card) !important;
+            color: var(--text-primary) !important;
+        }
+        .flatpickr-weekdays { background: var(--bg-darker) !important; }
+        .flatpickr-weekday { color: var(--text-secondary) !important; }
+        .flatpickr-day { color: var(--text-primary) !important; }
+        .flatpickr-day:hover {
+            background: rgba(247, 147, 26, 0.2) !important;
+            border-color: var(--bitcoin-orange) !important;
+        }
+        .flatpickr-day.selected {
+            background: var(--bitcoin-orange) !important;
+            border-color: var(--bitcoin-orange) !important;
+            color: var(--bg-darker) !important;
+        }
+        .flatpickr-day.today { border-color: var(--bitcoin-orange) !important; }
+        .flatpickr-day.flatpickr-disabled { color: var(--text-muted) !important; opacity: 0.35; }
         #guest-status.alert-danger { background: #3f1d1d; border-color: #7f1d1d; color: #fecaca; }
         #guest-status.alert-success { background: #14532d; border-color: #166534; color: #bbf7d0; }
-        #turnstile-widget { min-height: 65px; margin-bottom: 0.5rem; }
+        #turnstile-widget { min-height: 65px; margin-bottom: 1rem; }
+        .time-slots-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+        .time-slot-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            text-align: left;
+            max-width: 100%;
+        }
+        .time-slot-btn:hover:not(:disabled) {
+            border-color: var(--bitcoin-orange);
+            background: rgba(247, 147, 26, 0.12);
+        }
+        .time-slot-btn.selected {
+            border-color: var(--bitcoin-orange);
+            box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.35);
+        }
+        .time-slot-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .time-slot-btn .slot-primary { font-weight: 600; }
+        .time-slot-btn .slot-secondary { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; }
+        #time-slots-loading { color: var(--text-secondary); font-size: 0.9rem; }
     </style>
 scripts: |
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.5.0/build/global/luxon.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
     (function () {
+        var STUDIO_TZ = 'America/New_York';
+        /** 1-hour blocks, 11 AM–5 PM Eastern (last start 4 PM); Tue–Thu only */
+        var SLOT_START_HOURS_ET = [11, 12, 13, 14, 15, 16];
+        var userTimeZone = (function () {
+            try {
+                return Intl.DateTimeFormat().resolvedOptions().timeZone || STUDIO_TZ;
+            } catch (e) {
+                return STUDIO_TZ;
+            }
+        })();
+
         function apiBase() {
             return typeof window.getHubApiBaseUrl === 'function'
                 ? window.getHubApiBaseUrl()
@@ -36,28 +112,6 @@ scripts: |
             return 'bitcoin-district';
         }
 
-        function parseLocalDateTimeToISO(raw) {
-            if (raw == null) return null;
-            const trimmed = String(raw).trim();
-            if (!trimmed) return null;
-            const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(/^(\d{4}-\d{2}-\d{2})\s+/, '$1T');
-            const re = /^(\d{4})-(\d{2})-(\d{2})T(\d{1,2}):(\d{2})(?::(\d{2}))?/;
-            const match = re.exec(normalized);
-            if (match) {
-                const y = parseInt(match[1], 10);
-                const mo = parseInt(match[2], 10) - 1;
-                const d = parseInt(match[3], 10);
-                const h = parseInt(match[4], 10);
-                const mi = parseInt(match[5], 10);
-                const sec = match[6] != null ? parseInt(match[6], 10) : 0;
-                const localDate = new Date(y, mo, d, h, mi, sec, 0);
-                if (isNaN(localDate.getTime())) return null;
-                return localDate.toISOString();
-            }
-            const fallback = new Date(trimmed);
-            return isNaN(fallback.getTime()) ? null : fallback.toISOString();
-        }
-
         function setStatus(msg, kind) {
             const el = document.getElementById('guest-status');
             if (!el) return;
@@ -66,10 +120,151 @@ scripts: |
             el.hidden = !msg;
         }
 
-        var fpStart = null;
-        var fpEnd = null;
-        var defaultSlotMinutes = 60;
+        var fpDate = null;
         var turnstileWidgetId = null;
+        var selectedStartIso = null;
+        var selectedEndIso = null;
+
+        function getDateTime() {
+            if (typeof luxon === 'undefined') return null;
+            return luxon.DateTime;
+        }
+
+        function slotRangeForYmdHour(ymd, hourET) {
+            var DateTime = getDateTime();
+            if (!DateTime) return null;
+            var parts = ymd.split('-').map(function (x) { return parseInt(x, 10); });
+            var y = parts[0], m = parts[1], d = parts[2];
+            var start = DateTime.fromObject(
+                { year: y, month: m, day: d, hour: hourET, minute: 0, second: 0, millisecond: 0 },
+                { zone: STUDIO_TZ }
+            );
+            if (!start.isValid) return null;
+            var end = start.plus({ hours: 1 });
+            return { start: start, end: end, startIso: start.toISO(), endIso: end.toISO() };
+        }
+
+        function formatSlotButtonLines(start) {
+            var DateTime = getDateTime();
+            if (!DateTime) return { primary: '', secondary: '' };
+            var end = start.plus({ hours: 1 });
+            var su = start.setZone(userTimeZone);
+            var eu = end.setZone(userTimeZone);
+            var primary = su.toFormat('h:mm a') + ' – ' + eu.toFormat('h:mm a');
+            var ss = start.setZone(STUDIO_TZ);
+            var es = end.setZone(STUDIO_TZ);
+            var secondary = 'Eastern: ' + ss.toFormat('h:mm a') + ' – ' + es.toFormat('h:mm a');
+            return { primary: primary, secondary: secondary };
+        }
+
+        /** Flatpickr gives local calendar Date; Tue–Thu matches Gregorian weekday for that cell */
+        function isStudioBookingWeekday(date) {
+            var dow = date.getDay();
+            return dow === 2 || dow === 3 || dow === 4;
+        }
+
+        async function checkSlotOpen(startIso, endIso) {
+            var base = apiBase();
+            var url = base + '/api/studio/schedule/check?start=' + encodeURIComponent(startIso) + '&end=' + encodeURIComponent(endIso);
+            var res = await fetch(url);
+            var json = await res.json().catch(function () { return null; });
+            if (!res.ok || !json || !json.success) return false;
+            return !!(json.data && json.data.slotOpen);
+        }
+
+        function clearSlotSelection() {
+            selectedStartIso = null;
+            selectedEndIso = null;
+            document.querySelectorAll('.time-slot-btn').forEach(function (b) { b.classList.remove('selected'); });
+        }
+
+        async function renderTimeSlots(ymd) {
+            var section = document.getElementById('time-slots-section');
+            var wrap = document.getElementById('time-slots');
+            var loading = document.getElementById('time-slots-loading');
+            var hint = document.getElementById('timezone-hint');
+            if (!wrap || !section) return;
+            clearSlotSelection();
+            wrap.innerHTML = '';
+            section.hidden = false;
+            if (loading) loading.hidden = false;
+            if (hint) {
+                hint.textContent =
+                    'Your timezone was detected as ' + userTimeZone + '. Times below are shown in your local time. ' +
+                    'Availability is Tuesday–Thursday, 11 AM–5 PM Eastern Time (America/New_York).';
+            }
+
+            var DateTime = getDateTime();
+            if (!DateTime) {
+                if (loading) loading.hidden = true;
+                wrap.innerHTML = '<p class="text-secondary small">Could not load time library.</p>';
+                return;
+            }
+
+            var partsCheck = ymd.split('-').map(function (x) { return parseInt(x, 10); });
+            var noonEt = DateTime.fromObject(
+                { year: partsCheck[0], month: partsCheck[1], day: partsCheck[2], hour: 12, minute: 0, second: 0, millisecond: 0 },
+                { zone: STUDIO_TZ }
+            );
+            var wd = noonEt.weekday;
+            if (wd !== 2 && wd !== 3 && wd !== 4) {
+                if (loading) loading.hidden = true;
+                wrap.innerHTML = '<p class="text-secondary small">Bookings are only on Tuesday, Wednesday, and Thursday (Eastern).</p>';
+                return;
+            }
+
+            var checks = [];
+            for (var i = 0; i < SLOT_START_HOURS_ET.length; i++) {
+                var hour = SLOT_START_HOURS_ET[i];
+                var range = slotRangeForYmdHour(ymd, hour);
+                if (!range) continue;
+                var nowStudio = DateTime.now().setZone(STUDIO_TZ);
+                if (range.start <= nowStudio) continue;
+                checks.push({ hour: hour, range: range });
+            }
+            if (checks.length === 0) {
+                if (loading) loading.hidden = true;
+                wrap.innerHTML = '<p class="text-secondary small">No remaining slots for that day (Eastern Time). Try another date.</p>';
+                return;
+            }
+
+            var results = await Promise.all(
+                checks.map(function (c) {
+                    return checkSlotOpen(c.range.startIso, c.range.endIso).then(function (open) {
+                        return { range: c.range, open: open };
+                    });
+                })
+            );
+
+            if (loading) loading.hidden = true;
+            wrap.innerHTML = '';
+
+            var any = false;
+            results.forEach(function (r) {
+                var lines = formatSlotButtonLines(r.range.start);
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'time-slot-btn';
+                btn.disabled = !r.open;
+                btn.innerHTML =
+                    '<span class="slot-primary">' + lines.primary + '</span>' +
+                    '<div class="slot-secondary">' + lines.secondary + (r.open ? '' : ' · Unavailable') + '</div>';
+                if (r.open) {
+                    any = true;
+                    btn.addEventListener('click', function () {
+                        clearSlotSelection();
+                        btn.classList.add('selected');
+                        selectedStartIso = r.range.startIso;
+                        selectedEndIso = r.range.endIso;
+                    });
+                }
+                wrap.appendChild(btn);
+            });
+
+            if (!any) {
+                wrap.innerHTML = '<p class="text-secondary small">No open 1-hour slots that day. Try another date.</p>';
+            }
+        }
 
         function loadTurnstileScript() {
             return new Promise(function (resolve, reject) {
@@ -108,55 +303,27 @@ scripts: |
             }
         }
 
-        function applyStartToEndConstraints(start) {
-            if (!fpEnd || !start || isNaN(start.getTime())) return;
-            fpEnd.set('minDate', start);
-            var endSel = fpEnd.selectedDates[0];
-            var endIso = parseLocalDateTimeToISO(document.getElementById('end-time').value);
-            var endFromInput = endIso ? new Date(endIso) : null;
-            var endEffective = endSel;
-            if (!endEffective && endFromInput && !isNaN(endFromInput.getTime())) endEffective = endFromInput;
-            var endEmpty = !endEffective || isNaN(endEffective.getTime());
-            var endBeforeOrAtStart = !endEmpty && endEffective.getTime() <= start.getTime();
-            if (endEmpty || endBeforeOrAtStart) {
-                fpEnd.setDate(new Date(start.getTime() + defaultSlotMinutes * 60 * 1000), false);
-            }
-        }
-
-        function initPickers() {
+        function initDatePicker() {
             if (typeof flatpickr === 'undefined') return;
-            fpStart = flatpickr('#start-time', {
-                enableTime: true,
-                dateFormat: 'Y-m-d H:i',
-                time_24hr: true,
+            fpDate = flatpickr('#booking-date', {
+                enableTime: false,
+                dateFormat: 'Y-m-d',
                 minDate: 'today',
-                allowInput: true,
+                allowInput: false,
                 clickOpens: true,
-                minuteIncrement: 15,
-                onChange: function (selectedDates) {
-                    if (!fpEnd || !selectedDates[0]) return;
-                    applyStartToEndConstraints(selectedDates[0]);
-                }
-            });
-            var startInput = document.getElementById('start-time');
-            startInput.addEventListener('blur', function () {
-                if (!fpEnd) return;
-                var startIso = parseLocalDateTimeToISO(startInput.value);
-                if (!startIso) return;
-                applyStartToEndConstraints(new Date(startIso));
-            });
-            fpEnd = flatpickr('#end-time', {
-                enableTime: true,
-                dateFormat: 'Y-m-d H:i',
-                time_24hr: true,
-                minDate: 'today',
-                allowInput: true,
-                clickOpens: true,
-                minuteIncrement: 15,
-                onReady: function () {
-                    var s = fpStart && fpStart.selectedDates[0];
-                    if (s) fpEnd.set('minDate', s);
-                }
+                disable: [
+                    function (date) {
+                        return !isStudioBookingWeekday(date);
+                    },
+                ],
+                onChange: function (selectedDates, dateStr) {
+                    clearSlotSelection();
+                    if (!dateStr) {
+                        document.getElementById('time-slots-section').hidden = true;
+                        return;
+                    }
+                    renderTimeSlots(dateStr);
+                },
             });
         }
 
@@ -171,7 +338,6 @@ scripts: |
                 return false;
             }
             var d = json.data;
-            defaultSlotMinutes = d.defaultSlotMinutes || 60;
             document.getElementById('show-title').textContent = d.displayName || slug;
             document.getElementById('show-blurb').textContent = d.heroBlurb || '';
             return true;
@@ -184,8 +350,6 @@ scripts: |
             var guestEmail = document.getElementById('guest-email').value.trim();
             var guestName = document.getElementById('guest-name').value.trim();
             var message = document.getElementById('guest-message').value.trim();
-            var startIso = parseLocalDateTimeToISO(document.getElementById('start-time').value);
-            var endIso = parseLocalDateTimeToISO(document.getElementById('end-time').value);
             if (!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
                 setStatus('Please enter a valid email address.', 'err');
                 return;
@@ -194,16 +358,12 @@ scripts: |
                 setStatus('Please describe who you are and what you want to talk about.', 'err');
                 return;
             }
-            if (!startIso || !endIso) {
-                setStatus('Pick a valid start and end time.', 'err');
-                return;
-            }
-            if (new Date(startIso).getTime() >= new Date(endIso).getTime()) {
-                setStatus('End time must be after start time.', 'err');
+            if (!selectedStartIso || !selectedEndIso) {
+                setStatus('Choose a date, then select an available time.', 'err');
                 return;
             }
             var base = apiBase();
-            var checkUrl = base + '/api/studio/schedule/check?start=' + encodeURIComponent(startIso) + '&end=' + encodeURIComponent(endIso);
+            var checkUrl = base + '/api/studio/schedule/check?start=' + encodeURIComponent(selectedStartIso) + '&end=' + encodeURIComponent(selectedEndIso);
             var checkRes = await fetch(checkUrl);
             var checkJson = await checkRes.json().catch(function () { return null; });
             if (!checkRes.ok || !checkJson || !checkJson.success) {
@@ -211,14 +371,14 @@ scripts: |
                 return;
             }
             if (!checkJson.data || !checkJson.data.slotOpen) {
-                setStatus('That time overlaps an existing studio booking. Choose a different slot.', 'err');
+                setStatus('That time is no longer available. Choose another slot.', 'err');
                 return;
             }
             var body = {
                 podcastSlug: slug,
                 guestEmail: guestEmail,
-                startTime: startIso,
-                endTime: endIso,
+                startTime: selectedStartIso,
+                endTime: selectedEndIso,
                 message: message
             };
             if (guestName) body.guestName = guestName;
@@ -248,6 +408,10 @@ scripts: |
             }
             setStatus('Request sent. The hosts will email you if needed. You can close this page.', 'ok');
             document.getElementById('guest-form').reset();
+            clearSlotSelection();
+            if (fpDate) fpDate.clear();
+            document.getElementById('time-slots-section').hidden = true;
+            document.getElementById('time-slots').innerHTML = '';
             if (turnstileWidgetId !== null && window.turnstile) {
                 window.turnstile.reset(turnstileWidgetId);
             }
@@ -257,7 +421,7 @@ scripts: |
             var slug = parsePodcastSlug();
             var ok = await loadShowMeta(slug);
             if (ok) {
-                setTimeout(initPickers, 50);
+                setTimeout(initDatePicker, 50);
                 initTurnstileFromApi();
             }
         })();
@@ -282,12 +446,15 @@ scripts: |
             <input type="text" class="form-control" id="guest-name" autocomplete="name">
         </div>
         <div class="mb-3">
-            <label for="start-time" class="form-label">Start</label>
-            <input type="text" class="form-control" id="start-time" required placeholder="Select date and time">
+            <label for="booking-date" class="form-label">Date</label>
+            <input type="text" class="form-control" id="booking-date" readonly placeholder="Tuesday–Thursday" autocomplete="off">
         </div>
-        <div class="mb-3">
-            <label for="end-time" class="form-label">End</label>
-            <input type="text" class="form-control" id="end-time" required placeholder="Select date and time">
+        <div class="mb-3" id="time-slots-section" hidden>
+            <label class="form-label">Available times</label>
+            <p class="small text-secondary mb-1" id="timezone-hint"></p>
+            <p class="small text-secondary mb-2" id="studio-hours-note">Sessions are 1 hour. Open days: Tuesday, Wednesday, Thursday (Eastern). Hours: 11 AM–5 PM Eastern — shown below in your local timezone.</p>
+            <p id="time-slots-loading" class="small" hidden>Checking availability…</p>
+            <div id="time-slots" class="time-slots-grid" role="group" aria-label="Available start times"></div>
         </div>
         <div class="mb-3">
             <label for="guest-message" class="form-label">About you &amp; topic</label>

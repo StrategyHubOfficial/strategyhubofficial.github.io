@@ -57,8 +57,7 @@ test.describe('Book podcast guest (public)', () => {
     await expect(page.locator('#show-title')).toContainText('Bitcoin District');
     await expect(page.locator('#guest-email')).toBeVisible();
     await expect(page.locator('#guest-message')).toBeVisible();
-    await expect(page.locator('#start-time')).toBeVisible();
-    await expect(page.locator('#end-time')).toBeVisible();
+    await expect(page.locator('#booking-date')).toBeVisible();
   });
 
   test('submit sends POST with podcast slug', async ({ page }) => {
@@ -77,13 +76,23 @@ test.describe('Book podcast guest (public)', () => {
 
     await page.goto('/book-podcast/?podcast=bitcoin-district');
     await page.waitForSelector('#guest-form');
+    await page.waitForFunction(
+      () => {
+        const el = document.getElementById('booking-date');
+        return el && el._flatpickr;
+      },
+      null,
+      { timeout: 15000 }
+    );
 
     await page.evaluate(() => {
       document.getElementById('guest-email').value = 'guest@example.com';
       document.getElementById('guest-message').value = 'E2E test message about the episode.';
-      document.getElementById('start-time').value = '2099-01-15 14:00';
-      document.getElementById('end-time').value = '2099-01-15 15:00';
+      document.getElementById('booking-date')._flatpickr.setDate('2099-06-09', true);
     });
+
+    await page.waitForSelector('.time-slot-btn:not([disabled])', { timeout: 15000 });
+    await page.locator('.time-slot-btn:not([disabled])').first().click();
 
     await page.locator('#guest-form').evaluate((el) => el.requestSubmit());
 
@@ -91,6 +100,9 @@ test.describe('Book podcast guest (public)', () => {
     expect(posted.podcastSlug).toBe('bitcoin-district');
     expect(posted.guestEmail).toBe('guest@example.com');
     expect(posted.message).toContain('E2E test');
+    expect(posted.startTime).toBeTruthy();
+    expect(posted.endTime).toBeTruthy();
+    expect(posted.startTime).toMatch(/^2099-06-09T/);
   });
 
   test('pretty path redirects toward booking query', async ({ page }) => {
