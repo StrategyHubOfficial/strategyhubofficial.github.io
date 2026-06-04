@@ -89,7 +89,7 @@ styles: |
 <script>
 (function () {
     function guestBookingUrl(slug) {
-        var base =
+        const base =
             typeof window.getHubFrontendBaseUrl === 'function'
                 ? window.getHubFrontendBaseUrl()
                 : (window.HUB_CONFIG && window.HUB_CONFIG.frontendUrl
@@ -99,7 +99,7 @@ styles: |
     }
 
     async function waitDeps() {
-        var n = 0;
+        let n = 0;
         while ((typeof auth === 'undefined' || typeof api === 'undefined' || typeof toast === 'undefined') && n < 120) {
             await new Promise(function (r) { setTimeout(r, 50); });
             n++;
@@ -107,23 +107,23 @@ styles: |
     }
 
     function escapeHtml(text) {
-        if (text == null) return '';
-        var div = document.createElement('div');
+        if (text === null || text === undefined) {return '';}
+        const div = document.createElement('div');
         div.textContent = String(text);
         return div.innerHTML;
     }
 
-    var builtInSlugs = [];
-    var shows = {};
+    let builtInSlugs = [];
+    let shows = {};
 
     async function loadRegistry() {
         try {
-            var response = await api.getPodcastRegistry();
+            const response = await api.getPodcastRegistry();
             if (!response.success) {
                 toast.error(response.error || 'Failed to load registry');
                 return;
             }
-            var d = response.data || {};
+            const d = response.data || {};
             builtInSlugs = Array.isArray(d.builtInSlugs) ? d.builtInSlugs : [];
             shows = d.shows && typeof d.shows === 'object' ? d.shows : {};
             render();
@@ -135,24 +135,24 @@ styles: |
     }
 
     function render() {
-        var el = document.getElementById('reg-container');
-        var slugs = Object.keys(shows).sort();
+        const el = document.getElementById('reg-container');
+        const slugs = Object.keys(shows).sort();
         if (!slugs.length) {
             el.innerHTML = '<div class="empty-state">No shows in merged registry.</div>';
             return;
         }
-        var rows = slugs.map(function (slug) {
-            var s = shows[slug];
-            var builtIn = builtInSlugs.indexOf(slug) !== -1;
-            var emails = (s.notifyEmails && s.notifyEmails.length) ? s.notifyEmails.join(', ') : '(none — env fallback may apply)';
-            var blurb = (s.heroBlurb || '').length > 120 ? (s.heroBlurb.slice(0, 117) + '…') : (s.heroBlurb || '—');
-            var guestUrl = guestBookingUrl(slug);
+        const rows = slugs.map(function (slug) {
+            const s = shows[slug];
+            const builtIn = builtInSlugs.indexOf(slug) !== -1;
+            const emails = (s.notifyEmails && s.notifyEmails.length) ? s.notifyEmails.join(', ') : '(none — env fallback may apply)';
+            const blurb = (s.heroBlurb || '').length > 120 ? (s.heroBlurb.slice(0, 117) + '…') : (s.heroBlurb || '—');
+            const guestUrl = guestBookingUrl(slug);
             return (
                 '<tr>' +
                 '<td><code>' + escapeHtml(slug) + '</code>' + (builtIn ? '<span class="badge-built-in">built-in</span>' : '') + '</td>' +
                 '<td>' + escapeHtml(s.displayName || '') + '</td>' +
                 '<td class="emails-preview">' + escapeHtml(emails) + '</td>' +
-                '<td>' + escapeHtml(String(s.defaultSlotMinutes != null ? s.defaultSlotMinutes : 60)) + '</td>' +
+                '<td>' + escapeHtml(String(s.defaultSlotMinutes ?? 60)) + '</td>' +
                 '<td>' + escapeHtml(blurb) + '</td>' +
                 '<td><a href="' + escapeHtml(guestUrl) + '" target="_blank" rel="noopener">Open guest page</a></td>' +
                 '<td class="reg-actions">' +
@@ -175,18 +175,18 @@ styles: |
     }
 
     function openEdit(slug) {
-        var modal = document.getElementById('edit-modal');
-        var title = document.getElementById('edit-modal-title');
-        var fSlug = document.getElementById('f-slug');
-        var isNew = !slug;
+        const modal = document.getElementById('edit-modal');
+        const title = document.getElementById('edit-modal-title');
+        const fSlug = document.getElementById('f-slug');
+        const isNew = !slug;
         title.textContent = isNew ? 'Add show' : 'Edit show';
         fSlug.disabled = !isNew;
         fSlug.value = slug || '';
         if (slug && shows[slug]) {
-            var s = shows[slug];
+            const s = shows[slug];
             document.getElementById('f-name').value = s.displayName || '';
             document.getElementById('f-blurb').value = s.heroBlurb || '';
-            document.getElementById('f-slot').value = String(s.defaultSlotMinutes != null ? s.defaultSlotMinutes : 60);
+            document.getElementById('f-slot').value = String(s.defaultSlotMinutes ?? 60);
             document.getElementById('f-emails').value = (s.notifyEmails && s.notifyEmails.length) ? s.notifyEmails.join(', ') : '';
         } else {
             document.getElementById('f-name').value = '';
@@ -195,7 +195,7 @@ styles: |
             document.getElementById('f-emails').value = '';
         }
         modal.classList.add('show');
-        if (isNew) fSlug.focus();
+        if (isNew) {fSlug.focus();}
     }
 
     function closeModal() {
@@ -203,25 +203,25 @@ styles: |
     }
 
     function parseEmails(raw) {
-        if (!raw || !String(raw).trim()) return [];
+        if (!raw || !String(raw).trim()) {return [];}
         return String(raw).split(/[,;\n]+/).map(function (e) { return e.trim().toLowerCase(); }).filter(Boolean);
     }
 
     document.getElementById('edit-form').addEventListener('submit', async function (e) {
         e.preventDefault();
-        var slug = document.getElementById('f-slug').value.trim().toLowerCase();
+        const slug = document.getElementById('f-slug').value.trim().toLowerCase();
         if (!slug) {
             toast.error('Slug is required');
             return;
         }
-        var payload = {
+        const payload = {
             displayName: document.getElementById('f-name').value.trim(),
             heroBlurb: document.getElementById('f-blurb').value.trim() || undefined,
             defaultSlotMinutes: parseInt(document.getElementById('f-slot').value, 10) || 60,
             notifyEmails: parseEmails(document.getElementById('f-emails').value),
         };
         try {
-            var res = await api.putPodcastRegistryShow(slug, payload);
+            const res = await api.putPodcastRegistryShow(slug, payload);
             if (res.success) {
                 toast.success('Saved');
                 closeModal();
@@ -241,14 +241,14 @@ styles: |
     });
 
     async function removeShow(slug) {
-        if (!slug) return;
-        var builtIn = builtInSlugs.indexOf(slug) !== -1;
-        var msg = builtIn
+        if (!slug) {return;}
+        const builtIn = builtInSlugs.indexOf(slug) !== -1;
+        const msg = builtIn
             ? 'Remove the saved override for "' + slug + '" and revert to the built-in default? (Built-in shows cannot be fully deleted.)'
             : 'Delete "' + slug + '" from the registry file? Guest links for this slug will stop working.';
-        if (!confirm(msg)) return;
+        if (!confirm(msg)) {return;}
         try {
-            var res = await api.deletePodcastRegistryShow(slug);
+            const res = await api.deletePodcastRegistryShow(slug);
             if (res.success) {
                 toast.success('Removed');
                 if (res.data && res.data.registry && res.data.registry.shows) {
@@ -268,15 +268,15 @@ styles: |
 
     document.getElementById('modal-cancel').addEventListener('click', closeModal);
     document.getElementById('edit-modal').addEventListener('click', function (e) {
-        if (e.target.id === 'edit-modal') closeModal();
+        if (e.target.id === 'edit-modal') {closeModal();}
     });
     document.getElementById('btn-add').addEventListener('click', function () { openEdit(null); });
     document.getElementById('btn-refresh').addEventListener('click', loadRegistry);
 
     (async function init() {
         await waitDeps();
-        var ok = await auth.requireAuth();
-        if (!ok) return;
+        const ok = await auth.requireAuth();
+        if (!ok) {return;}
         await loadRegistry();
     })();
 })();

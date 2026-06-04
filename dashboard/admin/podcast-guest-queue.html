@@ -51,7 +51,7 @@ styles: |
 <script>
 (function () {
     async function waitDeps() {
-        var n = 0;
+        let n = 0;
         while ((typeof auth === 'undefined' || typeof api === 'undefined' || typeof toast === 'undefined') && n < 120) {
             await new Promise(function (r) { setTimeout(r, 50); });
             n++;
@@ -59,19 +59,19 @@ styles: |
     }
 
     function escapeHtml(text) {
-        if (text == null) return '';
-        var div = document.createElement('div');
+        if (text === null || text === undefined) {return '';}
+        const div = document.createElement('div');
         div.textContent = String(text);
         return div.innerHTML;
     }
 
-    var rows = [];
+    let rows = [];
 
     async function loadQueue() {
-        var slug = document.getElementById('filter-slug').value.trim();
-        var path = '/api/studio/podcast-guest-requests';
-        if (slug) path += '?podcastSlug=' + encodeURIComponent(slug);
-        var response = await api.get(path);
+        const slug = document.getElementById('filter-slug').value.trim();
+        let path = '/api/studio/podcast-guest-requests';
+        if (slug) {path += '?podcastSlug=' + encodeURIComponent(slug);}
+        const response = await api.get(path);
         if (!response.success) {
             toast.error(response.error || 'Failed to load queue');
             return;
@@ -81,22 +81,22 @@ styles: |
     }
 
     function render() {
-        var el = document.getElementById('queue-container');
+        const el = document.getElementById('queue-container');
         if (!rows.length) {
             el.innerHTML = '<div class="empty-state">No requests in the queue.</div>';
             return;
         }
         el.innerHTML = rows.map(function (r) {
-            var start = new Date(r.startTime).toLocaleString();
-            var end = new Date(r.endTime).toLocaleString();
-            var created = new Date(r.createdAt).toLocaleString();
-            var st = r.status === 'accepted' || r.status === 'rejected' ? r.status : 'pending';
-            var badgeClass = 'badge-status ' + st;
-            var bookingLine = '';
+            const start = new Date(r.startTime).toLocaleString();
+            const end = new Date(r.endTime).toLocaleString();
+            const created = new Date(r.createdAt).toLocaleString();
+            const st = r.status === 'accepted' || r.status === 'rejected' ? r.status : 'pending';
+            const badgeClass = 'badge-status ' + st;
+            let bookingLine = '';
             if (st === 'accepted' && r.bookingId) {
                 bookingLine = '<div class="queue-card-meta" style="margin-top:0.35rem"><span><strong>Booking:</strong> <code>' + escapeHtml(r.bookingId) + '</code> (see Studio calendar)</span></div>';
             }
-            var pendingActions = st === 'pending'
+            const pendingActions = st === 'pending'
                 ? '<button type="button" class="btn-accept resolve-btn" data-id="' + escapeHtml(r.id) + '" data-action="accept">Accept</button>' +
                   '<button type="button" class="btn-reject resolve-btn" data-id="' + escapeHtml(r.id) + '" data-action="reject">Reject</button>'
                 : '';
@@ -137,11 +137,11 @@ styles: |
     }
 
     async function resolveRequest(id, action) {
-        if (!id || !action) return;
-        var label = action === 'accept' ? 'Accept this request and create a studio booking on your account?' : 'Reject this guest request?';
-        if (!confirm(label)) return;
+        if (!id || !action) {return;}
+        const label = action === 'accept' ? 'Accept this request and create a studio booking on your account?' : 'Reject this guest request?';
+        if (!confirm(label)) {return;}
         try {
-            var response = await api.resolvePodcastGuestRequest(id, action);
+            const response = await api.resolvePodcastGuestRequest(id, action);
             if (response.success) {
                 toast.success(action === 'accept' ? 'Accepted — booking created' : 'Request rejected');
                 await loadQueue();
@@ -155,9 +155,9 @@ styles: |
     }
 
     async function dismissRequest(id) {
-        if (!id || !confirm('Remove this request from the queue?')) return;
+        if (!id || !confirm('Remove this request from the queue?')) {return;}
         try {
-            var response = await api.delete('/api/studio/podcast-guest-requests/' + encodeURIComponent(id));
+            const response = await api.delete('/api/studio/podcast-guest-requests/' + encodeURIComponent(id));
             if (response.success) {
                 toast.success('Removed from queue');
                 await loadQueue();
@@ -172,8 +172,8 @@ styles: |
 
     (async function init() {
         await waitDeps();
-        var ok = await auth.requireAuth();
-        if (!ok) return;
+        const ok = await auth.requireAuth();
+        if (!ok) {return;}
         document.getElementById('btn-refresh').addEventListener('click', loadQueue);
         document.getElementById('filter-slug').addEventListener('change', loadQueue);
         await loadQueue();
