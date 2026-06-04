@@ -16,7 +16,7 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https: blob:; font-src 'self' data: https:; connect-src 'self' https://dashboard.securesovereigns.workers.dev https://*.tile.openstreetmap.org https://*.openstreetmap.org https://router.project-osrm.org https://raw.githubusercontent.com;">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="manifest" href="/dashboard/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#f7931a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1036,28 +1036,63 @@
             initMap();
         })();
 
-        // Load portfolio projects
+        // Load portfolio projects (API when available, else static JSON fallback)
         (async function() {
             try {
-                const response = await fetch('/projects/projects.json');
-                const data = await response.json();
-                
+                let projects = [];
+                const apiBase = typeof window.getHubApiBaseUrl === 'function'
+                    ? window.getHubApiBaseUrl()
+                    : (window.HUB_CONFIG && window.HUB_CONFIG.apiBaseUrl);
+                if (apiBase) {
+                    try {
+                        const apiRes = await fetch(apiBase + '/api/projects/portfolio');
+                        const apiJson = await apiRes.json();
+                        if (apiJson.success && Array.isArray(apiJson.data) && apiJson.data.length > 0) {
+                            projects = apiJson.data;
+                        }
+                    } catch (apiErr) {
+                        console.warn('Portfolio API unavailable, using static fallback:', apiErr);
+                    }
+                }
+                if (projects.length === 0) {
+                    const response = await fetch('/projects/projects.json');
+                    const data = await response.json();
+                    if (data.success && Array.isArray(data.data)) {
+                        projects = data.data;
+                    } else if (Array.isArray(data)) {
+                        projects = data;
+                    }
+                }
+
                 const loading = document.getElementById('portfolio-loading');
                 const grid = document.getElementById('portfolio-grid');
                 const empty = document.getElementById('portfolio-empty');
-                
-                if (data.success && data.data && data.data.length > 0) {
+
+                if (projects.length > 0) {
                     loading.style.display = 'none';
                     grid.style.display = 'grid';
                     
-                    grid.innerHTML = data.data.map(project => {
+                    grid.innerHTML = projects.map(project => {
+                        const escapeAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;');
+                        const escapeHtml = (s) => {
+                            const div = document.createElement('div');
+                            div.textContent = s == null ? '' : String(s);
+                            return div.innerHTML;
+                        };
+                        const safeHttpUrl = (url) => {
+                            try {
+                                const u = new URL(String(url));
+                                if (u.protocol === 'http:' || u.protocol === 'https:') return u.href;
+                            } catch (_) {}
+                            return '';
+                        };
                         const skills = project.skillsNeeded || [];
                         const tags = project.tags || [];
                         const socialLinks = project.socialLinks || {};
                         const collaborationBadge = project.lookingForCollaboration 
                             ? '<span style="display: inline-block; background: rgba(247, 147, 26, 0.2); color: #f7931a; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; margin-bottom: 1rem;">Looking for Collaboration</span>'
                             : '';
-                        const logo = project.logoUrl ? `<div class="card-logo"><img src="${project.logoUrl}" alt="${project.name}" /></div>` : '';
+                        const logo = project.logoUrl ? `<div class="card-logo"><img src="${escapeAttr(project.logoUrl)}" alt="${escapeHtml(project.name)}" /></div>` : '';
                         const labels = { x: 'X', twitter: 'X', linkedin: 'LinkedIn', github: 'GitHub', youtube: 'YouTube', telegram: 'Telegram', substack: 'Substack', luma: 'Luma', meetup: 'Meetup', spotify: 'Spotify', facebook: 'Facebook', instagram: 'Instagram' };
                         const socialIconClass = {
                             x: 'fa-brands fa-x-twitter',
@@ -1073,31 +1108,34 @@
                             facebook: 'fa-brands fa-facebook-f',
                             instagram: 'fa-brands fa-instagram'
                         };
-                        const escapeAttr = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                        const websiteLine = project.website
-                            ? `<p style="margin-top: 0.5rem;"><a href="${project.website}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a></p>`
+                        const siteUrl = project.website ? safeHttpUrl(project.website) : '';
+                        const websiteLine = siteUrl
+                            ? `<p style="margin-top: 0.5rem;"><a href="${escapeAttr(siteUrl)}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">Visit website →</a></p>`
                             : '';
                         const socialLine = Object.keys(socialLinks).length > 0
-                            ? `<p class="portfolio-social-line" style="margin-top: ${project.website ? '0.75' : '0.5'}rem;">${Object.entries(socialLinks).map(([k, v]) => {
+                            ? `<p class="portfolio-social-line" style="margin-top: ${siteUrl ? '0.75' : '0.5'}rem;">${Object.entries(socialLinks).map(([k, v]) => {
+                                const href = safeHttpUrl(v);
+                                if (!href) return '';
                                 const labelText = labels[k] || k;
                                 const iconClass = socialIconClass[k] || 'fa-solid fa-link';
                                 const t = escapeAttr(labelText);
-                                return `<a href="${v}" target="_blank" rel="noopener noreferrer" class="portfolio-social-link" title="${t}" aria-label="${t}"><i class="${iconClass}" aria-hidden="true"></i></a>`;
+                                return `<a href="${escapeAttr(href)}" target="_blank" rel="noopener noreferrer" class="portfolio-social-link" title="${t}" aria-label="${t}"><i class="${iconClass}" aria-hidden="true"></i></a>`;
                             }).join('')}</p>`
                             : '';
                         const linksBlock = websiteLine + socialLine;
+                        const ghRepo = project.githubRepo ? escapeAttr(String(project.githubRepo).replace(/^\/+/, '')) : '';
                         
                         return `
                             <div class="card">
                                 ${logo}
-                                <h3>${project.name}</h3>
-                                <p class="card-description">${project.description}</p>
+                                <h3>${escapeHtml(project.name)}</h3>
+                                <p class="card-description">${escapeHtml(project.description)}</p>
                                 ${linksBlock}
-                                ${project.githubRepo ? `<p style="margin-top: 0.5rem;"><a href="https://github.com/${project.githubRepo}" target="_blank" style="color: #f7931a;">🔗 ${project.githubRepo}</a></p>` : ''}
-                                ${skills.length > 0 ? `<div style="margin-top: 1rem;"><strong>Skills Needed:</strong> ${skills.map(s => `<span style="background: rgba(247, 147, 26, 0.15); padding: 0.25rem 0.5rem; border-radius: 8px; margin-right: 0.5rem; font-size: 0.9rem;">${s}</span>`).join('')}</div>` : ''}
-                                ${tags.length > 0 ? `<div style="margin-top: 0.5rem;"><strong>Tags:</strong> ${tags.map(t => `<span style="color: #b0b0b0; font-size: 0.9rem;">${t}</span>`).join(', ')}</div>` : ''}
+                                ${ghRepo ? `<p style="margin-top: 0.5rem;"><a href="https://github.com/${ghRepo}" target="_blank" rel="noopener noreferrer" style="color: #f7931a;">🔗 ${escapeHtml(project.githubRepo)}</a></p>` : ''}
+                                ${skills.length > 0 ? `<div style="margin-top: 1rem;"><strong>Skills Needed:</strong> ${skills.map(s => `<span style="background: rgba(247, 147, 26, 0.15); padding: 0.25rem 0.5rem; border-radius: 8px; margin-right: 0.5rem; font-size: 0.9rem;">${escapeHtml(s)}</span>`).join('')}</div>` : ''}
+                                ${tags.length > 0 ? `<div style="margin-top: 0.5rem;"><strong>Tags:</strong> ${tags.map(t => `<span style="color: #b0b0b0; font-size: 0.9rem;">${escapeHtml(t)}</span>`).join(', ')}</div>` : ''}
                                 ${collaborationBadge}
-                                ${project.collaborationNote ? `<p style="margin-top: 0.5rem; font-style: italic; color: #b0b0b0; font-size: 0.9rem;">${project.collaborationNote}</p>` : ''}
+                                ${project.collaborationNote ? `<p style="margin-top: 0.5rem; font-style: italic; color: #b0b0b0; font-size: 0.9rem;">${escapeHtml(project.collaborationNote)}</p>` : ''}
                             </div>
                         `;
                     }).join('');

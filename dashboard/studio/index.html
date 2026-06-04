@@ -613,23 +613,29 @@ scripts: |
                 return;
             }
 
+            const esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : (t) => String(t ?? '');
+            const escAttr = typeof window.escapeAttr === 'function' ? window.escapeAttr : (t) => String(t ?? '');
             container.innerHTML = events.map(event => {
                 const eventDate = new Date(event.startTime);
                 const endDate = event.endTime ? new Date(event.endTime) : null;
+                const eid = escAttr(event.id);
+                const desc = event.description
+                    ? esc(event.description.substring(0, 100)) + (event.description.length > 100 ? '...' : '')
+                    : '';
 
                 return `
                     <div class="booking-card">
                         <div class="booking-header">
                             <div>
-                                <h3>${event.title}</h3>
+                                <h3>${esc(event.title)}</h3>
                             </div>
                             <span class="booking-status status confirmed">RSVP'd</span>
                         </div>
                         <p><strong>Date:</strong> ${eventDate.toLocaleString()}${endDate ? ` - ${endDate.toLocaleString()}` : ''}</p>
-                        ${event.location ? `<p><strong>Location:</strong> ${event.location}</p>` : ''}
-                        ${event.description ? `<p style="color: var(--text-secondary); margin-top: 0.5rem;">${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}</p>` : ''}
+                        ${event.location ? `<p><strong>Location:</strong> ${esc(event.location)}</p>` : ''}
+                        ${desc ? `<p style="color: var(--text-secondary); margin-top: 0.5rem;">${desc}</p>` : ''}
                         <div style="margin-top: 1rem;">
-                            <a href="/dashboard/events#${event.id}" class="btn-secondary btn-small" style="text-decoration: none; display: inline-block;">View Event</a>
+                            <a href="/dashboard/events#${eid}" class="btn-secondary btn-small" style="text-decoration: none; display: inline-block;">View Event</a>
                         </div>
                     </div>
                 `;

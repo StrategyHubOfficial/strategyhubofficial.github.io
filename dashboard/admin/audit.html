@@ -215,7 +215,9 @@ function clearFilters() {
 async function exportAllData() {
     try {
         const token = localStorage.getItem('hub_token');
-        const baseURL = api.baseURL || (window.HUB_CONFIG && window.HUB_CONFIG.apiBaseUrl) || '';
+        const baseURL = api.baseURL || (typeof window.getHubApiBaseUrl === 'function'
+            ? window.getHubApiBaseUrl()
+            : (window.HUB_CONFIG && window.HUB_CONFIG.apiBaseUrl) || '');
         const response = await fetch(baseURL + '/api/admin/export', {
             headers: {
                 'Authorization': 'Bearer ' + token

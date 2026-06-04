@@ -286,7 +286,10 @@ title: Projects
             }
 
             noResults.style.display = 'none';
+            const esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : (t) => String(t ?? '');
+            const escAttr = typeof window.escapeAttr === 'function' ? window.escapeAttr : (t) => String(t ?? '');
             container.innerHTML = filteredProjects.map(project => {
+                const pid = escAttr(project.id);
                 const statusClass = project.status || 'idea';
                 const tags = project.tags || [];
                 const teamMembers = project.teamMembers || [];
@@ -298,27 +301,28 @@ title: Projects
                     ? '<span class="project-status status rejected" style="background: #7f1d1d; color: #f87171; margin-left: 0.5rem;">Rejected</span>'
                     : '';
 
+                const ghRepo = project.githubRepo ? escAttr(String(project.githubRepo).replace(/^\/+/, '')) : '';
                 return `
-                    <div class="project-card" id="project-${project.id}">
+                    <div class="project-card" id="project-${pid}">
                         <div class="project-header">
                             <div>
-                                <div class="project-title">${project.name}</div>
-                                <span class="project-status status ${statusClass}">${statusClass}</span>
+                                <div class="project-title">${esc(project.name)}</div>
+                                <span class="project-status status ${escAttr(statusClass)}">${esc(statusClass)}</span>
                                 ${approvalBadge}
                             </div>
                             ${isAdmin() && approvalStatus === 'pending' ? `
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="approveProject('${project.id}')">Approve</button>
-                                    <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="rejectProject('${project.id}')">Reject</button>
+                                    <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="approveProject('${pid}')">Approve</button>
+                                    <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="rejectProject('${pid}')">Reject</button>
                                 </div>
                             ` : ''}
                         </div>
-                        <div class="project-description">${project.description || 'No description'}</div>
+                        <div class="project-description">${esc(project.description || 'No description')}</div>
                         <div class="project-meta">
-                            ${project.githubRepo ? `
+                            ${ghRepo ? `
                                 <div class="project-meta-item">
                                     <span>🔗</span>
-                                    <a href="https://github.com/${project.githubRepo}" target="_blank" style="color: var(--bitcoin-orange);">${project.githubRepo}</a>
+                                    <a href="https://github.com/${ghRepo}" target="_blank" rel="noopener noreferrer" style="color: var(--bitcoin-orange);">${esc(project.githubRepo)}</a>
                                 </div>
                             ` : ''}
                             <div class="project-meta-item">
@@ -344,11 +348,11 @@ title: Projects
                             </div>
                         ` : ''}
                         <div class="project-actions">
-                            <button class="btn btn-small" onclick="viewProject('${project.id}')">View Details</button>
-                            <button class="btn btn-small" onclick="donateToProject('${project.id}', '${project.name}')" style="background: var(--bitcoin-orange);">Donate</button>
+                            <button class="btn btn-small" onclick="viewProject('${pid}')">View Details</button>
+                            <button class="btn btn-small" onclick="donateToProject('${pid}', '${escAttr(project.name)}')" style="background: var(--bitcoin-orange);">Donate</button>
                             ${(currentUser && (currentUser.id === project.teamMembers[0] || isAdmin())) ? `
-                                <button class="btn btn-small" onclick="editProject('${project.id}')" style="background: var(--bitcoin-orange);">Edit</button>
-                                <button class="btn btn-small" onclick="deleteProject('${project.id}')" style="background: #7f1d1d; color: #f87171;">Delete</button>
+                                <button class="btn btn-small" onclick="editProject('${pid}')" style="background: var(--bitcoin-orange);">Edit</button>
+                                <button class="btn btn-small" onclick="deleteProject('${pid}')" style="background: #7f1d1d; color: #f87171;">Delete</button>
                             ` : ''}
                         </div>
                     </div>

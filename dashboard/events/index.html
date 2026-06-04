@@ -523,6 +523,8 @@ scripts: |
         window.cancelRSVP = cancelRSVP;
 
         function renderEvents() {
+            const esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : (t) => String(t ?? '');
+            const escAttr = typeof window.escapeAttr === 'function' ? window.escapeAttr : (t) => String(t ?? '');
             const container = document.getElementById('events-list');
             if (events.length === 0) {
                 container.innerHTML = '<p>No events scheduled.</p>';
@@ -530,6 +532,7 @@ scripts: |
             }
 
             container.innerHTML = events.map(event => {
+                const eid = escAttr(event.id);
                 const eventDate = new Date(event.startTime);
                 const currentUser = auth.getCurrentUser();
                 const isRSVPd = currentUser && event.rsvps && event.rsvps.includes(currentUser.id);
@@ -548,16 +551,16 @@ scripts: |
                     <div class="event-card">
                         <div class="event-header">
                             <div>
-                                <h2 class="event-title">${event.title}</h2>
+                                <h2 class="event-title">${esc(event.title)}</h2>
                                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-                                    <span class="event-type ${event.type}">${event.type}</span>
+                                    <span class="event-type ${escAttr(event.type)}">${esc(event.type)}</span>
                                     ${approvalBadge}
                                 </div>
                             </div>
                             ${isAdmin && approvalStatus === 'pending' ? `
                                 <div style="display: flex; gap: 0.5rem;">
-                                    <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="approveEvent('${event.id}')">Approve</button>
-                                    <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="rejectEvent('${event.id}')">Reject</button>
+                                    <button class="btn btn-small" style="background: #2d5016; color: #4ade80;" onclick="approveEvent('${eid}')">Approve</button>
+                                    <button class="btn btn-small" style="background: #7f1d1d; color: #f87171;" onclick="rejectEvent('${eid}')">Reject</button>
                                 </div>
                             ` : ''}
                         </div>
@@ -604,7 +607,7 @@ scripts: |
                                 
                                 let locationHtml = '';
                                 if (event.location) {
-                                    locationHtml = `<p><strong>Where:</strong> ${event.location}</p>`;
+                                    locationHtml = `<p><strong>Where:</strong> ${esc(event.location)}</p>`;
                                 }
                                 
                                 return whenHtml + locationHtml;
@@ -635,10 +638,10 @@ scripts: |
                             <div class="rsvp-count">${rsvpCount} / ${maxAttendees} attending</div>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem;">
                                 ${!isRSVPd 
-                                    ? `<button class="btn btn-small" onclick="rsvpToEvent('${event.id}')">RSVP</button>`
-                                    : `<button class="btn-secondary btn-small" onclick="cancelRSVP('${event.id}')">Cancel RSVP</button>`
+                                    ? `<button class="btn btn-small" onclick="rsvpToEvent('${eid}')">RSVP</button>`
+                                    : `<button class="btn-secondary btn-small" onclick="cancelRSVP('${eid}')">Cancel RSVP</button>`
                                 }
-                                <button class="btn-secondary btn-small" onclick="downloadEventICS('${event.id}')" title="Add to Calendar">
+                                <button class="btn-secondary btn-small" onclick="downloadEventICS('${eid}')" title="Add to Calendar">
                                     📅 Add to Calendar
                                 </button>
                             </div>
@@ -646,7 +649,7 @@ scripts: |
                         ` : `
                         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333;">
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                <button class="btn-secondary btn-small" onclick="downloadEventICS('${event.id}')" title="Add to Calendar">
+                                <button class="btn-secondary btn-small" onclick="downloadEventICS('${eid}')" title="Add to Calendar">
                                     📅 Add to Calendar
                                 </button>
                             </div>
@@ -654,8 +657,8 @@ scripts: |
                         `}
                         ${(currentUser && (currentUser.id === event.organizer || isAdmin)) ? `
                         <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #333; display: flex; gap: 0.5rem;">
-                            <button class="btn btn-small" onclick="editEvent('${event.id}')" style="background: var(--bitcoin-orange);">Edit</button>
-                            <button class="btn btn-small" onclick="deleteEvent('${event.id}')" style="background: #7f1d1d; color: #f87171;">Delete</button>
+                            <button class="btn btn-small" onclick="editEvent('${eid}')" style="background: var(--bitcoin-orange);">Edit</button>
+                            <button class="btn btn-small" onclick="deleteEvent('${eid}')" style="background: #7f1d1d; color: #f87171;">Delete</button>
                         </div>
                         ` : ''}
                     </div>

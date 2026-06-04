@@ -52,8 +52,46 @@ function createDebouncedSearch(searchFunction, delay = 300) {
   return debounce(searchFunction, delay);
 }
 
+/**
+ * Escape text for safe HTML insertion
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+}
+
+/**
+ * Escape for HTML attribute values (e.g. onclick handlers)
+ */
+function escapeAttr(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;');
+}
+
+/**
+ * Allow only http(s) URLs for user-provided links
+ */
+function safeHttpUrl(url) {
+  try {
+    const u = new URL(String(url));
+    if (u.protocol === 'http:' || u.protocol === 'https:') {
+      return u.href;
+    }
+  } catch (_) {
+    /* invalid */
+  }
+  return '';
+}
+
 // Export to global scope
 window.debounce = debounce;
 window.throttle = throttle;
 window.createDebouncedSearch = createDebouncedSearch;
+window.escapeHtml = escapeHtml;
+window.escapeAttr = escapeAttr;
+window.safeHttpUrl = safeHttpUrl;
 
