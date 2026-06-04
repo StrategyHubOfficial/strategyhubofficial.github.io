@@ -66,6 +66,8 @@ export default [
         'QRCode': 'readonly',
         'navigator': 'readonly',
         'HubAPI': 'readonly',
+        'flatpickr': 'readonly',
+        'linkifyHtml': 'readonly',
       },
     },
     plugins: {

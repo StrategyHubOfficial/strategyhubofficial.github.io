@@ -233,6 +233,7 @@ title: Projects
         let allProjects = [];
         let filteredProjects = [];
         let currentFilter = 'all';
+        let editingProjectId = null;
 
         async function loadProjects() {
             try {
@@ -288,6 +289,7 @@ title: Projects
             noResults.style.display = 'none';
             const esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : (t) => String(t ?? '');
             const escAttr = typeof window.escapeAttr === 'function' ? window.escapeAttr : (t) => String(t ?? '');
+            const currentUser = auth.getCurrentUser();
             container.innerHTML = filteredProjects.map(project => {
                 const pid = escAttr(project.id);
                 const statusClass = project.status || 'idea';
@@ -481,6 +483,8 @@ title: Projects
             const lookingForCollaboration = document.getElementById('project-looking-for-collaboration').checked;
             const collaborationNote = document.getElementById('project-collaboration-note').value.trim() || undefined;
             const showInPortfolio = document.getElementById('project-show-in-portfolio').checked;
+            const skillsRaw = document.getElementById('project-skills-needed').value;
+            const skillsNeeded = skillsRaw.split(',').map((s) => s.trim()).filter(Boolean);
 
             try {
                 const projectData = {
@@ -516,7 +520,7 @@ title: Projects
                             toast.success('Project submitted for approval!');
                         }
                     }
-                    closeCreateProject();
+                    window.closeCreateProject();
                     await loadProjects();
                 } else {
                     toast.error(`Failed to ${editingProjectId ? 'update' : 'create'} project: ` + (response.error || 'Unknown error'));

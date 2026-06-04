@@ -57,7 +57,7 @@ function createDebouncedSearch(searchFunction, delay = 300) {
  */
 function escapeHtml(text) {
   const div = document.createElement('div');
-  div.textContent = text == null ? '' : String(text);
+  div.textContent = text === null || text === undefined ? '' : String(text);
   return div.innerHTML;
 }
 
@@ -65,7 +65,7 @@ function escapeHtml(text) {
  * Escape for HTML attribute values (e.g. onclick handlers)
  */
 function escapeAttr(text) {
-  return String(text == null ? '' : text)
+  return String(text === null || text === undefined ? '' : text)
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
