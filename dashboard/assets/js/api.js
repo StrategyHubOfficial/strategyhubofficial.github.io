@@ -2,6 +2,10 @@
  * Hub API Client
  */
 
+/** Ad blockers (EasyPrivacy) often block /api/events as false-positive analytics tracking. */
+const HUB_EVENTS_API = '/api/hub-events';
+const HUB_EVENT_SUBSCRIPTIONS_API = '/api/subscriptions/hub-events';
+
 class HubAPI {
   constructor(baseURL) {
     this.baseURL =
@@ -49,6 +53,7 @@ class HubAPI {
     
     const config = {
       ...options,
+      cache: 'no-store',
       mode: 'cors',
       credentials: 'omit',
       headers: {
@@ -87,6 +92,15 @@ class HubAPI {
       
       return data;
     } catch (error) {
+      if (error instanceof TypeError && /fetch|network|blocked/i.test(error.message)) {
+        const blocked = new Error(
+          'Request blocked by the browser (often an ad blocker). Allow this site or disable extensions for strategyhubofficial.github.io and dashboard.securesovereigns.workers.dev.'
+        );
+        blocked.name = 'BlockedRequestError';
+        blocked.cause = error;
+        console.error('API Error:', blocked);
+        throw blocked;
+      }
       console.error('API Error:', error);
       throw error;
     }
@@ -283,27 +297,27 @@ class HubAPI {
     });
   }
 
-  // Events
+  // Events (use HUB_EVENTS_API — /api/events is blocked by many ad blockers)
   async getEvents(start, end) {
     const params = start && end ? `?start=${start}&end=${end}` : '';
-    return this.request(`/api/events${params}`);
+    return this.request(`${HUB_EVENTS_API}${params}`);
   }
 
   async createEvent(event) {
-    return this.request('/api/events', {
+    return this.request(HUB_EVENTS_API, {
       method: 'POST',
       body: JSON.stringify(event)
     });
   }
 
   async rsvpToEvent(eventId) {
-    return this.request(`/api/events/${eventId}/rsvp`, {
+    return this.request(`${HUB_EVENTS_API}/${eventId}/rsvp`, {
       method: 'POST'
     });
   }
 
   async cancelRSVP(eventId) {
-    return this.request(`/api/events/${eventId}/rsvp`, {
+    return this.request(`${HUB_EVENTS_API}/${eventId}/rsvp`, {
       method: 'DELETE'
     });
   }
@@ -322,11 +336,11 @@ class HubAPI {
 
   // Subscriptions
   async getEventSubscriptions() {
-    return this.request('/api/subscriptions/events');
+    return this.request(HUB_EVENT_SUBSCRIPTIONS_API);
   }
 
   async updateEventSubscriptions(subscriptions) {
-    return this.request('/api/subscriptions/events', {
+    return this.request(HUB_EVENT_SUBSCRIPTIONS_API, {
       method: 'PUT',
       body: JSON.stringify(subscriptions)
     });
@@ -393,21 +407,21 @@ class HubAPI {
   }
 
   async approveEvent(eventId) {
-    return this.request(`/api/events/${eventId}/approve`, {
+    return this.request(`${HUB_EVENTS_API}/${eventId}/approve`, {
       method: 'POST',
       body: JSON.stringify({ action: 'approve' })
     });
   }
 
   async rejectEvent(eventId) {
-    return this.request(`/api/events/${eventId}/approve`, {
+    return this.request(`${HUB_EVENTS_API}/${eventId}/approve`, {
       method: 'POST',
       body: JSON.stringify({ action: 'reject' })
     });
   }
 
   async getPendingEvents() {
-    return this.request('/api/events/pending');
+    return this.request(`${HUB_EVENTS_API}/pending`);
   }
 
   async cancelSponsorship(id) {

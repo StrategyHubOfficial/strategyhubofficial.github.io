@@ -27,7 +27,7 @@ test.describe('Events', () => {
 
   test('should display events list', async ({ page }) => {
     // Mock events API
-    await page.route('**/api/events', route => {
+    await page.route('**/api/hub-events', route => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -56,7 +56,7 @@ test.describe('Events', () => {
     let rsvpCalled = false;
 
     // Mock events list
-    await page.route('**/api/events', route => {
+    await page.route('**/api/hub-events', route => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -75,7 +75,7 @@ test.describe('Events', () => {
     });
 
     // Mock RSVP API
-    await page.route('**/api/events/1/rsvp', route => {
+    await page.route('**/api/hub-events/1/rsvp', route => {
       rsvpCalled = true;
       route.fulfill({
         status: 200,
@@ -104,7 +104,7 @@ test.describe('Events', () => {
     let cancelCalled = false;
 
     // Mock events with RSVP status
-    await page.route('**/api/events', route => {
+    await page.route('**/api/hub-events', route => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -124,7 +124,7 @@ test.describe('Events', () => {
     });
 
     // Mock cancel RSVP API
-    await page.route('**/api/events/1/rsvp', route => {
+    await page.route('**/api/hub-events/1/rsvp', route => {
       if (route.request().method() === 'DELETE') {
         cancelCalled = true;
         route.fulfill({
@@ -149,7 +149,7 @@ test.describe('Events', () => {
 
   test('should display event details', async ({ page }) => {
     // Mock event API
-    await page.route('**/api/events/1', route => {
+    await page.route('**/api/hub-events/1', route => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',

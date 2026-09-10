@@ -412,8 +412,8 @@ scripts: |
                 // Admins can see pending events, regular users only see approved
                 const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
                 const url = isAdmin
-                    ? '/api/events?includePending=true&futureOnly=true'
-                    : '/api/events?futureOnly=true';
+                    ? '/api/hub-events?includePending=true&futureOnly=true'
+                    : '/api/hub-events?futureOnly=true';
                 const response = await api.get(url);
                 if (response.success && response.data) {
                     // Handle paginated response structure: { data: [...], pagination: {...} }
@@ -441,7 +441,7 @@ scripts: |
 
         async function loadSubscriptions() {
             try {
-                const response = await api.get('/api/subscriptions/events');
+                const response = await api.get('/api/subscriptions/hub-events');
                 if (response.success) {
                     subscriptions = response.data;
                     updateSubscriptionUI();
@@ -470,7 +470,7 @@ scripts: |
             if (document.getElementById('notify-networking').checked) eventTypes.push('networking');
 
             try {
-                const response = await api.put('/api/subscriptions/events', {
+                const response = await api.put('/api/subscriptions/hub-events', {
                     eventTypes,
                     notifyOnNewEvent: document.getElementById('notify-new').checked,
                     notifyBeforeEvent: document.getElementById('notify-reminder').checked
@@ -490,7 +490,7 @@ scripts: |
 
         async function rsvpToEvent(eventId) {
             try {
-                const response = await api.post(`/api/events/${eventId}/rsvp`);
+                const response = await api.post(`/api/hub-events/${eventId}/rsvp`);
                 if (response.success) {
                     toast.success('RSVP confirmed!');
                     await loadEvents();
@@ -505,7 +505,7 @@ scripts: |
 
         async function cancelRSVP(eventId) {
             try {
-                const response = await api.delete(`/api/events/${eventId}/rsvp`);
+                const response = await api.delete(`/api/hub-events/${eventId}/rsvp`);
                 if (response.success) {
                     toast.success('RSVP cancelled');
                     await loadEvents();
@@ -849,7 +849,7 @@ scripts: |
                     (typeof window.getHubApiBaseUrl === 'function' ? window.getHubApiBaseUrl() : null) ||
                     window.HUB_CONFIG?.apiBaseUrl ||
                     'https://dashboard.securesovereigns.workers.dev';
-                const response = await fetch(`${baseURL}/api/events/${eventId}/ics`, {
+                const response = await fetch(`${baseURL}/api/hub-events/${eventId}/ics`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -932,7 +932,7 @@ scripts: |
             }
 
             try {
-                const response = await api.delete(`/api/events/${eventId}`);
+                const response = await api.delete(`/api/hub-events/${eventId}`);
                 if (response.success) {
                     toast.success('Event deleted successfully');
                     await loadEvents();
@@ -954,7 +954,7 @@ scripts: |
 
         async function createEvent(data) {
             try {
-                const response = await api.post('/api/events', data);
+                const response = await api.post('/api/hub-events', data);
                 if (response.success) {
                     const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
                     if (isAdmin) {
@@ -1004,7 +1004,7 @@ scripts: |
                         maxAttendees,
                         enableRSVP
                     };
-                    const response = await api.put(`/api/events/${editingEventId}`, eventData);
+                    const response = await api.put(`/api/hub-events/${editingEventId}`, eventData);
                 if (response.success) {
                     toast.success('Event updated successfully');
                     closeCreateEventModal();

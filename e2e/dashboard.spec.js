@@ -63,7 +63,7 @@ test.describe('Dashboard', () => {
       });
     });
 
-    await page.route('**/api/events*', route => {
+    await page.route('**/api/hub-events*', route => {
       route.fulfill({
         status: 200,
         contentType: 'application/json',

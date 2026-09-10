@@ -1,9 +1,11 @@
-
+---
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% include no-cache-meta.html %}
     <meta name="description" content="StrategyHub - Building Bitcoin infrastructure, fostering technical collaboration, and creating spaces for serious Bitcoin development.">
     <meta name="keywords" content="Bitcoin, Strategy₿, Infrastructure, Content Creation, Studio">
     <meta name="author" content="StrategyHub">
@@ -22,7 +24,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="StrategyHub">
     <title>StrategyHub - Bitcoin Infrastructure Hub</title>
-    <script src="/dashboard/assets/js/config.js"></script>
+    <script src="/dashboard/assets/js/config.js?v={{ site.asset_version }}"></script>
     <style>
         * {
             margin: 0;
@@ -1149,5 +1151,6 @@
             }
         })();
     </script>
+    {% include sw-cleanup.html %}
 </body>
 </html>

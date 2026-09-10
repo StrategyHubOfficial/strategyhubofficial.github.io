@@ -222,8 +222,11 @@ scripts: |
                 <div class="form-group">
                     <label class="checkbox-group">
                         <input type="checkbox" id="technical-assistance">
-                        <span>I need technical assistance (10,000 sats/hour)</span>
+                        <span>I would like technical assistance on site</span>
                     </label>
+                    <small style="display: block; color: var(--text-secondary, #888); margin-top: 0.35rem;">
+                        Informational only — we will follow up separately to arrange availability and payment (~10,000 sats/hour).
+                    </small>
                 </div>
                 <div class="form-group">
                     <label>Notes (optional):</label>
@@ -590,7 +593,7 @@ scripts: |
 
         async function loadEvents() {
             try {
-                const response = await api.get('/api/events');
+                const response = await api.get('/api/hub-events');
                 if (response.success && response.data) {
                     const currentUser = auth.getCurrentUser();
                     if (!currentUser) return;
@@ -745,7 +748,11 @@ scripts: |
                     });
 
                     if (response.success) {
-                        toast.success('Studio booked successfully!');
+                        if (needsTechnicalAssistance) {
+                            toast.success('Studio booked! We will contact you separately about technical assistance.');
+                        } else {
+                            toast.success('Studio booked successfully!');
+                        }
                         document.getElementById('booking-form').reset();
                         await loadBookings();
                     } else {

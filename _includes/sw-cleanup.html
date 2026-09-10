@@ -1,0 +1,14 @@
+<script>
+(function () {
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    regs.forEach(function (reg) { reg.unregister(); });
+  });
+  if ('caches' in window) {
+    caches.keys().then(function (keys) {
+      keys.filter(function (k) { return k.indexOf('strategyhub-') === 0; })
+        .forEach(function (k) { caches.delete(k); });
+    });
+  }
+})();
+</script>
