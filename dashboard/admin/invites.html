@@ -133,6 +133,8 @@ title: Invite Users
 .invite-actions {
     display: flex;
     gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .btn-small {
@@ -297,6 +299,65 @@ title: Invite Users
             }
         }
 
+        function escapeAttr(text) {
+            return String(text ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;');
+        }
+
+        async function copyInviteLink(url) {
+            if (!url) {
+                toast.error('No invite link available');
+                return false;
+            }
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(url);
+                } else {
+                    const ta = document.createElement('textarea');
+                    ta.value = url;
+                    ta.style.position = 'fixed';
+                    ta.style.left = '-9999px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                }
+                toast.success('Invite link copied');
+                return true;
+            } catch (err) {
+                console.error('Copy failed:', err);
+                toast.error('Could not copy link — select and copy manually');
+                return false;
+            }
+        }
+
+        window.copyInviteLink = copyInviteLink;
+
+        window.resendInvite = async function(inviteId) {
+            try {
+                const response = await api.post(`/api/invites/${encodeURIComponent(inviteId)}/resend`, {});
+                if (response.success) {
+                    const data = response.data || {};
+                    if (data.emailSent) {
+                        toast.success('Invitation email resent');
+                    } else {
+                        toast.warning(data.emailError || 'Email not sent — use Copy link and send manually');
+                        if (data.inviteUrl) {
+                            await copyInviteLink(data.inviteUrl);
+                        }
+                    }
+                } else {
+                    toast.error(response.error || 'Failed to resend invitation');
+                }
+            } catch (error) {
+                console.error('Error resending invite:', error);
+                toast.error('Error resending invitation');
+            }
+        };
+
         async function loadInvites() {
             try {
                 const response = await api.get('/api/invites');
@@ -326,10 +387,12 @@ title: Invite Users
 
             empty.style.display = 'none';
             container.innerHTML = invites.map(invite => {
-                const statusClass = `status-${invite.status}`;
                 const expiresDate = new Date(invite.expiresAt);
                 const isExpired = expiresDate < new Date() && invite.status === 'pending';
                 const statusText = isExpired ? 'expired' : invite.status;
+                const idAttr = escapeAttr(invite.id);
+                const urlAttr = escapeAttr(invite.inviteUrl || '');
+                const showPendingActions = invite.status === 'pending' && !isExpired && invite.inviteUrl;
 
                 return `
                     <div class="invite-item">
@@ -343,8 +406,10 @@ title: Invite Users
                             </div>
                         </div>
                         <div class="invite-actions">
-                            ${invite.status === 'pending' && !isExpired ? `
-                                <button class="btn btn-small" onclick="cancelInvite('${invite.id}')">Cancel</button>
+                            ${showPendingActions ? `
+                                <button type="button" class="btn btn-small btn-secondary" data-invite-url="${urlAttr}" onclick="copyInviteLink(this.getAttribute('data-invite-url'))">Copy link</button>
+                                <button type="button" class="btn btn-small btn-secondary" onclick="resendInvite('${idAttr}')">Resend email</button>
+                                <button type="button" class="btn btn-small" onclick="cancelInvite('${idAttr}')">Cancel</button>
                             ` : ''}
                         </div>
                     </div>
@@ -392,7 +457,15 @@ title: Invite Users
                 });
 
                 if (response.success) {
-                    toast.success(`Invitation sent to ${email}`);
+                    const data = response.data || {};
+                    if (data.emailSent) {
+                        toast.success(`Invitation created and emailed to ${email}`);
+                    } else {
+                        toast.success(`Invitation created for ${email} — copy the link below`);
+                        if (data.inviteUrl) {
+                            await copyInviteLink(data.inviteUrl);
+                        }
+                    }
                     document.getElementById('invite-form').reset();
                     document.getElementById('expires-days').value = '7';
                     await loadInvites();

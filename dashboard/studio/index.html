@@ -205,6 +205,15 @@ scripts: |
                     <input type="datetime-local" id="end-time" required>
                 </div>
                 <div class="form-group">
+                    <label for="microphones">Microphones needed:</label>
+                    <select id="microphones" required aria-label="Number of microphones">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Equipment needed (optional):</label>
                     <small style="display: block; color: var(--text-secondary, #888); margin-bottom: 0.5rem;">Loaded from the equipment catalog. Hold Ctrl/Cmd to select multiple.</small>
                     <p id="equipment-catalog-hint" style="display: none; color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 0.5rem 0;"></p>
@@ -558,6 +567,10 @@ scripts: |
                             </div>
                             <span class="booking-status status ${statusClass}">${booking.status}</span>
                         </div>
+                        ${booking.microphones
+                            ? `<p><strong>Microphones:</strong> ${booking.microphones}</p>`
+                            : ''
+                        }
                         ${booking.equipment && booking.equipment.length > 0 
                             ? `<p><strong>Equipment:</strong> ${formatBookingEquipment(booking.equipment)}</p>`
                             : ''
@@ -678,8 +691,13 @@ scripts: |
             }
 
             const equipment = Array.from(document.getElementById('equipment').selectedOptions).map(o => o.value).filter(v => v);
+            const microphones = parseInt(document.getElementById('microphones').value, 10) || 1;
             const needsTechnicalAssistance = document.getElementById('technical-assistance').checked;
             const notes = document.getElementById('notes').value;
+            if (microphones < 1 || microphones > 4) {
+                toast.error('Microphones must be between 1 and 4.');
+                return;
+            }
 
             try {
                 // Only for new bookings: availability counts every overlap, including this user’s
@@ -695,6 +713,7 @@ scripts: |
                         startTime: startIso,
                         endTime: endIso,
                         equipment,
+                        microphones,
                         needsTechnicalAssistance,
                         notes
                     });
@@ -720,6 +739,7 @@ scripts: |
                         startTime: startIso,
                         endTime: endIso,
                         equipment,
+                        microphones,
                         needsTechnicalAssistance,
                         notes
                     });
