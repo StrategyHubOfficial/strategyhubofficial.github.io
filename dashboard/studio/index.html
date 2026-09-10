@@ -232,12 +232,15 @@ scripts: |
                     <label>Notes (optional):</label>
                     <textarea id="notes" rows="3" placeholder="Any additional information..."></textarea>
                 </div>
-                <button type="submit" class="btn">Book Studio</button>
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <button type="submit" class="btn" id="booking-submit-btn">Book Studio</button>
+                    <button type="button" class="btn-secondary" id="cancel-edit-btn" style="display: none;" data-no-busy="1">Cancel edit</button>
+                </div>
             </form>
         </div>
 
         <div class="bookings-list">
-            <h2>My Bookings</h2>
+            <h2 id="bookings-heading">My Bookings</h2>
         <div id="loading" class="loading">
             <div class="loading-spinner"></div>
             <p>Loading bookings...</p>
@@ -383,6 +386,7 @@ scripts: |
         let editingBookingId = null;
         let fpStart = null;
         let fpEnd = null;
+        let bookingsById = {};
 
         /**
          * Flatpickr uses "Y-m-d H:i" (space); datetime-local uses "T". Parse as local wall time, then ISO for API.
@@ -427,6 +431,15 @@ scripts: |
                 const response = await api.get('/api/studio/bookings');
                 if (response.success) {
                     const bookings = Array.isArray(response.data) ? response.data : (response.data?.all || response.data?.data || []);
+                    bookingsById = {};
+                    bookings.forEach((b) => {
+                        if (b && b.id) bookingsById[b.id] = b;
+                    });
+                    const heading = document.getElementById('bookings-heading');
+                    if (heading) {
+                        const isAdmin = window.isAdmin || (auth.getCurrentUser()?.role === 'admin');
+                        heading.textContent = isAdmin ? 'All Bookings' : 'My Bookings';
+                    }
                     renderBookings(bookings);
                 } else {
                     toast.error('Failed to load bookings');
@@ -553,10 +566,16 @@ scripts: |
                 return;
             }
 
+            const esc = typeof window.escapeHtml === 'function' ? window.escapeHtml : (t) => String(t ?? '');
+            const escAttr = typeof window.escapeAttr === 'function' ? window.escapeAttr : (t) => String(t ?? '');
             container.innerHTML = bookings.map(booking => {
                 const start = new Date(booking.startTime);
                 const end = new Date(booking.endTime);
                 const statusClass = booking.status;
+                const bid = escAttr(booking.id);
+                const booker = booking.bookerName || booking.bookerEmail
+                    ? `<p><strong>Booked by:</strong> ${esc(booking.bookerName || '')}${booking.bookerEmail ? ` (${esc(booking.bookerEmail)})` : ''}</p>`
+                    : '';
 
                 return `
                     <div class="booking-card">
@@ -568,27 +587,38 @@ scripts: |
                                     : ''
                                 }
                             </div>
-                            <span class="booking-status status ${statusClass}">${booking.status}</span>
+                            <span class="booking-status status ${statusClass}">${esc(booking.status)}</span>
                         </div>
+                        ${booker}
                         ${booking.microphones
-                            ? `<p><strong>Microphones:</strong> ${booking.microphones}</p>`
+                            ? `<p><strong>Microphones:</strong> ${esc(booking.microphones)}</p>`
                             : ''
                         }
                         ${booking.equipment && booking.equipment.length > 0 
-                            ? `<p><strong>Equipment:</strong> ${formatBookingEquipment(booking.equipment)}</p>`
+                            ? `<p><strong>Equipment:</strong> ${esc(formatBookingEquipment(booking.equipment))}</p>`
                             : ''
                         }
-                        ${booking.notes ? `<p>${booking.notes}</p>` : ''}
+                        ${booking.notes ? `<p>${esc(booking.notes)}</p>` : ''}
                         <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            <button class="btn btn-small" onclick="editBooking('${booking.id}')" style="background: var(--bitcoin-orange);">Edit</button>
-                            <button class="btn-secondary btn-small" onclick="cancelBooking('${booking.id}')">Cancel</button>
-                            <button class="btn-secondary btn-small" onclick="downloadBookingICS('${booking.id}')" title="Add to Calendar">
+                            <button type="button" class="btn btn-small" data-booking-id="${bid}" data-action="edit" style="background: var(--bitcoin-orange);">Edit</button>
+                            <button type="button" class="btn-secondary btn-small" data-booking-id="${bid}" data-action="cancel">Cancel</button>
+                            <button type="button" class="btn-secondary btn-small" data-booking-id="${bid}" data-action="ics" title="Add to Calendar">
                                 📅 Add to Calendar
                             </button>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            container.querySelectorAll('[data-action="edit"]').forEach((btn) => {
+                btn.addEventListener('click', () => editBooking(btn.getAttribute('data-booking-id')));
+            });
+            container.querySelectorAll('[data-action="cancel"]').forEach((btn) => {
+                btn.addEventListener('click', () => cancelBooking(btn.getAttribute('data-booking-id')));
+            });
+            container.querySelectorAll('[data-action="ics"]').forEach((btn) => {
+                btn.addEventListener('click', () => downloadBookingICS(btn.getAttribute('data-booking-id')));
+            });
         }
 
         async function loadEvents() {
@@ -658,6 +688,49 @@ scripts: |
             }).join('');
         }
 
+        function setSubmitLabel(text) {
+            const submitBtn = document.getElementById('booking-submit-btn') ||
+                document.querySelector('#booking-form button[type="submit"]');
+            if (submitBtn) submitBtn.textContent = text;
+        }
+
+        function resetBookingForm() {
+            editingBookingId = null;
+            document.getElementById('booking-form').reset();
+            const cancelEdit = document.getElementById('cancel-edit-btn');
+            if (cancelEdit) cancelEdit.style.display = 'none';
+            setSubmitLabel('Book Studio');
+        }
+
+        function editBooking(id) {
+            const booking = bookingsById[id];
+            if (!booking) {
+                toast.error('Booking not found. Refresh and try again.');
+                return;
+            }
+            editingBookingId = id;
+            const start = new Date(booking.startTime);
+            const end = new Date(booking.endTime);
+            if (fpStart && !isNaN(start.getTime())) fpStart.setDate(start, true);
+            if (fpEnd && !isNaN(end.getTime())) fpEnd.setDate(end, true);
+            if (fpStart && start && !isNaN(start.getTime())) {
+                applyStartToEndConstraints(start);
+            }
+            document.getElementById('microphones').value = String(booking.microphones || 1);
+            document.getElementById('technical-assistance').checked = !!booking.needsTechnicalAssistance;
+            document.getElementById('notes').value = booking.notes || '';
+            const sel = document.getElementById('equipment');
+            const chosen = new Set(booking.equipment || []);
+            Array.from(sel.options).forEach((opt) => {
+                opt.selected = !opt.disabled && chosen.has(opt.value);
+            });
+            setSubmitLabel('Save Changes');
+            const cancelEdit = document.getElementById('cancel-edit-btn');
+            if (cancelEdit) cancelEdit.style.display = '';
+            document.getElementById('booking-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            toast.info('Editing booking — update the form and save.');
+        }
+
         async function cancelBooking(id) {
             if (!confirm('Are you sure you want to cancel this booking?')) {
                 return;
@@ -667,15 +740,59 @@ scripts: |
                 const response = await api.delete(`/api/studio/bookings/${id}`);
                 if (response.success) {
                     toast.success('Booking cancelled successfully');
+                    if (editingBookingId === id) resetBookingForm();
                     await loadBookings();
                 } else {
-                    toast.error('Failed to cancel booking');
+                    toast.error(response.error || 'Failed to cancel booking');
                 }
             } catch (error) {
                 console.error('Error canceling booking:', error);
-                toast.error('Error canceling booking');
+                toast.error(error.message || 'Error canceling booking');
             }
         }
+
+        async function downloadBookingICS(id) {
+            try {
+                const token = auth.getToken();
+                if (!token) {
+                    toast.error('Please log in to download calendar file');
+                    return;
+                }
+                const baseURL =
+                    (typeof api !== 'undefined' ? api.baseURL : null) ||
+                    (typeof window.getHubApiBaseUrl === 'function' ? window.getHubApiBaseUrl() : null) ||
+                    window.HUB_CONFIG?.apiBaseUrl ||
+                    'https://dashboard.securesovereigns.workers.dev';
+                const response = await fetch(`${baseURL}/api/studio/bookings/${id}/ics`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    cache: 'no-store',
+                });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        toast.error('Authentication required. Please log in again.');
+                        window.location.href = '/dashboard/login.html';
+                        return;
+                    }
+                    throw new Error(`Failed to download: ${response.status}`);
+                }
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `booking-${id}.ics`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error downloading ICS:', error);
+                toast.error('Failed to download calendar file');
+            }
+        }
+
+        window.editBooking = editBooking;
+        window.cancelBooking = cancelBooking;
+        window.downloadBookingICS = downloadBookingICS;
 
         document.getElementById('booking-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -723,12 +840,7 @@ scripts: |
 
                     if (response.success) {
                         toast.success('Booking updated successfully!');
-                        document.getElementById('booking-form').reset();
-                        editingBookingId = null;
-                        const submitBtn = document.querySelector('#booking-form button[type="submit"]');
-                        if (submitBtn) {
-                            submitBtn.textContent = 'Book Studio';
-                        }
+                        resetBookingForm();
                         await loadBookings();
                     } else {
                         if (response.error === 'CONFLICT' || response.error?.includes('already booked') || response.error?.includes('Time slot')) {
@@ -753,7 +865,7 @@ scripts: |
                         } else {
                             toast.success('Studio booked successfully!');
                         }
-                        document.getElementById('booking-form').reset();
+                        resetBookingForm();
                         await loadBookings();
                     } else {
                         // Check for conflict error
@@ -839,6 +951,11 @@ scripts: |
             await loadEquipment();
             document.getElementById('loading').style.display = 'none';
             await Promise.all([loadBookings(), loadEvents()]);
+
+            const cancelEditBtn = document.getElementById('cancel-edit-btn');
+            if (cancelEditBtn) {
+                cancelEditBtn.addEventListener('click', () => resetBookingForm());
+            }
 
             setTimeout(() => {
                 initDateTimePickers();

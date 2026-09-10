@@ -1,0 +1,100 @@
+---
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two-factor authentication - StrategyHub</title>
+    {% include no-cache-meta.html %}
+    <link rel="stylesheet" href="assets/css/main.css?v={{ site.asset_version }}">
+    <script src="assets/js/action-buttons.js?v={{ site.asset_version }}"></script>
+    <script src="assets/js/config.js?v={{ site.asset_version }}"></script>
+    <script src="assets/js/api.js?v={{ site.asset_version }}"></script>
+    <script src="assets/js/auth.js?v={{ site.asset_version }}"></script>
+    <script src="assets/js/toast.js?v={{ site.asset_version }}"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>₿</text></svg>">
+    <style>
+        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-dark); padding: 2rem; }
+        .login-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 3rem; width: 100%; max-width: 400px; box-shadow: var(--shadow); }
+        .login-card h1 { font-size: 1.75rem; margin-bottom: 0.5rem; color: var(--text-primary); text-align: center; }
+        .login-card .subtitle { text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 500; }
+        .form-group input { width: 100%; padding: 0.75rem; background: var(--bg-darker); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-primary); font-size: 1.25rem; letter-spacing: 0.2em; text-align: center; }
+        .btn-login { width: 100%; padding: 0.875rem; background: linear-gradient(135deg, var(--bitcoin-orange) 0%, var(--bitcoin-orange-light) 100%); color: var(--bg-darker); border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; margin-top: 0.5rem; }
+        .btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+        .error-message { background: rgba(214, 48, 49, 0.1); border: 1px solid rgba(214, 48, 49, 0.3); color: #d63031; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; display: none; }
+        .error-message.show { display: block; }
+        .logo-text { font-size: 1.5rem; font-weight: 700; color: var(--bitcoin-orange); text-align: center; margin-bottom: 2rem; }
+        .back-link { display: block; text-align: center; margin-top: 1.5rem; color: var(--bitcoin-orange); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-text">StrategyHub</div>
+            <h1>Two-factor code</h1>
+            <p class="subtitle">Enter the 6-digit code from your authenticator app, or a backup code.</p>
+            <div id="error-message" class="error-message"></div>
+            <form id="twofa-form" novalidate>
+                <div class="form-group">
+                    <label for="code">Code</label>
+                    <input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="12" placeholder="000000" required autofocus>
+                </div>
+                <button type="submit" class="btn-login" id="twofa-btn">Verify &amp; continue</button>
+            </form>
+            <a class="back-link" href="/dashboard/login.html">← Back to sign in</a>
+        </div>
+    </div>
+    <script>
+        (function () {
+            let pending;
+            try {
+                pending = JSON.parse(sessionStorage.getItem('hub_2fa') || 'null');
+            } catch (e) {
+                pending = null;
+            }
+            if (!pending || !pending.userId || !pending.tempToken) {
+                window.location.replace('/dashboard/login.html');
+                return;
+            }
+
+            document.getElementById('twofa-form').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const code = document.getElementById('code').value.trim().replace(/\s/g, '');
+                const btn = document.getElementById('twofa-btn');
+                const err = document.getElementById('error-message');
+                err.classList.remove('show');
+                err.textContent = '';
+                if (!code) {
+                    err.textContent = 'Enter your verification code.';
+                    err.classList.add('show');
+                    return;
+                }
+                btn.disabled = true;
+                btn.textContent = 'Verifying…';
+                try {
+                    const result = await auth.verify2FALogin(pending.userId, code, pending.tempToken);
+                    if (result.success) {
+                        sessionStorage.removeItem('hub_2fa');
+                        window.location.href = '/dashboard/';
+                    } else {
+                        err.textContent = result.error || 'Invalid code. Try again.';
+                        err.classList.add('show');
+                        if (typeof toast !== 'undefined') toast.error(err.textContent);
+                    }
+                } catch (error) {
+                    err.textContent = error.message || 'Verification failed.';
+                    err.classList.add('show');
+                    if (typeof toast !== 'undefined') toast.error(err.textContent);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Verify & continue';
+                }
+            });
+        })();
+    </script>
+    {% include sw-cleanup.html %}
+</body>
+</html>
