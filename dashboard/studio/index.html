@@ -81,6 +81,9 @@ styles: |
         .flatpickr-time .numInputWrapper span.arrowDown:after {
             border-top-color: var(--text-secondary) !important;
         }
+        .flatpickr-calendar {
+            z-index: 1200 !important;
+        }
     </style>
 scripts: |
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -129,8 +132,64 @@ scripts: |
         .checkbox-group input[type="checkbox"] {
             width: auto;
         }
+        .studio-page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .studio-page-header h1 {
+            margin: 0;
+        }
+        .btn-book-studio {
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
+        }
+        .booking-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+        .booking-modal.is-open {
+            display: flex;
+        }
+        .booking-modal-card {
+            background: var(--bg-card, #1a1a1a);
+            border: 1px solid var(--border-color, #333);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .booking-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+        }
+        .booking-modal-header h2 {
+            margin: 0;
+        }
+        .booking-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.75rem;
+            line-height: 1;
+            color: var(--text-secondary, #888);
+            cursor: pointer;
+        }
         .bookings-list {
-            margin-top: 2rem;
+            margin-top: 0;
         }
         .bookings-grid {
             display: grid;
@@ -191,10 +250,36 @@ scripts: |
 </style>
 
 <div class="container">
-        <h1>Studio Booking</h1>
-        
-        <div class="booking-form">
-            <h2>Book Studio Time</h2>
+        <div class="studio-page-header">
+            <h1>Studio</h1>
+            <button type="button" class="btn btn-book-studio" id="open-booking-modal-btn">Book Studio</button>
+        </div>
+
+        <div class="bookings-list">
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading bookings...</p>
+        </div>
+        <div id="error" class="error" style="display: none;"></div>
+            <div class="bookings-grid">
+                <div>
+                    <h2 id="bookings-heading" style="margin-bottom: 1rem;">My Bookings</h2>
+                    <div id="bookings-container"></div>
+                </div>
+                <div>
+                    <h2 style="margin-bottom: 1rem;">Event RSVPs</h2>
+                    <div id="events-container"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="booking-modal" class="booking-modal" role="dialog" aria-modal="true" aria-labelledby="booking-modal-title">
+        <div class="booking-modal-card" onclick="event.stopPropagation()">
+            <div class="booking-modal-header">
+                <h2 id="booking-modal-title">Book Studio Time</h2>
+                <button type="button" class="booking-modal-close" id="booking-modal-close" data-no-busy="1" aria-label="Close">&times;</button>
+            </div>
             <form id="booking-form">
                 <div class="form-group">
                     <label>Start Time:</label>
@@ -234,28 +319,9 @@ scripts: |
                 </div>
                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
                     <button type="submit" class="btn" id="booking-submit-btn">Book Studio</button>
-                    <button type="button" class="btn-secondary" id="cancel-edit-btn" style="display: none;" data-no-busy="1">Cancel edit</button>
+                    <button type="button" class="btn-secondary" id="cancel-edit-btn" data-no-busy="1">Cancel</button>
                 </div>
             </form>
-        </div>
-
-        <div class="bookings-list">
-            <h2 id="bookings-heading">My Bookings</h2>
-        <div id="loading" class="loading">
-            <div class="loading-spinner"></div>
-            <p>Loading bookings...</p>
-        </div>
-        <div id="error" class="error" style="display: none;"></div>
-            <div class="bookings-grid">
-                <div>
-                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Studio Bookings</h3>
-                    <div id="bookings-container"></div>
-                </div>
-                <div>
-                    <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Event RSVPs</h3>
-                    <div id="events-container"></div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -694,12 +760,38 @@ scripts: |
             if (submitBtn) submitBtn.textContent = text;
         }
 
+        function setModalTitle(text) {
+            const title = document.getElementById('booking-modal-title');
+            if (title) title.textContent = text;
+        }
+
+        function openBookingModal() {
+            const modal = document.getElementById('booking-modal');
+            if (!modal) return;
+            modal.classList.add('is-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBookingModal() {
+            const modal = document.getElementById('booking-modal');
+            if (modal) modal.classList.remove('is-open');
+            document.body.style.overflow = '';
+            resetBookingForm();
+        }
+
         function resetBookingForm() {
             editingBookingId = null;
-            document.getElementById('booking-form').reset();
-            const cancelEdit = document.getElementById('cancel-edit-btn');
-            if (cancelEdit) cancelEdit.style.display = 'none';
+            const form = document.getElementById('booking-form');
+            if (form) form.reset();
+            if (fpStart) fpStart.clear();
+            if (fpEnd) fpEnd.clear();
             setSubmitLabel('Book Studio');
+            setModalTitle('Book Studio Time');
+        }
+
+        function openNewBookingModal() {
+            resetBookingForm();
+            openBookingModal();
         }
 
         function editBooking(id) {
@@ -708,6 +800,7 @@ scripts: |
                 toast.error('Booking not found. Refresh and try again.');
                 return;
             }
+            resetBookingForm();
             editingBookingId = id;
             const start = new Date(booking.startTime);
             const end = new Date(booking.endTime);
@@ -725,10 +818,8 @@ scripts: |
                 opt.selected = !opt.disabled && chosen.has(opt.value);
             });
             setSubmitLabel('Save Changes');
-            const cancelEdit = document.getElementById('cancel-edit-btn');
-            if (cancelEdit) cancelEdit.style.display = '';
-            document.getElementById('booking-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            toast.info('Editing booking — update the form and save.');
+            setModalTitle('Edit Studio Time');
+            openBookingModal();
         }
 
         async function cancelBooking(id) {
@@ -740,7 +831,7 @@ scripts: |
                 const response = await api.delete(`/api/studio/bookings/${id}`);
                 if (response.success) {
                     toast.success('Booking cancelled successfully');
-                    if (editingBookingId === id) resetBookingForm();
+                    if (editingBookingId === id) closeBookingModal();
                     await loadBookings();
                 } else {
                     toast.error(response.error || 'Failed to cancel booking');
@@ -793,6 +884,8 @@ scripts: |
         window.editBooking = editBooking;
         window.cancelBooking = cancelBooking;
         window.downloadBookingICS = downloadBookingICS;
+        window.openNewBookingModal = openNewBookingModal;
+        window.closeBookingModal = closeBookingModal;
 
         document.getElementById('booking-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -840,7 +933,7 @@ scripts: |
 
                     if (response.success) {
                         toast.success('Booking updated successfully!');
-                        resetBookingForm();
+                        closeBookingModal();
                         await loadBookings();
                     } else {
                         if (response.error === 'CONFLICT' || response.error?.includes('already booked') || response.error?.includes('Time slot')) {
@@ -865,7 +958,7 @@ scripts: |
                         } else {
                             toast.success('Studio booked successfully!');
                         }
-                        resetBookingForm();
+                        closeBookingModal();
                         await loadBookings();
                     } else {
                         // Check for conflict error
@@ -952,10 +1045,23 @@ scripts: |
             document.getElementById('loading').style.display = 'none';
             await Promise.all([loadBookings(), loadEvents()]);
 
-            const cancelEditBtn = document.getElementById('cancel-edit-btn');
-            if (cancelEditBtn) {
-                cancelEditBtn.addEventListener('click', () => resetBookingForm());
+            const openBtn = document.getElementById('open-booking-modal-btn');
+            if (openBtn) openBtn.addEventListener('click', () => openNewBookingModal());
+            const closeBtn = document.getElementById('booking-modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => closeBookingModal());
+            const cancelBtn = document.getElementById('cancel-edit-btn');
+            if (cancelBtn) cancelBtn.addEventListener('click', () => closeBookingModal());
+            const modal = document.getElementById('booking-modal');
+            if (modal) {
+                modal.addEventListener('click', (ev) => {
+                    if (ev.target === modal) closeBookingModal();
+                });
             }
+            document.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Escape' && modal && modal.classList.contains('is-open')) {
+                    closeBookingModal();
+                }
+            });
 
             setTimeout(() => {
                 initDateTimePickers();
