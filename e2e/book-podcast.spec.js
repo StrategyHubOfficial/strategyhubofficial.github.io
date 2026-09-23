@@ -56,8 +56,10 @@ test.describe('Book podcast guest (public)', () => {
 
     await expect(page.locator('#show-title')).toContainText('Bitcoin District');
     await expect(page.locator('#guest-email')).toBeVisible();
+    await expect(page.locator('#guest-name')).toBeVisible();
     await expect(page.locator('#guest-message')).toBeVisible();
-    await expect(page.locator('#booking-date')).toBeVisible();
+    await expect(page.getByText('Direct link only')).toHaveCount(0);
+    await expect(page.locator('input[placeholder="Tuesday–Thursday"]:visible')).toBeVisible();
   });
 
   test('submit sends POST with podcast slug', async ({ page }) => {
@@ -87,18 +89,23 @@ test.describe('Book podcast guest (public)', () => {
 
     await page.evaluate(() => {
       document.getElementById('guest-email').value = 'guest@example.com';
+      document.getElementById('guest-name').value = 'Ada Guest';
       document.getElementById('guest-message').value = 'E2E test message about the episode.';
       document.getElementById('booking-date')._flatpickr.setDate('2099-06-09', true);
     });
 
     await page.waitForSelector('.time-slot-btn:not([disabled])', { timeout: 15000 });
     await page.locator('.time-slot-btn:not([disabled])').first().click();
+    await expect(page.locator('#selected-slot')).toContainText('Selected:');
 
     await page.locator('#guest-form').evaluate((el) => el.requestSubmit());
 
-    await expect(page.locator('#guest-status')).toContainText(/Request sent/i, { timeout: 10000 });
+    await expect(page.locator('#guest-status')).toContainText(/calendar\.ics/i, { timeout: 10000 });
+    await expect(page.locator('#guest-form-wrap')).toBeHidden();
     expect(posted.podcastSlug).toBe('bitcoin-district');
     expect(posted.guestEmail).toBe('guest@example.com');
+    expect(posted.guestName).toBe('Ada Guest');
+    expect(posted.description).toContain('E2E test');
     expect(posted.message).toContain('E2E test');
     expect(posted.startTime).toBeTruthy();
     expect(posted.endTime).toBeTruthy();

@@ -53,6 +53,14 @@ styles: |
         #guest-status.alert-danger { background: #3f1d1d; border-color: #7f1d1d; color: #fecaca; }
         #guest-status.alert-success { background: #14532d; border-color: #166534; color: #bbf7d0; }
         #turnstile-widget { min-height: 65px; margin-bottom: 1rem; }
+        .hp-field {
+            position: absolute;
+            left: -10000px;
+            top: auto;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
         .time-slots-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
         .time-slot-btn {
             background: var(--bg-card);
@@ -69,9 +77,21 @@ styles: |
             border-color: var(--bitcoin-orange);
             background: rgba(247, 147, 26, 0.12);
         }
+        .time-slot-btn:focus-visible {
+            outline: 2px solid var(--bitcoin-orange);
+            outline-offset: 2px;
+        }
         .time-slot-btn.selected {
             border-color: var(--bitcoin-orange);
+            background: rgba(247, 147, 26, 0.22);
             box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.35);
+        }
+        .selected-slot {
+            margin: 0 0 1rem;
+            padding: 0.65rem 0.75rem;
+            border: 1px solid var(--bitcoin-orange);
+            border-radius: 8px;
+            background: rgba(247, 147, 26, 0.12);
         }
         .time-slot-btn:disabled {
             opacity: 0.45;
@@ -117,12 +137,23 @@ scripts: |
             el.className = 'alert small ' + (kind === 'ok' ? 'alert-success' : kind === 'err' ? 'alert-danger' : 'alert-secondary');
             el.textContent = msg;
             el.hidden = !msg;
+            if (msg && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+        }
+
+        function showSelectedSlot(lines) {
+            var summary = document.getElementById('selected-slot');
+            if (!summary) return;
+            var text = lines.primary;
+            if (lines.secondary) text += ' (' + lines.secondary + ')';
+            summary.textContent = 'Selected: ' + text;
+            summary.hidden = false;
         }
 
         var fpDate = null;
         var turnstileWidgetId = null;
         var selectedStartIso = null;
         var selectedEndIso = null;
+        var submitting = false;
 
         function getDateTime() {
             if (typeof luxon === 'undefined') return null;
@@ -150,9 +181,12 @@ scripts: |
             var su = start.setZone(userTimeZone);
             var eu = end.setZone(userTimeZone);
             var primary = su.toFormat('h:mm a') + ' – ' + eu.toFormat('h:mm a');
-            var ss = start.setZone(STUDIO_TZ);
-            var es = end.setZone(STUDIO_TZ);
-            var secondary = 'Eastern: ' + ss.toFormat('h:mm a') + ' – ' + es.toFormat('h:mm a');
+            var secondary = '';
+            if (userTimeZone !== STUDIO_TZ) {
+                var ss = start.setZone(STUDIO_TZ);
+                var es = end.setZone(STUDIO_TZ);
+                secondary = 'Eastern: ' + ss.toFormat('h:mm a') + ' – ' + es.toFormat('h:mm a');
+            }
             return { primary: primary, secondary: secondary };
         }
 
@@ -163,18 +197,30 @@ scripts: |
         }
 
         async function checkSlotOpen(startIso, endIso) {
-            var base = apiBase();
-            var url = base + '/api/studio/schedule/check?start=' + encodeURIComponent(startIso) + '&end=' + encodeURIComponent(endIso);
-            var res = await fetch(url);
-            var json = await res.json().catch(function () { return null; });
-            if (!res.ok || !json || !json.success) return false;
-            return !!(json.data && json.data.slotOpen);
+            try {
+                var base = apiBase();
+                var url = base + '/api/studio/schedule/check?start=' + encodeURIComponent(startIso) + '&end=' + encodeURIComponent(endIso);
+                var res = await fetch(url);
+                var json = await res.json().catch(function () { return null; });
+                if (!res.ok || !json || !json.success) return 'error';
+                return json.data && json.data.slotOpen ? 'open' : 'closed';
+            } catch (e) {
+                return 'error';
+            }
         }
 
         function clearSlotSelection() {
             selectedStartIso = null;
             selectedEndIso = null;
-            document.querySelectorAll('.time-slot-btn').forEach(function (b) { b.classList.remove('selected'); });
+            document.querySelectorAll('.time-slot-btn').forEach(function (b) {
+                b.classList.remove('selected');
+                b.setAttribute('aria-pressed', 'false');
+            });
+            var summary = document.getElementById('selected-slot');
+            if (summary) {
+                summary.hidden = true;
+                summary.textContent = '';
+            }
         }
 
         async function renderTimeSlots(ymd) {
@@ -188,9 +234,12 @@ scripts: |
             section.hidden = false;
             if (loading) loading.hidden = false;
             if (hint) {
-                hint.textContent =
-                    'Your timezone was detected as ' + userTimeZone + '. Times below are shown in your local time. ' +
-                    'Availability is Tuesday–Thursday, 11 AM–5 PM Eastern Time (America/New_York).';
+                if (userTimeZone === STUDIO_TZ) {
+                    hint.hidden = true;
+                } else {
+                    hint.hidden = false;
+                    hint.textContent = 'Shown in your local time. Eastern is under each slot.';
+                }
             }
 
             var DateTime = getDateTime();
@@ -229,8 +278,8 @@ scripts: |
 
             var results = await Promise.all(
                 checks.map(function (c) {
-                    return checkSlotOpen(c.range.startIso, c.range.endIso).then(function (open) {
-                        return { range: c.range, open: open };
+                    return checkSlotOpen(c.range.startIso, c.range.endIso).then(function (state) {
+                        return { range: c.range, state: state };
                     });
                 })
             );
@@ -238,23 +287,33 @@ scripts: |
             if (loading) loading.hidden = true;
             wrap.innerHTML = '';
 
+            if (results.every(function (r) { return r.state === 'error'; })) {
+                wrap.innerHTML = '<p class="text-secondary small">Could not check the studio schedule. Refresh and try that date again.</p>';
+                return;
+            }
+
             var any = false;
             results.forEach(function (r) {
                 var lines = formatSlotButtonLines(r.range.start);
+                var open = r.state === 'open';
+                var note = open ? '' : r.state === 'error' ? ' · Could not check' : ' · Unavailable';
                 var btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'time-slot-btn';
-                btn.disabled = !r.open;
-                btn.innerHTML =
-                    '<span class="slot-primary">' + lines.primary + '</span>' +
-                    '<div class="slot-secondary">' + lines.secondary + (r.open ? '' : ' · Unavailable') + '</div>';
-                if (r.open) {
+                btn.setAttribute('data-no-busy', '1');
+                btn.setAttribute('aria-pressed', 'false');
+                btn.disabled = !open;
+                var secondary = lines.secondary ? '<div class="slot-secondary">' + lines.secondary + note + '</div>' : (note ? '<div class="slot-secondary">' + note.replace(/^ · /, '') + '</div>' : '');
+                btn.innerHTML = '<span class="slot-primary">' + lines.primary + '</span>' + secondary;
+                if (open) {
                     any = true;
                     btn.addEventListener('click', function () {
                         clearSlotSelection();
                         btn.classList.add('selected');
+                        btn.setAttribute('aria-pressed', 'true');
                         selectedStartIso = r.range.startIso;
                         selectedEndIso = r.range.endIso;
+                        showSelectedSlot(lines);
                     });
                 }
                 wrap.appendChild(btn);
@@ -307,6 +366,8 @@ scripts: |
             fpDate = flatpickr('#booking-date', {
                 enableTime: false,
                 dateFormat: 'Y-m-d',
+                altInput: true,
+                altFormat: 'l, F j, Y',
                 minDate: 'today',
                 allowInput: false,
                 clickOpens: true,
@@ -344,75 +405,101 @@ scripts: |
 
         document.getElementById('guest-form').addEventListener('submit', async function (e) {
             e.preventDefault();
+            if (submitting) return;
             setStatus('', '');
             var slug = parsePodcastSlug();
             var guestEmail = document.getElementById('guest-email').value.trim();
             var guestName = document.getElementById('guest-name').value.trim();
             var message = document.getElementById('guest-message').value.trim();
-            if (!guestEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+            var honeypot = document.getElementById('hp-field').value.trim();
+            if (honeypot) {
+                setStatus('Request sent. Check your email for the calendar files. A host still has to confirm the time.', 'ok');
+                document.getElementById('guest-form-wrap').hidden = true;
+                return;
+            }
+            if (!guestEmail || guestEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
                 setStatus('Please enter a valid email address.', 'err');
                 return;
             }
-            if (!message) {
-                setStatus('Please describe who you are and what you want to talk about.', 'err');
+            if (!guestName || guestName.length > 80) {
+                setStatus('Please enter your name.', 'err');
+                return;
+            }
+            if (message.length < 10) {
+                setStatus('Please add a short description of what you want to talk about.', 'err');
                 return;
             }
             if (!selectedStartIso || !selectedEndIso) {
                 setStatus('Choose a date, then select an available time.', 'err');
                 return;
             }
-            var base = apiBase();
-            var checkUrl = base + '/api/studio/schedule/check?start=' + encodeURIComponent(selectedStartIso) + '&end=' + encodeURIComponent(selectedEndIso);
-            var checkRes = await fetch(checkUrl);
-            var checkJson = await checkRes.json().catch(function () { return null; });
-            if (!checkRes.ok || !checkJson || !checkJson.success) {
-                setStatus((checkJson && checkJson.error) || 'Could not verify the time slot.', 'err');
-                return;
+            var slotLabel = (document.getElementById('selected-slot').textContent || '').replace(/^Selected:\s*/, '');
+            var submitBtn = document.getElementById('guest-submit');
+            submitting = true;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Sending…';
             }
-            if (!checkJson.data || !checkJson.data.slotOpen) {
-                setStatus('That time is no longer available. Choose another slot.', 'err');
-                return;
-            }
-            var body = {
-                podcastSlug: slug,
-                guestEmail: guestEmail,
-                startTime: selectedStartIso,
-                endTime: selectedEndIso,
-                message: message
-            };
-            if (guestName) body.guestName = guestName;
-            if (turnstileWidgetId !== null && window.turnstile) {
-                var tToken = window.turnstile.getResponse(turnstileWidgetId);
-                if (!tToken) {
-                    setStatus('Complete the verification below.', 'err');
+            try {
+                var base = apiBase();
+                var checkUrl = base + '/api/studio/schedule/check?start=' + encodeURIComponent(selectedStartIso) + '&end=' + encodeURIComponent(selectedEndIso);
+                var checkRes = await fetch(checkUrl);
+                var checkJson = await checkRes.json().catch(function () { return null; });
+                if (!checkRes.ok || !checkJson || !checkJson.success) {
+                    setStatus((checkJson && checkJson.error) || 'Could not verify the time slot.', 'err');
                     return;
                 }
-                body.turnstileToken = tToken;
-            }
-            var postRes = await fetch(base + '/api/studio/podcast-guest-requests', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            var postJson = await postRes.json().catch(function () { return null; });
-            if (postRes.status === 503) {
-                setStatus('This form is not fully configured yet (host notifications). Please contact the studio directly.', 'err');
-                return;
-            }
-            if (!postRes.ok || !postJson || !postJson.success) {
-                var err = (postJson && (postJson.error || postJson.message)) || 'Request failed.';
-                if (postRes.status === 409) err = 'That slot was just taken. Refresh and pick another time.';
-                setStatus(err, 'err');
-                return;
-            }
-            setStatus('Request sent. The hosts will email you if needed. You can close this page.', 'ok');
-            document.getElementById('guest-form').reset();
-            clearSlotSelection();
-            if (fpDate) fpDate.clear();
-            document.getElementById('time-slots-section').hidden = true;
-            document.getElementById('time-slots').innerHTML = '';
-            if (turnstileWidgetId !== null && window.turnstile) {
-                window.turnstile.reset(turnstileWidgetId);
+                if (!checkJson.data || !checkJson.data.slotOpen) {
+                    setStatus('That time is no longer available. Choose another slot.', 'err');
+                    return;
+                }
+                var body = {
+                    podcastSlug: slug,
+                    guestEmail: guestEmail,
+                    guestName: guestName,
+                    startTime: selectedStartIso,
+                    endTime: selectedEndIso,
+                    description: message,
+                    message: message
+                };
+                if (turnstileWidgetId !== null && window.turnstile) {
+                    var tToken = window.turnstile.getResponse(turnstileWidgetId);
+                    if (!tToken) {
+                        setStatus('Complete the verification below.', 'err');
+                        return;
+                    }
+                    body.turnstileToken = tToken;
+                }
+                var postRes = await fetch(base + '/api/studio/podcast-guest-requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                var postJson = await postRes.json().catch(function () { return null; });
+                if (postRes.status === 503) {
+                    setStatus('This form is not fully configured yet (host notifications). Please contact the studio directly.', 'err');
+                    return;
+                }
+                if (!postRes.ok || !postJson || !postJson.success) {
+                    var err = (postJson && (postJson.error || postJson.message)) || 'Request failed.';
+                    if (postRes.status === 409) err = 'That slot was just taken. Refresh and pick another time.';
+                    if (postRes.status === 429) err = 'Too many requests. Wait a bit and try again.';
+                    setStatus(err, 'err');
+                    return;
+                }
+                var when = slotLabel ? ' for ' + slotLabel + '.' : '.';
+                setStatus('Request sent' + when + ' Check your email for calendar.ics and invite.ics. A host still has to confirm the time.', 'ok');
+                document.getElementById('guest-form-wrap').hidden = true;
+            } catch (err) {
+                setStatus('Could not send the request. Try again.', 'err');
+            } finally {
+                if (!document.getElementById('guest-form-wrap').hidden) {
+                    submitting = false;
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = 'Request this time';
+                    }
+                }
             }
         });
 
@@ -429,37 +516,45 @@ scripts: |
 ---
 
 <div class="container py-5 guest-booking-form">
-    <p class="text-secondary small mb-2">Direct link only — not listed on the main site.</p>
     <h1 class="h2 mb-1" id="show-title">Loading…</h1>
-    <p class="text-secondary mb-4" id="show-blurb"></p>
+    <p class="text-secondary mb-2" id="show-blurb"></p>
+    <p class="text-secondary small mb-4">One-hour recording at Strategy Hub, 1850 Towers Cres Plaza, Tysons. You will get calendar.ics and invite.ics by email. A host confirms the time before it is final.</p>
 
     <div id="guest-status" class="alert small" role="status" hidden></div>
 
+    <div id="guest-form-wrap">
     <form id="guest-form">
         <div class="mb-3">
             <label for="guest-email" class="form-label">Your email</label>
             <input type="email" class="form-control" id="guest-email" required autocomplete="email" placeholder="you@example.com">
         </div>
         <div class="mb-3">
-            <label for="guest-name" class="form-label">Your name <span class="text-secondary fw-normal">(optional)</span></label>
-            <input type="text" class="form-control" id="guest-name" autocomplete="name">
+            <label for="guest-name" class="form-label">Your name</label>
+            <input type="text" class="form-control" id="guest-name" required maxlength="80" autocomplete="name">
+        </div>
+        <div class="hp-field" aria-hidden="true">
+            <label for="hp-field">Leave blank</label>
+            <input type="text" id="hp-field" name="hp_field" tabindex="-1" autocomplete="off" value="">
         </div>
         <div class="mb-3">
             <label for="booking-date" class="form-label">Date</label>
             <input type="text" class="form-control" id="booking-date" readonly placeholder="Tuesday–Thursday" autocomplete="off">
+            <p class="small text-secondary mt-1 mb-0" id="studio-hours-note">Tuesday–Thursday, one hour each. Last start is 4:00 p.m. Eastern.</p>
         </div>
         <div class="mb-3" id="time-slots-section" hidden>
             <label class="form-label">Available times</label>
-            <p class="small text-secondary mb-1" id="timezone-hint"></p>
-            <p class="small text-secondary mb-2" id="studio-hours-note">Sessions are 1 hour. Open days: Tuesday, Wednesday, Thursday (Eastern). Hours: 11 AM–5 PM Eastern — shown below in your local timezone.</p>
+            <p class="small text-secondary mb-1" id="timezone-hint" hidden></p>
             <p id="time-slots-loading" class="small" hidden>Checking availability…</p>
             <div id="time-slots" class="time-slots-grid" role="group" aria-label="Available start times"></div>
         </div>
         <div class="mb-3">
-            <label for="guest-message" class="form-label">About you &amp; topic</label>
-            <textarea class="form-control" id="guest-message" rows="5" required placeholder="Who you are and what you'd like to discuss…"></textarea>
+            <label for="guest-message" class="form-label">Description</label>
+            <textarea class="form-control" id="guest-message" rows="5" required minlength="10" maxlength="2000" placeholder="Who you are and what you want to talk about"></textarea>
+            <p class="small text-secondary mt-1 mb-0">At least a sentence. The host reads this before confirming.</p>
         </div>
+        <p id="selected-slot" class="selected-slot" hidden></p>
         <div id="turnstile-widget" class="mb-3" aria-live="polite"></div>
-        <button type="submit" class="btn btn-warning text-dark fw-semibold">Submit request</button>
+        <button type="submit" class="btn btn-warning text-dark fw-semibold w-100" id="guest-submit" data-no-busy="1">Request this time</button>
     </form>
+    </div>
 </div>
