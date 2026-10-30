@@ -52,6 +52,53 @@ styles: |
         .flatpickr-day.flatpickr-disabled { color: var(--text-muted) !important; opacity: 0.35; }
         #guest-status.alert-danger { background: #3f1d1d; border-color: #7f1d1d; color: #fecaca; }
         #guest-status.alert-success { background: #14532d; border-color: #166534; color: #bbf7d0; }
+        .ics-downloads {
+            margin-top: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+        .ics-downloads-lead {
+            margin: 0;
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+        .ics-download {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.2rem;
+            width: 100%;
+            min-height: 48px;
+            padding: 0.75rem 0.9rem;
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: left;
+            line-height: 1.3;
+        }
+        .ics-download:focus-visible {
+            outline: 2px solid var(--bitcoin-orange);
+            outline-offset: 2px;
+        }
+        .ics-download-primary {
+            background: var(--bitcoin-orange);
+            border: 1px solid var(--bitcoin-orange);
+            color: var(--bg-darker);
+        }
+        .ics-download-primary:hover { filter: brightness(1.05); color: var(--bg-darker); }
+        .ics-download-primary .ics-detail { color: rgba(0, 0, 0, 0.72); }
+        .ics-download-secondary {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .ics-download-secondary:hover {
+            border-color: var(--bitcoin-orange);
+            color: var(--text-primary);
+        }
+        .ics-title { font-weight: 650; font-size: 1rem; }
+        .ics-detail { font-weight: 450; font-size: 0.82rem; }
+        .ics-download-secondary .ics-detail { color: var(--text-secondary); }
         #turnstile-widget { min-height: 65px; margin-bottom: 1rem; }
         .hp-field {
             position: absolute;
@@ -87,7 +134,7 @@ styles: |
             box-shadow: 0 0 0 2px rgba(247, 147, 26, 0.35);
         }
         .selected-slot {
-            margin: 0 0 1rem;
+            margin: 0.75rem 0 0;
             padding: 0.65rem 0.75rem;
             border: 1px solid var(--bitcoin-orange);
             border-radius: 8px;
@@ -140,20 +187,36 @@ scripts: |
             if (msg && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
         }
 
-        function showSelectedSlot(lines) {
+        function formatSelectedSlotLabel(start) {
+            var DateTime = getDateTime();
+            if (!DateTime || !start) return '';
+            var end = start.plus({ hours: 1 });
+            var su = start.setZone(userTimeZone);
+            var eu = end.setZone(userTimeZone);
+            var label = su.toFormat('cccc, LLL d, yyyy') + ' · ' + su.toFormat('h:mm a') + ' – ' + eu.toFormat('h:mm a');
+            if (userTimeZone !== STUDIO_TZ) {
+                var ss = start.setZone(STUDIO_TZ);
+                var es = end.setZone(STUDIO_TZ);
+                label += ' (Eastern: ' + ss.toFormat('h:mm a') + ' – ' + es.toFormat('h:mm a') + ')';
+            }
+            return label;
+        }
+
+        function showSelectedSlot(start) {
             var summary = document.getElementById('selected-slot');
             if (!summary) return;
-            var text = lines.primary;
-            if (lines.secondary) text += ' (' + lines.secondary + ')';
-            summary.textContent = 'Selected: ' + text;
-            summary.hidden = false;
+            selectedSlotLabel = formatSelectedSlotLabel(start);
+            summary.textContent = selectedSlotLabel ? 'Selected: ' + selectedSlotLabel : '';
+            summary.hidden = !selectedSlotLabel;
         }
 
         var fpDate = null;
         var turnstileWidgetId = null;
         var selectedStartIso = null;
         var selectedEndIso = null;
+        var selectedSlotLabel = '';
         var submitting = false;
+        var emailEnabled = false;
 
         function getDateTime() {
             if (typeof luxon === 'undefined') return null;
@@ -212,6 +275,7 @@ scripts: |
         function clearSlotSelection() {
             selectedStartIso = null;
             selectedEndIso = null;
+            selectedSlotLabel = '';
             document.querySelectorAll('.time-slot-btn').forEach(function (b) {
                 b.classList.remove('selected');
                 b.setAttribute('aria-pressed', 'false');
@@ -313,7 +377,7 @@ scripts: |
                         btn.setAttribute('aria-pressed', 'true');
                         selectedStartIso = r.range.startIso;
                         selectedEndIso = r.range.endIso;
-                        showSelectedSlot(lines);
+                        showSelectedSlot(r.range.start);
                     });
                 }
                 wrap.appendChild(btn);
@@ -340,11 +404,77 @@ scripts: |
             });
         }
 
-        async function initTurnstileFromApi() {
+        function applyEmailCopy() {
+            var note = document.getElementById('guest-email-note');
+            if (!note) return;
+            note.textContent = emailEnabled
+                ? 'One-hour recording at Strategy Hub, 1850 Towers Cres Plaza, Tysons. After you send the request, save the time from this page. A copy also goes to your email. A host confirms it before it is final.'
+                : 'One-hour recording at Strategy Hub, 1850 Towers Cres Plaza, Tysons. After you send the request, save the time from this page. A host confirms it before it is final.';
+        }
+
+        function successCopy(when) {
+            return 'Request sent' + when + ' A host still has to confirm this time.';
+        }
+
+        function showCalendarDownloads(files) {
+            var box = document.getElementById('guest-calendar-downloads');
+            if (!box) return false;
+            box.innerHTML = '';
+            var copy = {
+                'calendar.ics': {
+                    title: 'Add to your calendar',
+                    detail: 'Saves the recording on this phone or computer.',
+                    primary: true,
+                },
+                'invite.ics': {
+                    title: 'Download the invite',
+                    detail: 'Use this if your calendar app asks for an invitation.',
+                    primary: false,
+                },
+            };
+            var ready = (files || []).filter(function (file) {
+                return file && copy[file.filename] && typeof file.content === 'string' && file.content.indexOf('BEGIN:VCALENDAR') !== -1;
+            });
+            ready.sort(function (a, b) { return a.filename === 'calendar.ics' ? -1 : b.filename === 'calendar.ics' ? 1 : 0; });
+            if (!ready.length) {
+                box.hidden = true;
+                return false;
+            }
+            var label = document.createElement('p');
+            label.className = 'ics-downloads-lead small';
+            label.textContent = emailEnabled
+                ? 'Save these before you leave this page. A copy is also coming by email.'
+                : 'Save these before you leave this page.';
+            box.appendChild(label);
+            ready.forEach(function (file) {
+                var meta = copy[file.filename];
+                var link = document.createElement('a');
+                link.className = 'ics-download ' + (meta.primary ? 'ics-download-primary' : 'ics-download-secondary');
+                link.download = file.filename;
+                link.href = URL.createObjectURL(new Blob([file.content], { type: 'text/calendar' }));
+                var title = document.createElement('span');
+                title.className = 'ics-title';
+                title.textContent = meta.title;
+                var detail = document.createElement('span');
+                detail.className = 'ics-detail';
+                detail.textContent = meta.detail + ' (' + file.filename + ')';
+                link.appendChild(title);
+                link.appendChild(detail);
+                box.appendChild(link);
+            });
+            box.hidden = false;
+            return true;
+        }
+
+        async function initGuestConfig() {
             try {
                 var base = apiBase();
                 var res = await fetch(base + '/api/studio/podcast-guest-config');
                 var json = await res.json().catch(function () { return null; });
+                if (json && json.success && json.data) {
+                    emailEnabled = !!json.data.emailEnabled;
+                }
+                applyEmailCopy();
                 if (!json || !json.success || !json.data || !json.data.turnstileSiteKey) {
                     return;
                 }
@@ -357,7 +487,8 @@ scripts: |
                     theme: 'dark',
                 });
             } catch (e) {
-                console.warn('[book-podcast] Turnstile:', e);
+                console.warn('[book-podcast] guest config:', e);
+                applyEmailCopy();
             }
         }
 
@@ -413,7 +544,7 @@ scripts: |
             var message = document.getElementById('guest-message').value.trim();
             var honeypot = document.getElementById('hp-field').value.trim();
             if (honeypot) {
-                setStatus('Request sent. Check your email for the calendar files. A host still has to confirm the time.', 'ok');
+                setStatus(successCopy('.'), 'ok');
                 document.getElementById('guest-form-wrap').hidden = true;
                 return;
             }
@@ -433,7 +564,7 @@ scripts: |
                 setStatus('Choose a date, then select an available time.', 'err');
                 return;
             }
-            var slotLabel = (document.getElementById('selected-slot').textContent || '').replace(/^Selected:\s*/, '');
+            var slotLabel = selectedSlotLabel;
             var submitBtn = document.getElementById('guest-submit');
             submitting = true;
             if (submitBtn) {
@@ -488,7 +619,14 @@ scripts: |
                     return;
                 }
                 var when = slotLabel ? ' for ' + slotLabel + '.' : '.';
-                setStatus('Request sent' + when + ' Check your email for calendar.ics and invite.ics. A host still has to confirm the time.', 'ok');
+                var saved = showCalendarDownloads(postJson.data && postJson.data.calendarFiles);
+                if (saved) {
+                    setStatus(successCopy(when), 'ok');
+                    var downloads = document.getElementById('guest-calendar-downloads');
+                    if (downloads && downloads.scrollIntoView) downloads.scrollIntoView({ block: 'nearest' });
+                } else {
+                    setStatus('Request sent' + when + ' The calendar files did not come back. Contact the studio and include your email and this time.', 'err');
+                }
                 document.getElementById('guest-form-wrap').hidden = true;
             } catch (err) {
                 setStatus('Could not send the request. Try again.', 'err');
@@ -508,7 +646,7 @@ scripts: |
             var ok = await loadShowMeta(slug);
             if (ok) {
                 setTimeout(initDatePicker, 50);
-                initTurnstileFromApi();
+                initGuestConfig();
             }
         })();
     })();
@@ -518,9 +656,10 @@ scripts: |
 <div class="container py-5 guest-booking-form">
     <h1 class="h2 mb-1" id="show-title">Loading…</h1>
     <p class="text-secondary mb-2" id="show-blurb"></p>
-    <p class="text-secondary small mb-4">One-hour recording at Strategy Hub, 1850 Towers Cres Plaza, Tysons. You will get calendar.ics and invite.ics by email. A host confirms the time before it is final.</p>
+    <p class="text-secondary small mb-4" id="guest-email-note">One-hour recording at Strategy Hub, 1850 Towers Cres Plaza, Tysons. After you send the request, save the time from this page. A host confirms it before it is final.</p>
 
     <div id="guest-status" class="alert small" role="status" hidden></div>
+    <div id="guest-calendar-downloads" class="ics-downloads" hidden></div>
 
     <div id="guest-form-wrap">
     <form id="guest-form">
@@ -546,13 +685,13 @@ scripts: |
             <p class="small text-secondary mb-1" id="timezone-hint" hidden></p>
             <p id="time-slots-loading" class="small" hidden>Checking availability…</p>
             <div id="time-slots" class="time-slots-grid" role="group" aria-label="Available start times"></div>
+            <p id="selected-slot" class="selected-slot" hidden></p>
         </div>
         <div class="mb-3">
             <label for="guest-message" class="form-label">Description</label>
             <textarea class="form-control" id="guest-message" rows="5" required minlength="10" maxlength="2000" placeholder="Who you are and what you want to talk about"></textarea>
             <p class="small text-secondary mt-1 mb-0">At least a sentence. The host reads this before confirming.</p>
         </div>
-        <p id="selected-slot" class="selected-slot" hidden></p>
         <div id="turnstile-widget" class="mb-3" aria-live="polite"></div>
         <button type="submit" class="btn btn-warning text-dark fw-semibold w-100" id="guest-submit" data-no-busy="1">Request this time</button>
     </form>

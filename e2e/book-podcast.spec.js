@@ -2,6 +2,7 @@
  * E2E: unlisted podcast guest booking page (no auth).
  */
 import { test, expect } from '@playwright/test';
+import fs from 'fs';
 
 test.describe('Book podcast guest (public)', () => {
   test.beforeEach(async ({ page }) => {
@@ -36,7 +37,7 @@ test.describe('Book podcast guest (public)', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: { turnstileSiteKey: null, turnstileEnabled: false },
+          data: { turnstileSiteKey: null, turnstileEnabled: false, emailEnabled: false },
         }),
       });
     });
@@ -58,6 +59,7 @@ test.describe('Book podcast guest (public)', () => {
     await expect(page.locator('#guest-email')).toBeVisible();
     await expect(page.locator('#guest-name')).toBeVisible();
     await expect(page.locator('#guest-message')).toBeVisible();
+    await expect(page.locator('#guest-email-note')).toContainText(/save the time from this page/i);
     await expect(page.getByText('Direct link only')).toHaveCount(0);
     await expect(page.locator('input[placeholder="Tuesday–Thursday"]:visible')).toBeVisible();
   });
@@ -71,7 +73,14 @@ test.describe('Book podcast guest (public)', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           success: true,
-          data: { requestId: 'e2e-1', createdAt: new Date().toISOString() },
+          data: {
+            requestId: 'e2e-1',
+            createdAt: new Date().toISOString(),
+            calendarFiles: [
+              { filename: 'calendar.ics', content: 'BEGIN:VCALENDAR\r\nMETHOD:PUBLISH\r\nEND:VCALENDAR' },
+              { filename: 'invite.ics', content: 'BEGIN:VCALENDAR\r\nMETHOD:REQUEST\r\nEND:VCALENDAR' },
+            ],
+          },
         }),
       });
     });
@@ -96,11 +105,23 @@ test.describe('Book podcast guest (public)', () => {
 
     await page.waitForSelector('.time-slot-btn:not([disabled])', { timeout: 15000 });
     await page.locator('.time-slot-btn:not([disabled])').first().click();
-    await expect(page.locator('#selected-slot')).toContainText('Selected:');
+    await expect(page.locator('#selected-slot')).toContainText(/Selected:.*2099/i);
+    await expect(page.locator('#selected-slot')).toContainText(/AM|PM/);
 
     await page.locator('#guest-form').evaluate((el) => el.requestSubmit());
 
-    await expect(page.locator('#guest-status')).toContainText(/calendar\.ics/i, { timeout: 10000 });
+    await expect(page.locator('#guest-status')).toContainText(/host still has to confirm/i, { timeout: 10000 });
+    await expect(page.locator('#guest-calendar-downloads')).toContainText(/Save these before you leave this page/i);
+    await expect(page.getByRole('link', { name: /Add to your calendar/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Download the invite/i })).toBeVisible();
+    await expect(page.locator('#guest-calendar-downloads a[download="calendar.ics"]')).toBeVisible();
+    await expect(page.locator('#guest-calendar-downloads a[download="invite.ics"]')).toBeVisible();
+    const calendarDownload = page.waitForEvent('download');
+    await page.locator('#guest-calendar-downloads a[download="calendar.ics"]').click();
+    const calendarFile = await calendarDownload;
+    expect(calendarFile.suggestedFilename()).toBe('calendar.ics');
+    const savedPath = await calendarFile.path();
+    expect(fs.readFileSync(savedPath, 'utf8')).toContain('METHOD:PUBLISH');
     await expect(page.locator('#guest-form-wrap')).toBeHidden();
     expect(posted.podcastSlug).toBe('bitcoin-district');
     expect(posted.guestEmail).toBe('guest@example.com');
